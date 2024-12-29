@@ -1038,6 +1038,27 @@ void NPC::Attack(Character *target)
 	target->Send(builder);
 }
 
+void NPC::Say(const std::string& message)
+{
+	PacketBuilder builder(PACKET_NPC, PACKET_PLAYER, 5 + message.length());
+	builder.AddByte(255);
+	builder.AddByte(255);
+	builder.AddChar(this->index);
+	builder.AddChar(message.length());
+	builder.AddString(message.c_str());
+	builder.AddByte(255);
+
+	UTIL_FOREACH(this->map->characters, character)
+	{
+		if (!character->InRange(this))
+		{
+			continue;
+		}
+
+		character->Send(builder);
+	}
+}
+
 #define v(x) vars[prefix + #x] = x;
 #define vv(x, n) vars[prefix + n] = x;
 #define vd(x) vars[prefix + #x] = data.x;

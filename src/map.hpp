@@ -11,6 +11,7 @@
 #include "fwd/arena.hpp"
 #include "fwd/character.hpp"
 #include "fwd/npc.hpp"
+#include "fwd/wedding.hpp"
 #include "fwd/world.hpp"
 
 #include <list>
@@ -252,6 +253,7 @@ class Map
 		bool has_timed_spikes;
 
 		Arena *arena;
+		Wedding* wedding;
 
 		Map(int id, World *world);
 		void LoadArena();
