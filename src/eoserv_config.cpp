@@ -74,6 +74,13 @@ void eoserv_config_validate_config(Config& config)
 	eoserv_config_default(config, "Maps"               , 278);
 	eoserv_config_default(config, "QuestDir"           , "./data/quests/");
 	eoserv_config_default(config, "Quests"             , 0);
+	eoserv_config_default(config, "SLN"                , false);
+	eoserv_config_default(config, "SLNURL"             , "http://www.apollo-games.com/SLN/sln.php/");
+	eoserv_config_default(config, "SLNSite"            , "");
+	eoserv_config_default(config, "ServerName"         , "Untitled Server");
+	eoserv_config_default(config, "SLNPeriod"          , 300);
+	eoserv_config_default(config, "SLNZone"            , "");
+	eoserv_config_default(config, "SLNBind"            , "1");
 	eoserv_config_default(config, "BotCharacters"      , "");
 	eoserv_config_default(config, "GuildPrice"         , 50000);
 	eoserv_config_default(config, "RecruitCost"        , 1000);

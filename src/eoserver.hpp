@@ -10,6 +10,7 @@
 
 #include "fwd/config.hpp"
 #include "fwd/eoclient.hpp"
+#include "fwd/sln.hpp"
 #include "fwd/timer.hpp"
 #include "fwd/world.hpp"
 
@@ -47,6 +48,8 @@ class EOServer : public Server
 	public:
 		World *world;
 		double start;
+
+		SLN *sln;
 
 		bool QuietConnectionErrors = false;
 		double HangupDelay = 10.0;

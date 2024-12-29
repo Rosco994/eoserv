@@ -130,6 +130,8 @@ class World
 
 		void Command(std::string command, const std::vector<std::string>& arguments, Command_Source* from = 0);
 
+		void PlayerCommand(std::string command, const std::vector<std::string>& arguments, Command_Source* from = 0);
+
 		void LoadHome();
 
 		int GenerateCharacterID();
