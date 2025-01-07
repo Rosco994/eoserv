@@ -45,7 +45,7 @@ Navigate to the Directory and Build:
 This project is built on contributions from the following people:
 
 - **Vult-r**: Creator/owner of the original server and client engine code.
-- **Julian Smythe**: Contributor to additional code improvements.
+- **Julian Smythe**: Creator of base code.
 - **Niox**: Contributor to additional code improvements.
 - **Cirras**: Contributor to additional code improvements.
 - **Ethan Moffat**: Contributor to additional code improvements.
