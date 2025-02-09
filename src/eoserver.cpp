@@ -106,31 +106,31 @@ void server_pump_queue(void *server_void)
 				Handlers::Handle(action->reader.Family(), action->reader.Action(), client, action->reader, !action->auto_queue);
 #ifndef DEBUG_EXCEPTIONS
 			}
-			catch (Socket_Exception& e)
+			catch (Socket_Exception &e)
 			{
 				Console::Err("Client caused an exception and was closed: %s.", static_cast<std::string>(client->GetRemoteAddr()).c_str());
 				Console::Err("%s: %s", e.what(), e.error());
 				client->Close();
 			}
-			catch (Database_Exception& e)
+			catch (Database_Exception &e)
 			{
 				Console::Err("Client caused an exception and was closed: %s.", static_cast<std::string>(client->GetRemoteAddr()).c_str());
 				Console::Err("%s: %s", e.what(), e.error());
 				client->Close();
 			}
-			catch (std::runtime_error& e)
+			catch (std::runtime_error &e)
 			{
 				Console::Err("Client caused an exception and was closed: %s.", static_cast<std::string>(client->GetRemoteAddr()).c_str());
 				Console::Err("Runtime Error: %s", e.what());
 				client->Close();
 			}
-			catch (std::logic_error& e)
+			catch (std::logic_error &e)
 			{
 				Console::Err("Client caused an exception and was closed: %s.", static_cast<std::string>(client->GetRemoteAddr()).c_str());
 				Console::Err("Logic Error: %s", e.what());
 				client->Close();
 			}
-			catch (std::exception& e)
+			catch (std::exception &e)
 			{
 				Console::Err("Client caused an exception and was closed: %s.", static_cast<std::string>(client->GetRemoteAddr()).c_str());
 				Console::Err("Uncaught Exception: %s", e.what());
@@ -196,7 +196,7 @@ void EOServer::Initialize(std::array<std::string, 6> dbinfo, const Config &eoser
 
 Client *EOServer::ClientFactory(const Socket &sock)
 {
-	 return new EOClient(sock, this);
+	return new EOClient(sock, this);
 }
 
 void EOServer::Tick()
@@ -219,8 +219,7 @@ void EOServer::Tick()
 			double last_connection_time = connection->second.last_connection_time;
 			double last_rejection_time = connection->second.last_rejection_time;
 
-			if (last_connection_time + reconnect_limit < now
-			 && last_rejection_time + 30.0 < now)
+			if (last_connection_time + reconnect_limit < now && last_rejection_time + 30.0 < now)
 			{
 				this->ClearClientRejections(connection);
 				connection = connection_log.erase(connection);
@@ -231,8 +230,7 @@ void EOServer::Tick()
 				continue;
 			}
 
-			if (connection->first == remote_addr
-			 && last_connection_time + reconnect_limit >= now)
+			if (connection->first == remote_addr && last_connection_time + reconnect_limit >= now)
 			{
 				throttle = true;
 			}
@@ -288,7 +286,7 @@ void EOServer::Tick()
 	this->world->timer.Tick();
 }
 
-void EOServer::RecordClientRejection(const IPAddress& ip, const char* reason)
+void EOServer::RecordClientRejection(const IPAddress &ip, const char *reason)
 {
 	if (QuietConnectionErrors)
 	{
@@ -307,7 +305,7 @@ void EOServer::RecordClientRejection(const IPAddress& ip, const char* reason)
 		if (it == this->connection_log.end())
 			return;
 
-		auto& log = it->second;
+		auto &log = it->second;
 
 		// Buffer up to 100 rejections + 30 seconds in delayed error mode
 		if (++log.rejections < 100)
@@ -319,7 +317,7 @@ void EOServer::RecordClientRejection(const IPAddress& ip, const char* reason)
 	}
 }
 
-void EOServer::ClearClientRejections(const IPAddress& ip)
+void EOServer::ClearClientRejections(const IPAddress &ip)
 {
 	auto it = this->connection_log.find(ip);
 	if (it != this->connection_log.end())
@@ -328,7 +326,7 @@ void EOServer::ClearClientRejections(const IPAddress& ip)
 
 void EOServer::ClearClientRejections(EOServer::connection_log_iterator it)
 {
-	int& rejections = it->second.rejections;
+	int &rejections = it->second.rejections;
 
 	if (rejections > 1)
 	{
@@ -345,9 +343,9 @@ EOServer::~EOServer()
 	builder.AddByte('r');
 
 	// Send server reboot message
-	for (Client* client : this->clients)
+	for (Client *client : this->clients)
 	{
-		EOClient* eoclient = static_cast<EOClient*>(client);
+		EOClient *eoclient = static_cast<EOClient *>(client);
 		eoclient->Send(builder);
 		eoclient->FinishWriting();
 	}
@@ -371,5 +369,6 @@ EOServer::~EOServer()
 		this->BuryTheDead();
 	}
 
+	delete this->sln;
 	delete this->world;
 }

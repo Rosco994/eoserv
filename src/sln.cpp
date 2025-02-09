@@ -1,5 +1,4 @@
-
-/* $Id$
+/* sln.cpp
  * EOSERV is released under the zlib license.
  * See LICENSE.txt for more info.
  */
@@ -29,21 +28,19 @@
 
 struct SLN_Request
 {
-	SLN* sln;
+	SLN *sln;
 	std::string url;
 	std::string bind;
 	std::string host;
 	int period;
 
-	HTTP* http;
+	HTTP *http;
 	bool timeout;
 
 	SLN_Request()
-		: sln(0)
-		, period(600)
-		, http(0)
-		, timeout(false)
-	{ }
+		: sln(0), period(600), http(0), timeout(false)
+	{
+	}
 
 	~SLN_Request()
 	{
@@ -52,7 +49,7 @@ struct SLN_Request
 	}
 };
 
-SLN::SLN(EOServer* server)
+SLN::SLN(EOServer *server)
 {
 	this->server = server;
 	this->Request();
@@ -60,7 +57,7 @@ SLN::SLN(EOServer* server)
 
 void SLN::Request()
 {
-	SLN_Request* request = new SLN_Request;
+	SLN_Request *request = new SLN_Request;
 
 	request->sln = this;
 
@@ -135,9 +132,9 @@ void SLN::Request()
 	pthread_detach(thread);
 }
 
-void* SLN::RequestThread(void* void_request)
+void *SLN::RequestThread(void *void_request)
 {
-	SLN_Request* request(static_cast<SLN_Request*>(void_request));
+	SLN_Request *request(static_cast<SLN_Request *>(void_request));
 
 	try
 	{
@@ -194,15 +191,15 @@ void* SLN::RequestThread(void* void_request)
 	}
 
 end:
-	TimeEvent* event = new TimeEvent(SLN::TimedCleanup, request, 0.0, 1);
+	TimeEvent *event = new TimeEvent(SLN::TimedCleanup, request, 0.0, 1);
 	request->sln->server->world->timer.Register(event);
 
 	return 0;
 }
 
-void SLN::TimedCleanup(void* void_request)
+void SLN::TimedCleanup(void *void_request)
 {
-	SLN_Request* request(static_cast<SLN_Request*>(void_request));
+	SLN_Request *request(static_cast<SLN_Request *>(void_request));
 
 	if (!request->http)
 	{
@@ -238,127 +235,126 @@ void SLN::TimedCleanup(void* void_request)
 
 				switch (maincode)
 				{
-					case 1: // Informational
-						switch (code)
+				case 1: // Informational
+					switch (code)
+					{
+					case 104:
+						request->period = util::to_int(parts.at(2));
+						break;
+					}
+					break;
+
+				case 2: // Success
+					break;
+
+				case 3: // Warning
+					errmsg += "SLN Update Warning: ";
+					switch (code)
+					{
+					case 300:
+						errmsg += parts.at(4);
+
+						if (parts.at(2) == "retry")
 						{
-							case 104:
-								request->period = util::to_int(parts.at(2));
-								break;
+							int old_period = int(request->sln->server->world->config["SLNPeriod"]);
+							int new_period = util::to_int(parts.at(3));
+							request->sln->server->world->config["SLNPeriod"] = new_period;
+							request->period += new_period - old_period;
+							resolved = true;
+						}
+						else if (parts.at(2) == "name")
+						{
+							request->sln->server->world->config["ServerName"] = parts.at(3);
+							resolved = true;
+						}
+						else if (parts.at(2) == "url")
+						{
+							request->sln->server->world->config["SLNSite"] = parts.at(3);
+							resolved = true;
 						}
 						break;
 
-					case 2: // Success
+					case 301:
+						errmsg += parts.at(2);
 						break;
 
-					case 3: // Warning
-						errmsg += "SLN Update Warning: ";
-						switch (code)
+					case 302:
+						errmsg += parts.at(2);
+						break;
+
+					default:
+						errmsg += "Unknown error code";
+						break;
+					}
+
+					Console::Wrn("%s", errmsg.c_str());
+					request->sln->server->world->AdminMsg(0, errmsg, ADMIN_HGM);
+					if (resolved)
+					{
+						request->sln->server->world->AdminMsg(0, "EOSERV has automatically resolved this message and the next check-in should succeed.", ADMIN_HGM);
+					}
+					break;
+
+				case 4: // Client Error
+					errmsg += "SLN Update Client Error: ";
+					switch (code)
+					{
+					case 400:
+						errmsg += parts.at(3);
+						break;
+
+					case 401:
+						errmsg += parts.at(3);
+
+						if (parts.at(2) == "url")
 						{
-							case 300:
-								errmsg += parts.at(4);
-
-								if (parts.at(2) == "retry")
-								{
-									int old_period = int(request->sln->server->world->config["SLNPeriod"]);
-									int new_period = util::to_int(parts.at(3));
-									request->sln->server->world->config["SLNPeriod"] = new_period;
-									request->period += new_period - old_period;
-									resolved = true;
-								}
-								else if (parts.at(2) == "name")
-								{
-									request->sln->server->world->config["ServerName"] = parts.at(3);
-									resolved = true;
-								}
-								else if (parts.at(2) == "url")
-								{
-									request->sln->server->world->config["SLNSite"] = parts.at(3);
-									resolved = true;
-								}
-								break;
-
-							case 301:
-								errmsg += parts.at(2);
-								break;
-
-							case 302:
-								errmsg += parts.at(2);
-								break;
-
-							default:
-								errmsg += "Unknown error code";
-								break;
-						}
-
-						Console::Wrn("%s", errmsg.c_str());
-						request->sln->server->world->AdminMsg(0, errmsg, ADMIN_HGM);
-						if (resolved)
-						{
-							request->sln->server->world->AdminMsg(0, "EOSERV has automatically resolved this message and the next check-in should succeed.", ADMIN_HGM);
+							request->sln->server->world->config["SLNSite"] = "";
+							resolved = true;
 						}
 						break;
 
-					case 4: // Client Error
-						errmsg += "SLN Update Client Error: ";
-						switch (code)
-						{
-							case 400:
-								errmsg += parts.at(3);
-								break;
-
-							case 401:
-								errmsg += parts.at(3);
-
-								if (parts.at(2) == "url")
-								{
-									request->sln->server->world->config["SLNSite"] = "";
-									resolved = true;
-								}
-								break;
-
-							case 402:
-								errmsg += parts.at(2);
-								break;
-
-							case 403:
-								errmsg += parts.at(2);
-								break;
-
-							case 404:
-								errmsg += parts.at(2);
-								break;
-
-							default:
-								errmsg += "Unknown error code";
-								break;
-						}
-
-						Console::Wrn("%s", errmsg.c_str());
-						request->sln->server->world->AdminMsg(0, errmsg, ADMIN_HGM);
-						if (resolved)
-						{
-							request->sln->server->world->AdminMsg(0, "EOSERV has automatically resolved this message and the next check-in should succeed.", ADMIN_HGM);
-						}
+					case 402:
+						errmsg += parts.at(2);
 						break;
 
-					case 5: // Server Error
-						errmsg += "SLN Update Server Error: ";
-
-						switch (code)
-						{
-							case 500:
-								errmsg += parts.at(2);
-								break;
-
-							default:
-								errmsg += "Unknown error code";
-								break;
-
-						}
-
-						Console::Wrn("%s", errmsg.c_str());
-						request->sln->server->world->AdminMsg(0, errmsg, ADMIN_HGM);
+					case 403:
+						errmsg += parts.at(2);
 						break;
+
+					case 404:
+						errmsg += parts.at(2);
+						break;
+
+					default:
+						errmsg += "Unknown error code";
+						break;
+					}
+
+					Console::Wrn("%s", errmsg.c_str());
+					request->sln->server->world->AdminMsg(0, errmsg, ADMIN_HGM);
+					if (resolved)
+					{
+						request->sln->server->world->AdminMsg(0, "EOSERV has automatically resolved this message and the next check-in should succeed.", ADMIN_HGM);
+					}
+					break;
+
+				case 5: // Server Error
+					errmsg += "SLN Update Server Error: ";
+
+					switch (code)
+					{
+					case 500:
+						errmsg += parts.at(2);
+						break;
+
+					default:
+						errmsg += "Unknown error code";
+						break;
+					}
+
+					Console::Wrn("%s", errmsg.c_str());
+					request->sln->server->world->AdminMsg(0, errmsg, ADMIN_HGM);
+					break;
 				}
 			}
 		}
@@ -371,15 +367,15 @@ void SLN::TimedCleanup(void* void_request)
 	if (request->period > 900)
 		request->period = 900;
 
-	TimeEvent* event = new TimeEvent(SLN::TimedRequest, request->sln, request->period, 1);
+	TimeEvent *event = new TimeEvent(SLN::TimedRequest, request->sln, request->period, 1);
 	request->sln->server->world->timer.Register(event);
 
 	delete request;
 }
 
-void SLN::TimedRequest(void* void_sln)
+void SLN::TimedRequest(void *void_sln)
 {
-	SLN* sln(static_cast<SLN*>(void_sln));
+	SLN *sln(static_cast<SLN *>(void_sln));
 
 	sln->Request();
 }

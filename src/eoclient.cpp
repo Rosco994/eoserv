@@ -28,7 +28,7 @@
 #include <string>
 #include <utility>
 
-void ActionQueue::AddAction(const PacketReader& reader, double time, bool auto_queue)
+void ActionQueue::AddAction(const PacketReader &reader, double time, bool auto_queue)
 {
 	this->queue.emplace(new ActionQueue_Action(reader, time, auto_queue));
 }
@@ -123,55 +123,55 @@ void EOClient::Tick()
 		{
 			switch (this->packet_state)
 			{
-				case EOClient::ReadLen1:
-					this->raw_length[0] = data[0];
-					data[0] = '\0';
-					data.erase(0, 1);
-					this->packet_state = EOClient::ReadLen2;
+			case EOClient::ReadLen1:
+				this->raw_length[0] = data[0];
+				data[0] = '\0';
+				data.erase(0, 1);
+				this->packet_state = EOClient::ReadLen2;
 
-					if (data.length() == 0)
-					{
-						break;
-					}
-
-				case EOClient::ReadLen2:
-					this->raw_length[1] = data[0];
-					data[0] = '\0';
-					data.erase(0, 1);
-					this->length = PacketProcessor::Number(this->raw_length[0], this->raw_length[1]);
-					this->packet_state = EOClient::ReadData;
-
-					if (data.length() == 0)
-					{
-						break;
-					}
-
-				case EOClient::ReadData:
-					oldlength = this->data.length();
-					this->data += data.substr(0, this->length);
-					std::fill(data.begin(), data.begin() + std::min<std::size_t>(data.length(), this->length), '\0');
-					data.erase(0, this->length);
-					this->length -= this->data.length() - oldlength;
-
-					if (this->length == 0)
-					{
-						this->Execute(this->data);
-
-						std::fill(UTIL_RANGE(this->data), '\0');
-						this->data.erase();
-						this->packet_state = EOClient::ReadLen1;
-
-						done = true;
-					}
+				if (data.length() == 0)
+				{
 					break;
+				}
 
-				default:
-					// If the code ever gets here, something is broken, so we just reset the client's state.
-					std::fill(UTIL_RANGE(data), '\0');
+			case EOClient::ReadLen2:
+				this->raw_length[1] = data[0];
+				data[0] = '\0';
+				data.erase(0, 1);
+				this->length = PacketProcessor::Number(this->raw_length[0], this->raw_length[1]);
+				this->packet_state = EOClient::ReadData;
+
+				if (data.length() == 0)
+				{
+					break;
+				}
+
+			case EOClient::ReadData:
+				oldlength = this->data.length();
+				this->data += data.substr(0, this->length);
+				std::fill(data.begin(), data.begin() + std::min<std::size_t>(data.length(), this->length), '\0');
+				data.erase(0, this->length);
+				this->length -= this->data.length() - oldlength;
+
+				if (this->length == 0)
+				{
+					this->Execute(this->data);
+
 					std::fill(UTIL_RANGE(this->data), '\0');
-					data.erase();
 					this->data.erase();
 					this->packet_state = EOClient::ReadLen1;
+
+					done = true;
+				}
+				break;
+
+			default:
+				// If the code ever gets here, something is broken, so we just reset the client's state.
+				std::fill(UTIL_RANGE(data), '\0');
+				std::fill(UTIL_RANGE(this->data), '\0');
+				data.erase();
+				this->data.erase();
+				this->packet_state = EOClient::ReadLen1;
 			}
 		}
 	}
@@ -256,12 +256,12 @@ void EOClient::Execute(const std::string &data)
 	{
 		PacketFamily family = reader.Family();
 
-		if (family != PACKET_F_INIT && family != PACKET_CONNECTION
-		 && !(family == PACKET_PLAYERS && reader.Action() == PACKET_LIST && this->server()->world->config["AllowStats"]))
+		if (family != PACKET_F_INIT && family != PACKET_CONNECTION && !(family == PACKET_PLAYERS && reader.Action() == PACKET_LIST && this->server()->world->config["AllowStats"]))
 		{
-			this->server()->RecordClientRejection(this->GetRemoteAddr(), "bad packet");
-			this->Close(true);
-			return;
+			// Console::Dbg("packet: %s_%s", PacketProcessor::GetFamilyName(family).c_str(), PacketProcessor::GetActionName(reader.Action()).c_str());
+			// this->server()->RecordClientRejection(this->GetRemoteAddr(), "bad packet");
+			// this->Close(true);
+			// return;
 		}
 	}
 
@@ -322,14 +322,14 @@ bool EOClient::Upload(FileType type, int id, InitReply init_reply)
 	std::size_t file_start = 0;
 	std::size_t file_length = 0;
 
-	std::vector<std::size_t>* file_splits = nullptr;
+	std::vector<std::size_t> *file_splits = nullptr;
 
 	auto load_file_splits = [&](auto pub)
 	{
 		if (pub.files.empty())
 			return false;
 
-		Pub_File& first_file = pub.files[0];
+		Pub_File &first_file = pub.files[0];
 
 		if (pub.files.size() == 1 && first_file.splits.size() > 2)
 		{
@@ -474,7 +474,7 @@ bool EOClient::Upload(FileType type, const std::string &filename, std::size_t fi
 
 void EOClient::Send(const PacketBuilder &builder)
 {
-	std::string data= this->processor.Encode(builder);
+	std::string data = this->processor.Encode(builder);
 
 	if (this->upload_fh)
 	{

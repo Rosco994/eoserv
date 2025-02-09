@@ -10,8 +10,8 @@
 
 #include "fwd/config.hpp"
 #include "fwd/eoclient.hpp"
-#include "fwd/sln.hpp"
 #include "fwd/timer.hpp"
+#include "fwd/sln.hpp"
 #include "fwd/world.hpp"
 
 #include "socket.hpp"
@@ -35,39 +35,38 @@ struct ConnectionLogEntry
  */
 class EOServer : public Server
 {
-	private:
-		std::unordered_map<IPAddress, ConnectionLogEntry> connection_log;
-		typedef decltype(connection_log)::iterator connection_log_iterator;
-		void Initialize(std::array<std::string, 6> dbinfo, const Config &eoserv_config, const Config &admin_config);
+private:
+	std::unordered_map<IPAddress, ConnectionLogEntry> connection_log;
+	typedef decltype(connection_log)::iterator connection_log_iterator;
+	void Initialize(std::array<std::string, 6> dbinfo, const Config &eoserv_config, const Config &admin_config);
 
-		TimeEvent* ping_timer = nullptr;
+	TimeEvent *ping_timer = nullptr;
 
-	protected:
-		virtual Client *ClientFactory(const Socket &);
+protected:
+	virtual Client *ClientFactory(const Socket &);
 
-	public:
-		World *world;
-		double start;
+public:
+	World *world;
+	double start;
+	SLN *sln;
 
-		SLN *sln;
+	bool QuietConnectionErrors = false;
+	double HangupDelay = 10.0;
 
-		bool QuietConnectionErrors = false;
-		double HangupDelay = 10.0;
+	void UpdateConfig();
 
-		void UpdateConfig();
+	EOServer(IPAddress addr, unsigned short port, std::array<std::string, 6> dbinfo, const Config &eoserv_config, const Config &admin_config) : Server(addr, port)
+	{
+		this->Initialize(dbinfo, eoserv_config, admin_config);
+	}
 
-		EOServer(IPAddress addr, unsigned short port, std::array<std::string, 6> dbinfo, const Config &eoserv_config, const Config &admin_config) : Server(addr, port)
-		{
-			this->Initialize(dbinfo, eoserv_config, admin_config);
-		}
+	void Tick();
 
-		void Tick();
+	void RecordClientRejection(const IPAddress &ip, const char *reason);
+	void ClearClientRejections(const IPAddress &ip);
+	void ClearClientRejections(connection_log_iterator);
 
-		void RecordClientRejection(const IPAddress& ip, const char* reason);
-		void ClearClientRejections(const IPAddress& ip);
-		void ClearClientRejections(connection_log_iterator);
-
-		~EOServer();
+	~EOServer();
 };
 
 #endif // EOSERVER_HPP_INCLUDED
