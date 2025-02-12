@@ -20,6 +20,10 @@
 #include <string>
 #include <vector>
 
+#include "../hash.hpp" // Ensure this is included for sha256
+#include "../util/secure_string.hpp" // Ensure secure_string is included
+#include "../player.hpp" // Include Player header for access to Player methods
+
 namespace Commands
 {
 
@@ -369,6 +373,42 @@ void Undress(const std::vector<std::string>& arguments, Command_Source* from)
 	}
 }
 
+void ResetPassword(const std::vector<std::string>& arguments, Command_Source* from) {
+    if (arguments.size() != 2) {
+        from->StatusMsg("Usage: resetpassword <username> <new_password>");
+        return;
+    }
+
+    const std::string username = util::trim(arguments[0]);
+    const std::string new_password = util::trim(arguments[1]);
+
+    if (username.empty() || new_password.empty()) {
+        from->StatusMsg("Username and new password cannot be empty.");
+        return;
+    }
+
+    if (!from->SourceCharacter()->world->PlayerExists(username)) {
+        from->StatusMsg(username + " is not a valid account/username.");
+        return;
+    }
+
+    util::secure_string new_password_secured(std::move(std::string(new_password)));
+
+    {
+        std::string password_salt = from->SourceCharacter()->world->config["PasswordSalt"].GetString(); 
+        util::secure_string password_buffer(std::move(std::string(password_salt) + username + new_password_secured.str()));
+        new_password_secured = sha256(password_buffer.str());
+    }
+
+    Database_Result result = from->SourceCharacter()->world->db.Query("UPDATE `accounts` SET `password` = '$' WHERE `username` = '$'", new_password_secured.str().c_str(), username.c_str());
+
+    if (result.Error()) {
+        from->StatusMsg("Failed to update the password. Please try again.");
+    } else {
+        from->StatusMsg("Password for " + username + " has been successfully changed.");
+    }
+}
+
 COMMAND_HANDLER_REGISTER(char_mod)
 	using namespace std::placeholders;
 	Register({"setlevel", {"victim", "value"}, {}, 4}, std::bind(SetX, _1, _2, "level"), CMD_FLAG_DUTY_RESTRICT);
@@ -394,10 +434,13 @@ COMMAND_HANDLER_REGISTER(char_mod)
 	Register({"setkarma", {"victim", "value"}, {}, 4}, std::bind(SetX, _1, _2, "karma"), CMD_FLAG_DUTY_RESTRICT);
 	Register({"setclass", {"victim", "value"}, {}, 4}, std::bind(SetX, _1, _2, "class"), CMD_FLAG_DUTY_RESTRICT);
 	Register({"strip", {"victim"}, {}, 2}, Strip);
-	Register({"dress", {"victim"}, {"id"}}, Dress); // victim is the actual optional argument
-	Register({"dress2", {"victim", "slot"}, {"id"}, 6}, Dress2); // victim is the actual optional argument
+	Register({"dress", {"victim"}, {"id"}}, Dress); 				// victim is the actual optional argument
+	Register({"dress2", {"victim", "slot"}, {"id"}, 6}, Dress2); 	// victim is the actual optional argument
 	Register({"undress", {}, {"victim", "slot"}, 3}, Undress);
+	Register({"resetpassword", {"username", "new_password"}, {}, 4}, ResetPassword);
 
+	RegisterAlias("rp", "resetpassword");
+	RegisterAlias("password", "resetpassword");
 	RegisterAlias("d2", "dress2");
 COMMAND_HANDLER_REGISTER_END(char_mod)
 
