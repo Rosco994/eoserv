@@ -128,7 +128,7 @@ void eoserv_config_validate_config(Config &config)
 	eoserv_config_default(config, "GlobalBuffer", 0);
 	eoserv_config_default(config, "AdminPrefix", "$");
 	eoserv_config_default(config, "StatPerLevel", 3);
-	eoserv_config_default(config, "SkillPerLevel", 4);
+	eoserv_config_default(config, "SkillPerLevel", 3);
 	eoserv_config_default(config, "EnforceWeight", 2);
 	eoserv_config_default(config, "MaxWeight", 250);
 	eoserv_config_default(config, "MaxLevel", 250);
@@ -170,6 +170,7 @@ void eoserv_config_validate_config(Config &config)
 	eoserv_config_default(config, "Quake2", "6,12,0,2");
 	eoserv_config_default(config, "Quake3", "2,10,3,5");
 	eoserv_config_default(config, "Quake4", "1,4,6,8");
+	eoserv_config_default(config, "AccountCreationTimer", 30);
 	eoserv_config_default(config, "ChatLength", 128);
 	eoserv_config_default(config, "ShareMode", 2);
 	eoserv_config_default(config, "PartyShareMode", 2);

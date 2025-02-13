@@ -114,6 +114,11 @@ namespace Handlers
 		}
 
 		client->Send(reply);
+		// sends config to control the account creation timer
+		PacketBuilder acc_creation_timer(PACKET_ACCOUNT, PACKET_CONFIG, 2);
+		acc_creation_timer.AddShort(static_cast<int>(util::tdparse(client->server()->world->config["AccountCreationTimer"])));
+
+		client->Send(acc_creation_timer);
 	}
 
 	// Change password
