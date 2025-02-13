@@ -450,7 +450,7 @@ void Map::LoadArena()
 
 bool Map::Load()
 {
-	char namebuf[6];
+	char namebuf[10];
 
 	if (this->id < 0)
 	{
@@ -2440,7 +2440,7 @@ bool Map::Evacuate()
 
 bool Map::Reload()
 {
-	char namebuf[6];
+	char namebuf[10];
 	char checkrid[4];
 
 	std::string filename = this->world->config["MapDir"];
