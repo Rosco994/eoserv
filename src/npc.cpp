@@ -881,6 +881,26 @@ abort_drop:
 		q.second->KilledNPC(this->ENF().id);
 	}
 
+	if (from->party) // Party kills
+	{
+		UTIL_FOREACH(from->party->members, member)
+		{
+			if (from != member)
+			{
+				UTIL_FOREACH(member->quests, q)
+				{
+					if (!q.second || q.second->GetQuest()->Disabled())
+						continue;
+
+					if (member->map == this->map)
+					{
+						q.second->KilledNPC(this->ENF().id);
+					}
+				}
+			}
+		}
+	}
+
 	if (this->temporary)
 	{
 		delete this;
