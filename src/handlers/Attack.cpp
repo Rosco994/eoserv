@@ -52,7 +52,7 @@ namespace Handlers
 	}
 
 	PACKET_HANDLER_REGISTER(PACKET_ATTACK)
-	Register(PACKET_USE, Attack_Use, Playing, 0.5);
+	Register(PACKET_USE, Attack_Use, Playing, 0.25);
 	PACKET_HANDLER_REGISTER_END(PACKET_ATTACK)
 
 }

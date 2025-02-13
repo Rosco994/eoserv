@@ -176,7 +176,7 @@ namespace Handlers
 
 	PACKET_HANDLER_REGISTER(PACKET_ACCOUNT)
 	Register(PACKET_REQUEST, Account_Request, Menu, 0.5);
-	Register(PACKET_CREATE, Account_Create, Menu, 1.0);
+	Register(PACKET_CREATE, Account_Create, Menu, 0.5);
 	Register(PACKET_AGREE, Account_Agree, Character_Menu, 1.0);
 	PACKET_HANDLER_REGISTER_END(PACKET_ACCOUNT)
 

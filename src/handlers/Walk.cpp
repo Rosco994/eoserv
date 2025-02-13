@@ -97,9 +97,9 @@ namespace Handlers
 	}*/
 
 	PACKET_HANDLER_REGISTER(PACKET_WALK)
-	Register(PACKET_ADMIN, Walk_Admin, Playing, 0.4);
-	Register(PACKET_PLAYER, Walk_Player, Playing, 0.4);
-	Register(PACKET_SPEC, Walk_Player, Playing, 0.4);
+	Register(PACKET_ADMIN, Walk_Admin, Playing, 0.1);
+	Register(PACKET_PLAYER, Walk_Player, Playing, 0.25);
+	Register(PACKET_SPEC, Walk_Player, Playing, 0.25);
 	PACKET_HANDLER_REGISTER_END(PACKET_WALK)
 
 }
