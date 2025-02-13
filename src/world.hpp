@@ -51,7 +51,7 @@ struct Board
 	short last_id;
 	std::list<Board_Post *> posts;
 
-	Board(int id_) : id(id_), last_id(0) { }
+	Board(int id_) : id(id_), last_id(0) {}
 };
 
 struct Home
@@ -71,7 +71,7 @@ struct Home
 
 	Home() : map(1), x(0), y(0),
 			 level(-1), race(-1), innkeeper_vend(0),
-			 sleep_map(0), sleep_x(0), sleep_y(0) { }
+			 sleep_map(0), sleep_x(0), sleep_y(0) {}
 };
 
 /**
@@ -80,128 +80,128 @@ struct Home
  */
 class World
 {
-	protected:
-		int last_character_id;
+protected:
+	int last_character_id;
 
-		void UpdateConfig();
+	void UpdateConfig();
 
-	public:
-		Timer timer;
+public:
+	Timer timer;
 
-		EOServer *server;
-		Database db;
+	EOServer *server;
+	Database db;
 
-		GuildManager *guildmanager;
+	GuildManager *guildmanager;
 
-		EIF *eif;
-		ENF *enf;
-		ESF *esf;
-		ECF *ecf;
+	EIF *eif;
+	ENF *enf;
+	ESF *esf;
+	ECF *ecf;
 
-		std::vector<std::unique_ptr<NPC_Data>> npc_data;
+	std::vector<std::unique_ptr<NPC_Data>> npc_data;
 
-		Config config;
-		Config admin_config;
-		Config drops_config;
-		Config shops_config;
-		Config arenas_config;
-		Config formulas_config;
-		Config home_config;
-		Config skills_config;
+	Config config;
+	Config admin_config;
+	Config drops_config;
+	Config shops_config;
+	Config arenas_config;
+	Config formulas_config;
+	Config home_config;
+	Config skills_config;
 
-		std::unordered_map<std::string, std::stack<std::string>> formulas_cache;
+	std::unordered_map<std::string, std::stack<std::string>> formulas_cache;
 
-		I18N i18n;
+	I18N i18n;
 
-		std::vector<Character *> characters;
-		std::vector<Party *> parties;
-		std::vector<Map *> maps;
-		std::vector<Home *> homes;
-		std::map<short, std::shared_ptr<Quest>> quests;
+	std::vector<Character *> characters;
+	std::vector<Party *> parties;
+	std::vector<Map *> maps;
+	std::vector<Home *> homes;
+	std::map<short, std::shared_ptr<Quest>> quests;
 
-		std::array<Board *, 8> boards;
+	std::array<Board *, 8> boards;
 
-		std::array<int, 254> exp_table;
-		std::vector<int> instrument_ids;
+	std::array<int, 254> exp_table;
+	std::vector<int> instrument_ids;
 
-		int admin_count;
+	int admin_count;
 
-		World(std::array<std::string, 6> dbinfo, const Config &eoserv_config, const Config &admin_config);
+	World(std::array<std::string, 6> dbinfo, const Config &eoserv_config, const Config &admin_config);
 
-		void BeginDB();
-		void CommitDB();
+	void BeginDB();
+	void CommitDB();
 
-		void UpdateAdminCount(int admin_count);
-		void IncAdminCount() { UpdateAdminCount(this->admin_count + 1); }
-		void DecAdminCount() { UpdateAdminCount(this->admin_count - 1); }
+	void UpdateAdminCount(int admin_count);
+	void IncAdminCount() { UpdateAdminCount(this->admin_count + 1); }
+	void DecAdminCount() { UpdateAdminCount(this->admin_count - 1); }
 
-		void Command(std::string command, const std::vector<std::string>& arguments, Command_Source* from = 0);
+	void Command(std::string command, const std::vector<std::string> &arguments, Command_Source *from = 0);
 
-		void PlayerCommand(std::string command, const std::vector<std::string>& arguments, Command_Source* from = 0);
+	void PlayerCommand(std::string command, const std::vector<std::string> &arguments, Command_Source *from = 0);
 
-		void LoadHome();
+	void LoadHome();
 
-		int GenerateCharacterID();
-		int GeneratePlayerID();
+	int GenerateCharacterID();
+	int GeneratePlayerID();
 
-		void Login(Character *);
-		void Logout(Character *);
+	void Login(Character *);
+	void Logout(Character *);
 
-		void Msg(Command_Source *from, std::string message, bool echo = true);
-		void AdminMsg(Command_Source *from, std::string message, int minlevel = ADMIN_GUARDIAN, bool echo = true);
-		void AnnounceMsg(Command_Source *from, std::string message, bool echo = true);
-		void ServerMsg(std::string message);
-		void AdminReport(Character *from, std::string reportee, std::string message);
-		void AdminRequest(Character *from, std::string message);
+	void Msg(Command_Source *from, std::string message, bool echo = true);
+	void AdminMsg(Command_Source *from, std::string message, int minlevel = ADMIN_GUARDIAN, bool echo = true);
+	void AnnounceMsg(Command_Source *from, std::string message, bool echo = true);
+	void ServerMsg(std::string message);
+	void AdminReport(Character *from, std::string reportee, std::string message);
+	void AdminRequest(Character *from, std::string message);
 
-		void Reboot();
-		void Reboot(int seconds, std::string reason);
+	void Reboot();
+	void Reboot(int seconds, std::string reason);
 
-		void Rehash();
-		void ReloadPub(bool quiet = false);
-		void ReloadQuests();
+	void Rehash();
+	void ReloadPub(bool quiet = false);
+	void ReloadQuests();
 
-		void Kick(Command_Source *from, Character *victim, bool announce = true);
-		void Jail(Command_Source *from, Character *victim, bool announce = true);
-		void Unjail(Command_Source *from, Character *victim);
-		void Ban(Command_Source *from, Character *victim, int duration, bool announce = true);
-		void Mute(Command_Source *from, Character *victim, bool announce = true);
+	void Kick(Command_Source *from, Character *victim, bool announce = true);
+	void Jail(Command_Source *from, Character *victim, bool announce = true);
+	void Unjail(Command_Source *from, Character *victim);
+	void Ban(Command_Source *from, Character *victim, int duration, bool announce = true);
+	void Mute(Command_Source *from, Character *victim, bool announce = true);
 
-		int CheckBan(const std::string *username, const IPAddress *address, const int *hdid);
+	int CheckBan(const std::string *username, const IPAddress *address, const int *hdid);
 
-		Character *GetCharacter(std::string name);
-		Character *GetCharacterReal(std::string real_name);
-		Character *GetCharacterPID(unsigned int id);
-		Character *GetCharacterCID(unsigned int id);
+	Character *GetCharacter(std::string name);
+	Character *GetCharacterReal(std::string real_name);
+	Character *GetCharacterPID(unsigned int id);
+	Character *GetCharacterCID(unsigned int id);
 
-		Map *GetMap(short id);
-		const NPC_Data* GetNpcData(short id) const;
-		Home *GetHome(const Character *) const;
-		Home *GetHome(std::string);
+	Map *GetMap(short id);
+	const NPC_Data *GetNpcData(short id) const;
+	Home *GetHome(const Character *) const;
+	Home *GetHome(std::string);
 
-		bool CharacterExists(std::string name);
-		Character *CreateCharacter(Player *, std::string name, Gender, int hairstyle, int haircolor, Skin);
-		void DeleteCharacter(std::string name);
+	bool CharacterExists(std::string name);
+	Character *CreateCharacter(Player *, std::string name, Gender, int hairstyle, int haircolor, Skin);
+	void DeleteCharacter(std::string name);
 
-		Player *Login(const std::string& username, util::secure_string&& password);
-		Player *Login(std::string username);
-		LoginReply LoginCheck(const std::string& username, util::secure_string&& password);
+	Player *Login(const std::string &username, util::secure_string &&password);
+	Player *Login(std::string username);
+	LoginReply LoginCheck(const std::string &username, util::secure_string &&password);
 
-		bool CreatePlayer(const std::string& username, util::secure_string&& password,
-			const std::string& fullname,const std::string& location, const std::string& email,
-			const std::string& computer, const std::string& hdid, const std::string& ip);
+	bool CreatePlayer(const std::string &username, util::secure_string &&password,
+					  const std::string &fullname, const std::string &location, const std::string &email,
+					  const std::string &computer, const std::string &hdid, const std::string &ip);
 
-		bool PlayerExists(std::string username);
-		bool PlayerOnline(std::string username);
+	bool PlayerExists(std::string username);
+	bool PlayerOnline(std::string username);
 
-		bool PKExcept(const Map *map);
-		bool PKExcept(int mapid);
+	bool PKExcept(const Map *map);
+	bool PKExcept(int mapid);
 
-		bool IsInstrument(int graphic_id);
+	bool IsInstrument(int graphic_id);
 
-		double EvalFormula(const std::string& name, const std::unordered_map<std::string, double>& vars);
+	double EvalFormula(const std::string &name, const std::unordered_map<std::string, double> &vars);
 
-		~World();
+	~World();
 };
 
 #endif // WORLD_HPP_INCLUDED

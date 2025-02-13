@@ -21,9 +21,9 @@ namespace EOPlus
 {
 	struct OperatorInfo
 	{
-		Operator op;         // UOP2 hash
-		OperatorArgs args;   // Number of arguments (1 or 2) (see op_args)
-		char prec;           // Precedence (0-n)
+		Operator op;		 // UOP2 hash
+		OperatorArgs args;	 // Number of arguments (1 or 2) (see op_args)
+		char prec;			 // Precedence (0-n)
 		OperatorAssoc assoc; // Associativity (see op_assoc)
 	};
 
@@ -31,16 +31,16 @@ namespace EOPlus
 	{
 		enum TokenType
 		{
-			Invalid    = 0,
+			Invalid = 0,
 			Identifier = 1,
-			String     = 2,
-			Integer    = 4,
-			Float      = 8,
-			Boolean    = 16,
-			Operator   = 32,
-			Symbol     = 64,
-			NewLine    = 128,
-			EndOfFile  = 256
+			String = 2,
+			Integer = 4,
+			Float = 8,
+			Boolean = 16,
+			Operator = 32,
+			Symbol = 64,
+			NewLine = 128,
+			EndOfFile = 256
 		};
 
 		TokenType type;
@@ -49,10 +49,9 @@ namespace EOPlus
 		int newlines; // Parser uses this to keep track of how many preceeding newline tokens there were
 
 		Token(TokenType type = Invalid, util::variant data = util::variant())
-			: type(type)
-			, data(data)
-			, newlines(0)
-		{ }
+			: type(type), data(data), newlines(0)
+		{
+		}
 
 		explicit operator bool()
 		{
@@ -76,7 +75,8 @@ namespace EOPlus
 
 		Scope()
 			: type(Default)
-		{ }
+		{
+		}
 	};
 
 	struct Expression
@@ -123,10 +123,9 @@ namespace EOPlus
 		bool disabled;
 
 		Info()
-			: version(0)
-			, hidden(NotHidden)
-			, disabled(false)
-		{ }
+			: version(0), hidden(NotHidden), disabled(false)
+		{
+		}
 	};
 
 	struct State
@@ -139,9 +138,9 @@ namespace EOPlus
 		std::size_t goal_rule;
 
 		State()
-			: has_desc(false)
-			, goal_rule(0)
-		{ }
+			: has_desc(false), goal_rule(0)
+		{
+		}
 	};
 
 	struct Quest
@@ -155,66 +154,68 @@ namespace EOPlus
 
 	struct Syntax_Error : public std::runtime_error
 	{
-		private:
-			int line_;
+	private:
+		int line_;
 
-		public:
-			Syntax_Error(const std::string &what_, int line_)
-				: runtime_error(what_)
-				, line_(line_)
-			{ }
+	public:
+		Syntax_Error(const std::string &what_, int line_)
+			: runtime_error(what_), line_(line_)
+		{
+		}
 
-			int line() const
-			{
-				return line_;
-			}
+		int line() const
+		{
+			return line_;
+		}
 	};
 
 	struct Lexer_Error : public Syntax_Error
 	{
-		private:
-			int line_;
-			int col_;
+	private:
+		int line_;
+		int col_;
 
-		public:
-			Lexer_Error(const std::string &what_, int line_, int col_)
-				: Syntax_Error(what_, line_)
-				, col_(col_)
-			{ }
+	public:
+		Lexer_Error(const std::string &what_, int line_, int col_)
+			: Syntax_Error(what_, line_), col_(col_)
+		{
+		}
 
-			int line() const
-			{
-				return line_;
-			}
+		int line() const
+		{
+			return line_;
+		}
 
-			int col() const
-			{
-				return col_;
-			}
+		int col() const
+		{
+			return col_;
+		}
 	};
 
 	struct Parser_Error : public Syntax_Error
 	{
-		private:
-			int line_;
+	private:
+		int line_;
 
-		public:
-			Parser_Error(const std::string &what_, int line_)
-				: Syntax_Error(what_, line_)
-			{ }
+	public:
+		Parser_Error(const std::string &what_, int line_)
+			: Syntax_Error(what_, line_)
+		{
+		}
 
-			int line() const
-			{
-				return line_;
-			}
+		int line() const
+		{
+			return line_;
+		}
 	};
 
 	struct Runtime_Error : public std::runtime_error
 	{
-		public:
-			Runtime_Error(const std::string &what_)
-				: runtime_error(what_)
-			{ }
+	public:
+		Runtime_Error(const std::string &what_)
+			: runtime_error(what_)
+		{
+		}
 	};
 }
 

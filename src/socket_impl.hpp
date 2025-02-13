@@ -64,7 +64,8 @@ struct Socket
 
 	Socket(const SOCKET &sock = INVALID_SOCKET, const sockaddr_in &sin = sockaddr_in())
 		: sock(sock), sin(sin)
-	{ }
+	{
+	}
 };
 
 #endif // SOCKET_IMPL_HPP_INCLUDED

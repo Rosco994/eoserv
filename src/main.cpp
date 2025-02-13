@@ -55,12 +55,20 @@ static void eoserv_crash(int signal)
 
 	switch (signal)
 	{
-		case SIGSEGV: extype = "Segmentation fault"; break;
-		case SIGFPE: extype = "Floating point exception"; break;
+	case SIGSEGV:
+		extype = "Segmentation fault";
+		break;
+	case SIGFPE:
+		extype = "Floating point exception";
+		break;
 #ifdef SIGBUS
-		case SIGBUS: extype = "Dereferenced invalid pointer"; break;
+	case SIGBUS:
+		extype = "Dereferenced invalid pointer";
+		break;
 #endif // SIGBUS
-		case SIGILL: extype = "Illegal instruction"; break;
+	case SIGILL:
+		extype = "Illegal instruction";
+		break;
 	}
 
 	Console::Err("EOSERV is dying! %s", extype);
@@ -68,7 +76,7 @@ static void eoserv_crash(int signal)
 #ifdef DEBUG
 	std::signal(signal, SIG_DFL);
 	std::raise(signal);
-#else // DEBUG
+#else  // DEBUG
 	std::exit(1);
 #endif // DEBUG
 }
@@ -98,7 +106,7 @@ static void exception_test() throw()
 	{
 		throw std::runtime_error("You cannot run this program. Exception handling is working incorrectly.");
 	}
-	catch (std::exception& e)
+	catch (std::exception &e)
 	{
 		// Ignore
 	}
@@ -117,7 +125,8 @@ int eoserv_main(int argc, char *argv[])
 	(void)argv;
 
 	// Type checks
-	if (!std::numeric_limits<char>::is_signed) Console::Wrn("char is not signed, correct operation of the server cannot be guaranteed.");
+	if (!std::numeric_limits<char>::is_signed)
+		Console::Wrn("char is not signed, correct operation of the server cannot be guaranteed.");
 
 	exception_test();
 
@@ -158,7 +167,7 @@ int eoserv_main(int argc, char *argv[])
 
 			if (lastslash)
 			{
-				*(lastslash+1) = '\0';
+				*(lastslash + 1) = '\0';
 			}
 
 			SetCurrentDirectory(cwd);
@@ -168,12 +177,14 @@ int eoserv_main(int argc, char *argv[])
 		{
 			if (service_install(name.c_str()))
 			{
-				if (!silent) MessageBox(0, "Service installed.", "EOSERV", MB_OK);
+				if (!silent)
+					MessageBox(0, "Service installed.", "EOSERV", MB_OK);
 				return 0;
 			}
 			else
 			{
-				if (!silent) MessageBox(0, OSErrorString(), "EOSERV", MB_OK);
+				if (!silent)
+					MessageBox(0, OSErrorString(), "EOSERV", MB_OK);
 				return 1;
 			}
 		}
@@ -181,12 +192,14 @@ int eoserv_main(int argc, char *argv[])
 		{
 			if (service_uninstall(name.c_str()))
 			{
-				if (!silent) MessageBox(0, "Service uninstalled.", "EOSERV", MB_OK);
+				if (!silent)
+					MessageBox(0, "Service uninstalled.", "EOSERV", MB_OK);
 				return 0;
 			}
 			else
 			{
-				if (!silent) MessageBox(0, OSErrorString(), "EOSERV", MB_OK);
+				if (!silent)
+					MessageBox(0, OSErrorString(), "EOSERV", MB_OK);
 				return 1;
 			}
 		}
@@ -269,7 +282,7 @@ int eoserv_main(int argc, char *argv[])
 			std::time(&rawtime);
 			std::strftime(timestr, 256, "%c", std::localtime(&rawtime));
 
-			auto redirect_stream = [&](const char* name, FILE* fh, Console::Stream stream_id, const char* cfgkey)
+			auto redirect_stream = [&](const char *name, FILE *fh, Console::Stream stream_id, const char *cfgkey)
 			{
 				std::string log = config[cfgkey];
 
@@ -362,7 +375,7 @@ int eoserv_main(int argc, char *argv[])
 					server.world->db.ExecuteFile(config["InstallSQL"]);
 					server.world->BeginDB();
 				}
-				catch (Database_Exception& e)
+				catch (Database_Exception &e)
 				{
 					Console::Err("Could not install tables.");
 					Console::Err(e.error());

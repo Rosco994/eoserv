@@ -92,9 +92,8 @@ bool Database_Result::Error()
 	return this->error;
 }
 
-Database::Bulk_Query_Context::Bulk_Query_Context(Database& db)
-	: db(db)
-	, pending(false)
+Database::Bulk_Query_Context::Bulk_Query_Context(Database &db)
+	: db(db), pending(false)
 {
 	pending = db.BeginTransaction();
 }
@@ -104,7 +103,7 @@ bool Database::Bulk_Query_Context::Pending() const
 	return pending;
 }
 
-void Database::Bulk_Query_Context::RawQuery(const std::string& query)
+void Database::Bulk_Query_Context::RawQuery(const std::string &query)
 {
 	db.RawQuery(query.c_str());
 }
@@ -132,13 +131,11 @@ Database::Bulk_Query_Context::~Bulk_Query_Context()
 }
 
 Database::Database()
-	: impl(new impl_)
-	, connected(false)
-	, engine(Engine(0))
-	, in_transaction(false)
-{ }
+	: impl(new impl_), connected(false), engine(Engine(0)), in_transaction(false)
+{
+}
 
-Database::Database(Database::Engine type, const std::string& host, unsigned short port, const std::string& user, const std::string& pass, const std::string& db, bool connectnow)
+Database::Database(Database::Engine type, const std::string &host, unsigned short port, const std::string &user, const std::string &pass, const std::string &db, bool connectnow)
 {
 	this->connected = false;
 
@@ -157,7 +154,7 @@ Database::Database(Database::Engine type, const std::string& host, unsigned shor
 	}
 }
 
-void Database::Connect(Database::Engine type, const std::string& host, unsigned short port, const std::string& user, const std::string& pass, const std::string& db)
+void Database::Connect(Database::Engine type, const std::string &host, unsigned short port, const std::string &user, const std::string &pass, const std::string &db)
 {
 	this->engine = type;
 	this->host = host;
@@ -174,30 +171,30 @@ void Database::Connect(Database::Engine type, const std::string& host, unsigned 
 	switch (type)
 	{
 #ifdef DATABASE_MYSQL
-		case MySQL:
-			if ((this->impl->mysql_handle = mysql_init(0)) == 0)
-			{
-				throw Database_OpenFailed(mysql_error(this->impl->mysql_handle));
-			}
+	case MySQL:
+		if ((this->impl->mysql_handle = mysql_init(0)) == 0)
+		{
+			throw Database_OpenFailed(mysql_error(this->impl->mysql_handle));
+		}
 
 // Linux uses the ABI version number as part of the shared library name
 #ifdef WIN32
-			if (mysql_get_client_version() != MYSQL_VERSION_ID)
-			{
-				unsigned int client_version = mysql_get_client_version();
+		if (mysql_get_client_version() != MYSQL_VERSION_ID)
+		{
+			unsigned int client_version = mysql_get_client_version();
 
-				Console::Err("MySQL client library version mismatch! Please recompile EOSERV with the correct MySQL client library.");
-				Console::Err("  Expected version: %i.%i.%i", (MYSQL_VERSION_ID) / 10000, ((MYSQL_VERSION_ID) / 100) % 100, (MYSQL_VERSION_ID) % 100);
-				Console::Err("  Library version:  %i.%i.%i", (client_version) / 10000, ((client_version) / 100) % 100, (client_version) % 100);
-				Console::Err("Make sure EOSERV is using the correct version of libmariadb.dll");
-				throw Database_OpenFailed("MySQL client library version mismatch");
-			}
+			Console::Err("MySQL client library version mismatch! Please recompile EOSERV with the correct MySQL client library.");
+			Console::Err("  Expected version: %i.%i.%i", (MYSQL_VERSION_ID) / 10000, ((MYSQL_VERSION_ID) / 100) % 100, (MYSQL_VERSION_ID) % 100);
+			Console::Err("  Library version:  %i.%i.%i", (client_version) / 10000, ((client_version) / 100) % 100, (client_version) % 100);
+			Console::Err("Make sure EOSERV is using the correct version of libmariadb.dll");
+			throw Database_OpenFailed("MySQL client library version mismatch");
+		}
 #endif
 
-			if (mysql_real_connect(this->impl->mysql_handle, host.c_str(), user.c_str(), pass.c_str(), 0, this->port, 0, 0) != this->impl->mysql_handle)
-			{
-				throw Database_OpenFailed(mysql_error(this->impl->mysql_handle));
-			}
+		if (mysql_real_connect(this->impl->mysql_handle, host.c_str(), user.c_str(), pass.c_str(), 0, this->port, 0, 0) != this->impl->mysql_handle)
+		{
+			throw Database_OpenFailed(mysql_error(this->impl->mysql_handle));
+		}
 
 // This check isn't really neccessary for EOSERV
 #if 0
@@ -209,42 +206,42 @@ void Database::Connect(Database::Engine type, const std::string& host, unsigned 
 			}
 #endif
 
-			this->connected = true;
+		this->connected = true;
 
-			if (mysql_select_db(this->impl->mysql_handle, db.c_str()) != 0)
-			{
-				this->Close();
-				throw Database_OpenFailed(mysql_error(this->impl->mysql_handle));
-			}
+		if (mysql_select_db(this->impl->mysql_handle, db.c_str()) != 0)
+		{
+			this->Close();
+			throw Database_OpenFailed(mysql_error(this->impl->mysql_handle));
+		}
 
-			break;
+		break;
 #endif // DATABASE_MYSQL
 
 #ifdef DATABASE_SQLITE
-		case SQLite:
-			if (sqlite3_libversion_number() != SQLITE_VERSION_NUMBER)
-			{
-				Console::Err("SQLite library version mismatch! Please recompile EOSERV with the correct SQLite library.");
-				Console::Err("  Expected version: %s", SQLITE_VERSION);
-				Console::Err("  Library version:  %s", sqlite3_libversion());
+	case SQLite:
+		if (sqlite3_libversion_number() != SQLITE_VERSION_NUMBER)
+		{
+			Console::Err("SQLite library version mismatch! Please recompile EOSERV with the correct SQLite library.");
+			Console::Err("  Expected version: %s", SQLITE_VERSION);
+			Console::Err("  Library version:  %s", sqlite3_libversion());
 #ifdef WIN32
-				Console::Err("Make sure EOSERV is using the correct version of sqlite3.dll");
+			Console::Err("Make sure EOSERV is using the correct version of sqlite3.dll");
 #endif // WIN32
-				throw Database_OpenFailed("SQLite library version mismatch");
-			}
+			throw Database_OpenFailed("SQLite library version mismatch");
+		}
 
-			if (sqlite3_open(host.c_str(), &this->impl->sqlite_handle) != SQLITE_OK)
-			{
-				throw Database_OpenFailed(sqlite3_errmsg(this->impl->sqlite_handle));
-			}
+		if (sqlite3_open(host.c_str(), &this->impl->sqlite_handle) != SQLITE_OK)
+		{
+			throw Database_OpenFailed(sqlite3_errmsg(this->impl->sqlite_handle));
+		}
 
-			this->connected = true;
+		this->connected = true;
 
-			break;
+		break;
 #endif // DATABASE_SQLITE
 
-		default:
-			throw Database_OpenFailed("Invalid database engine.");
+	default:
+		throw Database_OpenFailed("Invalid database engine.");
 	}
 }
 
@@ -260,20 +257,20 @@ void Database::Close()
 	switch (this->engine)
 	{
 #ifdef DATABASE_MYSQL
-		case MySQL:
-			mysql_close(this->impl->mysql_handle);
-			break;
+	case MySQL:
+		mysql_close(this->impl->mysql_handle);
+		break;
 #endif // DATABASE_MYSQL
 
 #ifdef DATABASE_SQLITE
-		case SQLite:
-			sqlite3_close(this->impl->sqlite_handle);
-			break;
+	case SQLite:
+		sqlite3_close(this->impl->sqlite_handle);
+		break;
 #endif // DATABASE_SQLITE
 	}
 }
 
-Database_Result Database::RawQuery(const char* query, bool tx_control)
+Database_Result Database::RawQuery(const char *query, bool tx_control)
 {
 	if (!this->connected)
 	{
@@ -291,198 +288,198 @@ Database_Result Database::RawQuery(const char* query, bool tx_control)
 	switch (this->engine)
 	{
 #ifdef DATABASE_MYSQL
-		case MySQL:
+	case MySQL:
+	{
+		MYSQL_RES *mresult = nullptr;
+		MYSQL_FIELD *fields = nullptr;
+		int num_fields = 0;
+
+	exec_query:
+		if (mysql_real_query(this->impl->mysql_handle, query, query_length) != 0)
 		{
-			MYSQL_RES* mresult = nullptr;
-			MYSQL_FIELD* fields = nullptr;
-			int num_fields = 0;
+			int myerr = mysql_errno(this->impl->mysql_handle);
+			int recovery_attempt = 0;
 
-			exec_query:
-			if (mysql_real_query(this->impl->mysql_handle, query, query_length) != 0)
+			if (myerr == CR_SERVER_GONE_ERROR || myerr == CR_SERVER_LOST || myerr == ER_LOCK_WAIT_TIMEOUT)
 			{
-				int myerr = mysql_errno(this->impl->mysql_handle);
-				int recovery_attempt = 0;
+			server_gone:
 
-				if (myerr == CR_SERVER_GONE_ERROR || myerr == CR_SERVER_LOST || myerr == ER_LOCK_WAIT_TIMEOUT)
+				if (++recovery_attempt > 10)
 				{
-					server_gone:
+					Console::Err("Could not re-connect to database. Halting server.");
+					std::terminate();
+				}
 
-					if (++recovery_attempt > 10)
-					{
-						Console::Err("Could not re-connect to database. Halting server.");
-						std::terminate();
-					}
+				Console::Wrn("Connection to database lost! Attempting to reconnect... (Attempt %i / 10)", recovery_attempt);
+				this->Close();
+				util::sleep(2.0 * recovery_attempt);
 
-					Console::Wrn("Connection to database lost! Attempting to reconnect... (Attempt %i / 10)", recovery_attempt);
-					this->Close();
-					util::sleep(2.0 * recovery_attempt);
+				try
+				{
+					this->Connect(this->engine, this->host, this->port, this->user, this->pass, this->db);
+				}
+				catch (const Database_OpenFailed &e)
+				{
+					Console::Err("Connection failed: %s", e.error());
+				}
 
-					try
-					{
-						this->Connect(this->engine, this->host, this->port, this->user, this->pass, this->db);
-					}
-					catch (const Database_OpenFailed& e)
-					{
-						Console::Err("Connection failed: %s", e.error());
-					}
+				if (!this->connected)
+				{
+					goto server_gone;
+				}
 
-					if (!this->connected)
-					{
-						goto server_gone;
-					}
-
-					if (this->in_transaction)
-					{
+				if (this->in_transaction)
+				{
 #ifdef DEBUG
-						Console::Dbg("Replaying %i queries.", this->transaction_log.size());
+					Console::Dbg("Replaying %i queries.", this->transaction_log.size());
 #endif // DEBUG
 
-						if (mysql_real_query(this->impl->mysql_handle, "START TRANSACTION", std::strlen("START TRANSACTION")) != 0)
-						{
-							int myerr = mysql_errno(this->impl->mysql_handle);
-
-							if (myerr == CR_SERVER_GONE_ERROR || myerr == CR_SERVER_LOST || myerr == ER_LOCK_WAIT_TIMEOUT)
-							{
-								goto server_gone;
-							}
-							else
-							{
-								Console::Err("Error during recovery: %s", mysql_error(this->impl->mysql_handle));
-								Console::Err("Halting server.");
-								std::terminate();
-							}
-						}
-
-						for (const std::string& q : this->transaction_log)
-						{
-#ifdef DATABASE_DEBUG
-							Console::Dbg("%s", q.c_str());
-#endif // DATABASE_DEBUG
-							int myerr = 0;
-							int query_result = mysql_real_query(this->impl->mysql_handle, q.c_str(), q.length());
-
-							if (query_result == 0)
-							{
-								mresult = mysql_use_result(this->impl->mysql_handle);
-							}
-
-							myerr = mysql_errno(this->impl->mysql_handle);
-
-							if (myerr == CR_SERVER_GONE_ERROR || myerr == CR_SERVER_LOST || myerr == ER_LOCK_WAIT_TIMEOUT)
-							{
-								goto server_gone;
-							}
-							else if (myerr)
-							{
-								Console::Err("Error during recovery: %s", mysql_error(this->impl->mysql_handle));
-								Console::Err("Halting server.");
-								std::terminate();
-							}
-							else
-							{
-								if (mresult)
-								{
-									mysql_free_result(mresult);
-									mresult = nullptr;
-								}
-							}
-						}
-					}
-
-					goto exec_query;
-				}
-				else
-				{
-					throw Database_QueryFailed(mysql_error(this->impl->mysql_handle));
-				}
-			}
-
-			if (this->in_transaction && !tx_control)
-			{
-				using namespace std;
-
-				if (strncmp(query, "SELECT", 6) != 0)
-					this->transaction_log.emplace_back(std::string(query));
-			}
-
-			num_fields = mysql_field_count(this->impl->mysql_handle);
-
-			if ((mresult = mysql_store_result(this->impl->mysql_handle)) == 0)
-			{
-				if (num_fields == 0)
-				{
-					result.affected_rows = mysql_affected_rows(this->impl->mysql_handle);
-					return result;
-				}
-				else
-				{
-					throw Database_QueryFailed(mysql_error(this->impl->mysql_handle));
-				}
-			}
-
-			fields = mysql_fetch_fields(mresult);
-
-			for (int i = 0; i < num_fields; ++i)
-			{
-				if (!fields[i].name)
-				{
-					throw Database_QueryFailed("libMySQL critical failure!");
-				}
-			}
-
-			result.resize(mysql_num_rows(mresult));
-			int i = 0;
-			for (MYSQL_ROW row = mysql_fetch_row(mresult); row != 0; row = mysql_fetch_row(mresult))
-			{
-				std::unordered_map<std::string, util::variant> resrow;
-				for (int ii = 0; ii < num_fields; ++ii)
-				{
-					util::variant rescell;
-					if (IS_NUM(fields[ii].type))
+					if (mysql_real_query(this->impl->mysql_handle, "START TRANSACTION", std::strlen("START TRANSACTION")) != 0)
 					{
-						if (row[ii])
+						int myerr = mysql_errno(this->impl->mysql_handle);
+
+						if (myerr == CR_SERVER_GONE_ERROR || myerr == CR_SERVER_LOST || myerr == ER_LOCK_WAIT_TIMEOUT)
 						{
-							rescell = util::to_int(row[ii]);
+							goto server_gone;
 						}
 						else
 						{
-							rescell = 0;
+							Console::Err("Error during recovery: %s", mysql_error(this->impl->mysql_handle));
+							Console::Err("Halting server.");
+							std::terminate();
 						}
+					}
+
+					for (const std::string &q : this->transaction_log)
+					{
+#ifdef DATABASE_DEBUG
+						Console::Dbg("%s", q.c_str());
+#endif // DATABASE_DEBUG
+						int myerr = 0;
+						int query_result = mysql_real_query(this->impl->mysql_handle, q.c_str(), q.length());
+
+						if (query_result == 0)
+						{
+							mresult = mysql_use_result(this->impl->mysql_handle);
+						}
+
+						myerr = mysql_errno(this->impl->mysql_handle);
+
+						if (myerr == CR_SERVER_GONE_ERROR || myerr == CR_SERVER_LOST || myerr == ER_LOCK_WAIT_TIMEOUT)
+						{
+							goto server_gone;
+						}
+						else if (myerr)
+						{
+							Console::Err("Error during recovery: %s", mysql_error(this->impl->mysql_handle));
+							Console::Err("Halting server.");
+							std::terminate();
+						}
+						else
+						{
+							if (mresult)
+							{
+								mysql_free_result(mresult);
+								mresult = nullptr;
+							}
+						}
+					}
+				}
+
+				goto exec_query;
+			}
+			else
+			{
+				throw Database_QueryFailed(mysql_error(this->impl->mysql_handle));
+			}
+		}
+
+		if (this->in_transaction && !tx_control)
+		{
+			using namespace std;
+
+			if (strncmp(query, "SELECT", 6) != 0)
+				this->transaction_log.emplace_back(std::string(query));
+		}
+
+		num_fields = mysql_field_count(this->impl->mysql_handle);
+
+		if ((mresult = mysql_store_result(this->impl->mysql_handle)) == 0)
+		{
+			if (num_fields == 0)
+			{
+				result.affected_rows = mysql_affected_rows(this->impl->mysql_handle);
+				return result;
+			}
+			else
+			{
+				throw Database_QueryFailed(mysql_error(this->impl->mysql_handle));
+			}
+		}
+
+		fields = mysql_fetch_fields(mresult);
+
+		for (int i = 0; i < num_fields; ++i)
+		{
+			if (!fields[i].name)
+			{
+				throw Database_QueryFailed("libMySQL critical failure!");
+			}
+		}
+
+		result.resize(mysql_num_rows(mresult));
+		int i = 0;
+		for (MYSQL_ROW row = mysql_fetch_row(mresult); row != 0; row = mysql_fetch_row(mresult))
+		{
+			std::unordered_map<std::string, util::variant> resrow;
+			for (int ii = 0; ii < num_fields; ++ii)
+			{
+				util::variant rescell;
+				if (IS_NUM(fields[ii].type))
+				{
+					if (row[ii])
+					{
+						rescell = util::to_int(row[ii]);
 					}
 					else
 					{
-						if (row[ii])
-						{
-							rescell = row[ii];
-						}
-						else
-						{
-							rescell = "";
-						}
+						rescell = 0;
 					}
-					resrow[fields[ii].name] = rescell;
 				}
-				result[i++] = resrow;
+				else
+				{
+					if (row[ii])
+					{
+						rescell = row[ii];
+					}
+					else
+					{
+						rescell = "";
+					}
+				}
+				resrow[fields[ii].name] = rescell;
 			}
-
-			mysql_free_result(mresult);
+			result[i++] = resrow;
 		}
-		break;
+
+		mysql_free_result(mresult);
+	}
+	break;
 #endif // DATABASE_MYSQL
 
 #ifdef DATABASE_SQLITE
-		case SQLite:
-			if (sqlite3_exec(this->impl->sqlite_handle, query, sqlite_callback, (void *)this, 0) != SQLITE_OK)
-			{
-				throw Database_QueryFailed(sqlite3_errmsg(this->impl->sqlite_handle));
-			}
-			result = this->callbackdata;
-			this->callbackdata.clear();
-			break;
+	case SQLite:
+		if (sqlite3_exec(this->impl->sqlite_handle, query, sqlite_callback, (void *)this, 0) != SQLITE_OK)
+		{
+			throw Database_QueryFailed(sqlite3_errmsg(this->impl->sqlite_handle));
+		}
+		result = this->callbackdata;
+		this->callbackdata.clear();
+		break;
 #endif // DATABASE_SQLITE
 
-		default:
-			throw Database_QueryFailed("Unknown database engine");
+	default:
+		throw Database_QueryFailed("Unknown database engine");
 	}
 
 	return result;
@@ -508,35 +505,35 @@ Database_Result Database::Query(const char *format, ...)
 	{
 		if (*p == '#')
 		{
-			tempi = va_arg(ap,int);
+			tempi = va_arg(ap, int);
 			finalquery += util::to_string(tempi);
 		}
 		else if (*p == '@')
 		{
-			tempc = va_arg(ap,char *);
+			tempc = va_arg(ap, char *);
 			finalquery += static_cast<std::string>(tempc);
 		}
 		else if (*p == '$')
 		{
-			tempc = va_arg(ap,char *);
+			tempc = va_arg(ap, char *);
 			switch (this->engine)
 			{
 #ifdef DATABASE_MYSQL
-				case MySQL:
-					tempi = strlen(tempc);
-					escret = new char[tempi*2+1];
-					esclen = mysql_real_escape_string(this->impl->mysql_handle, escret, tempc, tempi);
-					finalquery += std::string(escret, esclen);
-					delete[] escret;
-					break;
+			case MySQL:
+				tempi = strlen(tempc);
+				escret = new char[tempi * 2 + 1];
+				esclen = mysql_real_escape_string(this->impl->mysql_handle, escret, tempc, tempi);
+				finalquery += std::string(escret, esclen);
+				delete[] escret;
+				break;
 #endif // DATABASE_MYSQL
 
 #ifdef DATABASE_SQLITE
-				case SQLite:
-					escret = sqlite3_mprintf("%q",tempc);
-					finalquery += escret;
-					sqlite3_free(escret);
-					break;
+			case SQLite:
+				escret = sqlite3_mprintf("%q", tempc);
+				finalquery += escret;
+				sqlite3_free(escret);
+				break;
 #endif // DATABASE_SQLITE
 			}
 		}
@@ -551,7 +548,7 @@ Database_Result Database::Query(const char *format, ...)
 	return this->RawQuery(finalquery.c_str());
 }
 
-std::string Database::Escape(const std::string& raw)
+std::string Database::Escape(const std::string &raw)
 {
 	char *escret;
 	unsigned long esclen;
@@ -560,20 +557,20 @@ std::string Database::Escape(const std::string& raw)
 	switch (this->engine)
 	{
 #ifdef DATABASE_MYSQL
-		case MySQL:
-			escret = new char[raw.length()*2+1];
-			esclen = mysql_real_escape_string(this->impl->mysql_handle, escret, raw.c_str(), raw.length());
-			result.assign(escret, esclen);
-			delete[] escret;
-			break;
+	case MySQL:
+		escret = new char[raw.length() * 2 + 1];
+		esclen = mysql_real_escape_string(this->impl->mysql_handle, escret, raw.c_str(), raw.length());
+		result.assign(escret, esclen);
+		delete[] escret;
+		break;
 #endif // DATABASE_MYSQL
 
 #ifdef DATABASE_SQLITE
-		case SQLite:
-			escret = sqlite3_mprintf("%q", raw.c_str());
-			result = escret;
-			sqlite3_free(escret);
-			break;
+	case SQLite:
+		escret = sqlite3_mprintf("%q", raw.c_str());
+		result = escret;
+		sqlite3_free(escret);
+		break;
 #endif // DATABASE_SQLITE
 	}
 
@@ -588,12 +585,12 @@ std::string Database::Escape(const std::string& raw)
 	return result;
 }
 
-void Database::ExecuteFile(const std::string& filename)
+void Database::ExecuteFile(const std::string &filename)
 {
 	std::list<std::string> queries;
 	std::string query;
 
-	FILE* fh = std::fopen(filename.c_str(), "rt");
+	FILE *fh = std::fopen(filename.c_str(), "rt");
 
 	try
 	{
@@ -606,7 +603,7 @@ void Database::ExecuteFile(const std::string& filename)
 			if (!result || std::feof(fh))
 				break;
 
-			for (char* p = buf; *p != '\0'; ++p)
+			for (char *p = buf; *p != '\0'; ++p)
 			{
 				if (*p == ';')
 				{
@@ -631,7 +628,8 @@ void Database::ExecuteFile(const std::string& filename)
 	queries.push_back(query);
 	query.erase();
 
-	std::remove_if(UTIL_RANGE(queries), [&](const std::string& s) { return util::trim(s).length() == 0; });
+	std::remove_if(UTIL_RANGE(queries), [&](const std::string &s)
+				   { return util::trim(s).length() == 0; });
 
 	this->ExecuteQueries(UTIL_RANGE(queries));
 }
@@ -646,7 +644,7 @@ bool Database::BeginTransaction()
 	if (this->in_transaction)
 		return false;
 
-	for (int attempt = 1; ; ++attempt)
+	for (int attempt = 1;; ++attempt)
 	{
 		try
 		{
@@ -659,15 +657,15 @@ bool Database::BeginTransaction()
 			switch (this->engine)
 			{
 #ifdef DATABASE_MYSQL
-				case MySQL:
-					this->RawQuery("START TRANSACTION", true);
-					break;
+			case MySQL:
+				this->RawQuery("START TRANSACTION", true);
+				break;
 #endif // DATABASE_MYSQL
 
 #ifdef DATABASE_SQLITE
-				case SQLite:
-					this->RawQuery("BEGIN", true);
-					break;
+			case SQLite:
+				this->RawQuery("BEGIN", true);
+				break;
 #endif // DATABASE_SQLITE
 			}
 

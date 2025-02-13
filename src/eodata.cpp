@@ -15,11 +15,11 @@
 
 static const char *eodata_safe_fail_filename;
 
-std::string convert_pub_filename(const std::string& s)
+std::string convert_pub_filename(const std::string &s)
 {
 	std::string result;
 
-	for (const char* p = &s[0]; *p != '\0'; ++p)
+	for (const char *p = &s[0]; *p != '\0'; ++p)
 	{
 		if ((p - &s[0]) < s.size() - 3 && p[0] == '0' && p[1] == '0' && p[2] == '1')
 		{
@@ -43,10 +43,20 @@ static void eodata_safe_fail(int line)
 	std::exit(1);
 }
 
-#define SAFE_SEEK(fh, offset, from) if (std::fseek(fh, offset, from) != 0) { std::fclose(fh); eodata_safe_fail(__LINE__); }
-#define SAFE_READ(buf, size, count, fh) if (std::fread(buf, size, count, fh) != static_cast<std::size_t>(count)) { std::fclose(fh); eodata_safe_fail(__LINE__); }
+#define SAFE_SEEK(fh, offset, from)        \
+	if (std::fseek(fh, offset, from) != 0) \
+	{                                      \
+		std::fclose(fh);                   \
+		eodata_safe_fail(__LINE__);        \
+	}
+#define SAFE_READ(buf, size, count, fh)                                      \
+	if (std::fread(buf, size, count, fh) != static_cast<std::size_t>(count)) \
+	{                                                                        \
+		std::fclose(fh);                                                     \
+		eodata_safe_fail(__LINE__);                                          \
+	}
 
-void pub_read_record(EIF_Data& newdata, char* buf)
+void pub_read_record(EIF_Data &newdata, char *buf)
 {
 	newdata.graphic = PacketProcessor::Number(buf[0], buf[1]);
 	newdata.type = static_cast<EIF::Type>(PacketProcessor::Number(buf[2]));
@@ -99,8 +109,7 @@ void pub_read_record(EIF_Data& newdata, char* buf)
 	newdata.size = static_cast<EIF::Size>(PacketProcessor::Number(buf[57]));
 }
 
-
-void pub_read_record(ENF_Data& newdata, char* buf)
+void pub_read_record(ENF_Data &newdata, char *buf)
 {
 	newdata.graphic = PacketProcessor::Number(buf[0], buf[1]);
 
@@ -120,7 +129,7 @@ void pub_read_record(ENF_Data& newdata, char* buf)
 	newdata.exp = PacketProcessor::Number(buf[36], buf[37]);
 }
 
-void pub_read_record(ESF_Data& newdata, char* buf)
+void pub_read_record(ESF_Data &newdata, char *buf)
 {
 	newdata.icon = PacketProcessor::Number(buf[0], buf[1]);
 	newdata.graphic = PacketProcessor::Number(buf[2], buf[3]);
@@ -138,7 +147,7 @@ void pub_read_record(ESF_Data& newdata, char* buf)
 	newdata.hp = PacketProcessor::Number(buf[34], buf[35]);
 }
 
-void pub_read_record(ECF_Data& newdata, char* buf)
+void pub_read_record(ECF_Data &newdata, char *buf)
 {
 	newdata.base = PacketProcessor::Number(buf[0]);
 	newdata.type = PacketProcessor::Number(buf[1]);
@@ -152,7 +161,7 @@ void pub_read_record(ECF_Data& newdata, char* buf)
 }
 
 template <class T>
-int read_single_file(T& pub, Pub_File& file, bool auto_split, int version, int first_id)
+int read_single_file(T &pub, Pub_File &file, bool auto_split, int version, int first_id)
 {
 	std::FILE *fh = std::fopen(file.filename.c_str(), "rb");
 	eodata_safe_fail_filename = file.filename.c_str();
@@ -223,7 +232,7 @@ int read_single_file(T& pub, Pub_File& file, bool auto_split, int version, int f
 
 		SAFE_READ(buf, sizeof(char), T::DATA_SIZE, fh);
 
-		typename T::data_t& newdata = pub.data[first_id + i];
+		typename T::data_t &newdata = pub.data[first_id + i];
 
 		++readobj;
 
@@ -237,8 +246,7 @@ int read_single_file(T& pub, Pub_File& file, bool auto_split, int version, int f
 
 		pub_read_record(newdata, buf);
 
-		if (first_id + i >= pub.data.size()
-		 || std::fread(static_cast<void *>(&namesize), sizeof(char), 1, fh) != 1)
+		if (first_id + i >= pub.data.size() || std::fread(static_cast<void *>(&namesize), sizeof(char), 1, fh) != 1)
 		{
 			break;
 		}
@@ -271,7 +279,7 @@ int read_single_file(T& pub, Pub_File& file, bool auto_split, int version, int f
 }
 
 template <class T>
-void read_pub_files(T& pub, const std::string& filename, bool auto_split)
+void read_pub_files(T &pub, const std::string &filename, bool auto_split)
 {
 	pub.files.clear();
 	pub.data.clear();
@@ -307,7 +315,7 @@ void read_pub_files(T& pub, const std::string& filename, bool auto_split)
 	{
 		std::snprintf(fn_buf, sizeof fn_buf, filename_template.c_str(), file_number++);
 		pub.files.push_back(Pub_File{fn_buf, {}});
-		Pub_File& pub_file = pub.files.back();
+		Pub_File &pub_file = pub.files.back();
 		readobj += read_single_file(pub, pub_file, auto_split, version, readobj + 1);
 
 		// Only a single file is loaded if auto-splitting occurs
@@ -319,13 +327,13 @@ void read_pub_files(T& pub, const std::string& filename, bool auto_split)
 		pub.data.pop_back();
 }
 
-void EIF::Read(const std::string& filename, bool auto_split)
+void EIF::Read(const std::string &filename, bool auto_split)
 {
 	read_pub_files(*this, filename, auto_split);
-	Console::Out("%i items loaded.", this->data.size()-1);
+	Console::Out("%i items loaded.", this->data.size() - 1);
 }
 
-EIF_Data& EIF::Get(unsigned int id)
+EIF_Data &EIF::Get(unsigned int id)
 {
 	if (id < this->data.size())
 		return this->data[id];
@@ -333,7 +341,7 @@ EIF_Data& EIF::Get(unsigned int id)
 		return this->data[0];
 }
 
-const EIF_Data& EIF::Get(unsigned int id) const
+const EIF_Data &EIF::Get(unsigned int id) const
 {
 	if (id < this->data.size())
 		return this->data[id];
@@ -352,13 +360,13 @@ unsigned int EIF::GetKey(int keynum) const
 	return 0;
 }
 
-void ENF::Read(const std::string& filename, bool auto_split)
+void ENF::Read(const std::string &filename, bool auto_split)
 {
 	read_pub_files(*this, filename, auto_split);
-	Console::Out("%i npc types loaded.", this->data.size()-1);
+	Console::Out("%i npc types loaded.", this->data.size() - 1);
 }
 
-ENF_Data& ENF::Get(unsigned int id)
+ENF_Data &ENF::Get(unsigned int id)
 {
 	if (id < this->data.size())
 		return this->data[id];
@@ -366,7 +374,7 @@ ENF_Data& ENF::Get(unsigned int id)
 		return this->data[0];
 }
 
-const ENF_Data& ENF::Get(unsigned int id) const
+const ENF_Data &ENF::Get(unsigned int id) const
 {
 	if (id < this->data.size())
 		return this->data[id];
@@ -374,13 +382,13 @@ const ENF_Data& ENF::Get(unsigned int id) const
 		return this->data[0];
 }
 
-void ESF::Read(const std::string& filename, bool auto_split)
+void ESF::Read(const std::string &filename, bool auto_split)
 {
 	read_pub_files(*this, filename, auto_split);
-	Console::Out("%i spells loaded.", this->data.size()-1);
+	Console::Out("%i spells loaded.", this->data.size() - 1);
 }
 
-ESF_Data& ESF::Get(unsigned int id)
+ESF_Data &ESF::Get(unsigned int id)
 {
 	if (id < this->data.size())
 		return this->data[id];
@@ -388,7 +396,7 @@ ESF_Data& ESF::Get(unsigned int id)
 		return this->data[0];
 }
 
-const ESF_Data& ESF::Get(unsigned int id) const
+const ESF_Data &ESF::Get(unsigned int id) const
 {
 	if (id < this->data.size())
 		return this->data[id];
@@ -396,13 +404,13 @@ const ESF_Data& ESF::Get(unsigned int id) const
 		return this->data[0];
 }
 
-void ECF::Read(const std::string& filename, bool auto_split)
+void ECF::Read(const std::string &filename, bool auto_split)
 {
 	read_pub_files(*this, filename, auto_split);
-	Console::Out("%i classes loaded.", this->data.size()-1);
+	Console::Out("%i classes loaded.", this->data.size() - 1);
 }
 
-ECF_Data& ECF::Get(unsigned int id)
+ECF_Data &ECF::Get(unsigned int id)
 {
 	if (id < this->data.size())
 		return this->data[id];
@@ -410,7 +418,7 @@ ECF_Data& ECF::Get(unsigned int id)
 		return this->data[0];
 }
 
-const ECF_Data& ECF::Get(unsigned int id) const
+const ECF_Data &ECF::Get(unsigned int id) const
 {
 	if (id < this->data.size())
 		return this->data[id];

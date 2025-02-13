@@ -94,7 +94,7 @@ bool Player::AddCharacter(std::string name, Gender gender, int hairstyle, int ha
 	return true;
 }
 
-void Player::ChangePass(util::secure_string&& password)
+void Player::ChangePass(util::secure_string &&password)
 {
 	{
 		util::secure_string password_buffer(std::move(std::string(this->world->config["PasswordSalt"]) + this->username + password.str()));
@@ -108,7 +108,7 @@ AdminLevel Player::Admin() const
 {
 	AdminLevel admin = ADMIN_PLAYER;
 
-	for (const Character* c : this->characters)
+	for (const Character *c : this->characters)
 	{
 		admin = std::max(admin, c->admin);
 	}

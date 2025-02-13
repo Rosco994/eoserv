@@ -14,45 +14,45 @@
 namespace Handlers
 {
 
-// Player attacking
-void Attack_Use(Character *character, PacketReader &reader)
-{
-	Direction direction = static_cast<Direction>(reader.GetChar());
-	Timestamp timestamp = reader.GetThree();
-
-	int ts_diff = timestamp - character->timestamp;
-
-	if (character->world->config["EnforceTimestamps"])
+	// Player attacking
+	void Attack_Use(Character *character, PacketReader &reader)
 	{
-		if (ts_diff < 48)
+		Direction direction = static_cast<Direction>(reader.GetChar());
+		Timestamp timestamp = reader.GetThree();
+
+		int ts_diff = timestamp - character->timestamp;
+
+		if (character->world->config["EnforceTimestamps"])
 		{
-			return;
+			if (ts_diff < 48)
+			{
+				return;
+			}
 		}
+
+		character->timestamp = timestamp;
+
+		if (character->sitting != SIT_STAND)
+			return;
+
+		if (int(character->world->config["EnforceWeight"]) >= 1 && character->weight > character->maxweight)
+			return;
+
+		int limit_attack = character->world->config["LimitAttack"];
+
+		if (limit_attack != 0 && character->attacks >= limit_attack)
+			return;
+
+		if (!character->world->config["EnforceTimestamps"] || ts_diff >= 60)
+		{
+			direction = character->direction;
+		}
+
+		character->Attack(direction);
 	}
 
-	character->timestamp = timestamp;
-
-	if (character->sitting != SIT_STAND)
-		return;
-
-	if (int(character->world->config["EnforceWeight"]) >= 1 && character->weight > character->maxweight)
-		return;
-
-	int limit_attack = character->world->config["LimitAttack"];
-
-	if (limit_attack != 0 && character->attacks >= limit_attack)
-		return;
-
-	if (!character->world->config["EnforceTimestamps"] || ts_diff >= 60)
-	{
-		direction = character->direction;
-	}
-
-	character->Attack(direction);
-}
-
-PACKET_HANDLER_REGISTER(PACKET_ATTACK)
+	PACKET_HANDLER_REGISTER(PACKET_ATTACK)
 	Register(PACKET_USE, Attack_Use, Playing, 0.5);
-PACKET_HANDLER_REGISTER_END(PACKET_ATTACK)
+	PACKET_HANDLER_REGISTER_END(PACKET_ATTACK)
 
 }

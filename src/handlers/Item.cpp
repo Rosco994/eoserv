@@ -22,33 +22,34 @@
 namespace Handlers
 {
 
-// Player using an item
-void Item_Use(Character *character, PacketReader &reader)
-{
-	if (character->trading) return;
-
-	int id = reader.GetShort();
-
-	if (character->HasItem(id))
+	// Player using an item
+	void Item_Use(Character *character, PacketReader &reader)
 	{
-		const EIF_Data& item = character->world->eif->Get(id);
-		PacketBuilder reply(PACKET_ITEM, PACKET_REPLY, 3);
-		reply.AddChar(item.type);
-		reply.AddShort(id);
+		if (character->trading)
+			return;
 
-		auto QuestUsedItems = [](Character* character, int id)
+		int id = reader.GetShort();
+
+		if (character->HasItem(id))
 		{
-			UTIL_FOREACH(character->quests, q)
+			const EIF_Data &item = character->world->eif->Get(id);
+			PacketBuilder reply(PACKET_ITEM, PACKET_REPLY, 3);
+			reply.AddChar(item.type);
+			reply.AddShort(id);
+
+			auto QuestUsedItems = [](Character *character, int id)
 			{
-				if (!q.second || q.second->GetQuest()->Disabled())
-					continue;
+				UTIL_FOREACH(character->quests, q)
+				{
+					if (!q.second || q.second->GetQuest()->Disabled())
+						continue;
 
-				q.second->UsedItem(id);
-			}
-		};
+					q.second->UsedItem(id);
+				}
+			};
 
-		switch (item.type)
-		{
+			switch (item.type)
+			{
 			case EIF::Teleport:
 			{
 				if (!character->map->scroll)
@@ -286,8 +287,7 @@ void Item_Use(Character *character, PacketReader &reader)
 
 				character->exp = std::min(character->exp, static_cast<int>(character->map->world->config["MaxExp"]));
 
-				while (character->level < static_cast<int>(character->map->world->config["MaxLevel"])
-				 && character->exp >= character->map->world->exp_table[character->level+1])
+				while (character->level < static_cast<int>(character->map->world->config["MaxLevel"]) && character->exp >= character->map->world->exp_table[character->level + 1])
 				{
 					level_up = true;
 					++character->level;
@@ -340,159 +340,162 @@ void Item_Use(Character *character, PacketReader &reader)
 
 			default:
 				return;
+			}
 		}
 	}
-}
 
-// Drop an item on the ground
-void Item_Drop(Character *character, PacketReader &reader)
-{
-	if (character->trading) return;
-	if (!character->CanInteractItems()) return;
-
-	int id = reader.GetShort();
-	int amount;
-
-	if (character->world->eif->Get(id).special == EIF::Lore)
+	// Drop an item on the ground
+	void Item_Drop(Character *character, PacketReader &reader)
 	{
-		return;
-	}
+		if (character->trading)
+			return;
+		if (!character->CanInteractItems())
+			return;
 
-	if (reader.Remaining() == 5)
-	{
-		amount = reader.GetThree();
-	}
-	else
-	{
-		amount = reader.GetInt();
-	}
-	unsigned char x = reader.GetByte(); // ?
-	unsigned char y = reader.GetByte(); // ?
+		int id = reader.GetShort();
+		int amount;
 
-	amount = std::min<int>(amount, character->world->config["MaxDrop"]);
-
-	if (amount <= 0)
-	{
-		return;
-	}
-
-	if (x == 255 && y == 255)
-	{
-		x = character->x;
-		y = character->y;
-	}
-	else
-	{
-		x = PacketProcessor::Number(x);
-		y = PacketProcessor::Number(y);
-	}
-
-	int distance = util::path_length(x, y, character->x, character->y);
-
-	if (distance > static_cast<int>(character->world->config["DropDistance"]))
-	{
-		return;
-	}
-
-	if (!character->map->Walkable(x, y))
-	{
-		return;
-	}
-
-	if (character->HasItem(id) >= amount && character->mapid != static_cast<int>(character->world->config["JailMap"]))
-	{
-		std::shared_ptr<Map_Item> item = character->map->AddItem(id, amount, x, y, character);
-
-		if (item)
+		if (character->world->eif->Get(id).special == EIF::Lore)
 		{
-			item->owner = character->PlayerID();
-			item->unprotecttime = Timer::GetTime() + static_cast<double>(character->world->config["ProtectPlayerDrop"]);
-			character->DelItem(id, amount);
-
-			PacketBuilder reply(PACKET_ITEM, PACKET_DROP, 15);
-			reply.AddShort(id);
-			reply.AddThree(amount);
-			reply.AddInt(character->HasItem(id));
-			reply.AddShort(item->uid);
-			reply.AddChar(x);
-			reply.AddChar(y);
-			reply.AddChar(character->weight);
-			reply.AddChar(character->maxweight);
-			character->Send(reply);
+			return;
 		}
-	}
-}
 
-// Destroying an item
-void Item_Junk(Character *character, PacketReader &reader)
-{
-	if (character->trading) return;
+		if (reader.Remaining() == 5)
+		{
+			amount = reader.GetThree();
+		}
+		else
+		{
+			amount = reader.GetInt();
+		}
+		unsigned char x = reader.GetByte(); // ?
+		unsigned char y = reader.GetByte(); // ?
 
-	int id = reader.GetShort();
-	int amount = reader.GetInt();
+		amount = std::min<int>(amount, character->world->config["MaxDrop"]);
 
-	if (amount <= 0)
-		return;
+		if (amount <= 0)
+		{
+			return;
+		}
 
-	if (character->HasItem(id) >= amount)
-	{
-		character->DelItem(id, amount);
+		if (x == 255 && y == 255)
+		{
+			x = character->x;
+			y = character->y;
+		}
+		else
+		{
+			x = PacketProcessor::Number(x);
+			y = PacketProcessor::Number(y);
+		}
 
-		PacketBuilder reply(PACKET_ITEM, PACKET_JUNK, 11);
-		reply.AddShort(id);
-		reply.AddThree(amount); // Overflows, does it matter?
-		reply.AddInt(character->HasItem(id));
-		reply.AddChar(character->weight);
-		reply.AddChar(character->maxweight);
-		character->Send(reply);
-	}
-}
-
-// Retrieve an item from the ground
-void Item_Get(Character *character, PacketReader &reader)
-{
-	int uid = reader.GetShort();
-
-	std::shared_ptr<Map_Item> item = character->map->GetItem(uid);
-
-	if (item)
-	{
-		int distance = util::path_length(item->x, item->y, character->x, character->y);
+		int distance = util::path_length(x, y, character->x, character->y);
 
 		if (distance > static_cast<int>(character->world->config["DropDistance"]))
 		{
 			return;
 		}
 
-		if (item->owner != character->PlayerID() && item->unprotecttime > Timer::GetTime())
+		if (!character->map->Walkable(x, y))
 		{
 			return;
 		}
 
-		int taken = character->CanHoldItem(item->id, item->amount);
-
-		if (taken > 0)
+		if (character->HasItem(id) >= amount && character->mapid != static_cast<int>(character->world->config["JailMap"]))
 		{
-			character->AddItem(item->id, taken);
+			std::shared_ptr<Map_Item> item = character->map->AddItem(id, amount, x, y, character);
 
-			PacketBuilder reply(PACKET_ITEM, PACKET_GET, 9);
-			reply.AddShort(uid);
-			reply.AddShort(item->id);
-			reply.AddThree(taken);
+			if (item)
+			{
+				item->owner = character->PlayerID();
+				item->unprotecttime = Timer::GetTime() + static_cast<double>(character->world->config["ProtectPlayerDrop"]);
+				character->DelItem(id, amount);
+
+				PacketBuilder reply(PACKET_ITEM, PACKET_DROP, 15);
+				reply.AddShort(id);
+				reply.AddThree(amount);
+				reply.AddInt(character->HasItem(id));
+				reply.AddShort(item->uid);
+				reply.AddChar(x);
+				reply.AddChar(y);
+				reply.AddChar(character->weight);
+				reply.AddChar(character->maxweight);
+				character->Send(reply);
+			}
+		}
+	}
+
+	// Destroying an item
+	void Item_Junk(Character *character, PacketReader &reader)
+	{
+		if (character->trading)
+			return;
+
+		int id = reader.GetShort();
+		int amount = reader.GetInt();
+
+		if (amount <= 0)
+			return;
+
+		if (character->HasItem(id) >= amount)
+		{
+			character->DelItem(id, amount);
+
+			PacketBuilder reply(PACKET_ITEM, PACKET_JUNK, 11);
+			reply.AddShort(id);
+			reply.AddThree(amount); // Overflows, does it matter?
+			reply.AddInt(character->HasItem(id));
 			reply.AddChar(character->weight);
 			reply.AddChar(character->maxweight);
 			character->Send(reply);
-
-			character->map->DelSomeItem(item->uid, taken, character);
 		}
 	}
-}
 
-PACKET_HANDLER_REGISTER(PACKET_ITEM)
+	// Retrieve an item from the ground
+	void Item_Get(Character *character, PacketReader &reader)
+	{
+		int uid = reader.GetShort();
+
+		std::shared_ptr<Map_Item> item = character->map->GetItem(uid);
+
+		if (item)
+		{
+			int distance = util::path_length(item->x, item->y, character->x, character->y);
+
+			if (distance > static_cast<int>(character->world->config["DropDistance"]))
+			{
+				return;
+			}
+
+			if (item->owner != character->PlayerID() && item->unprotecttime > Timer::GetTime())
+			{
+				return;
+			}
+
+			int taken = character->CanHoldItem(item->id, item->amount);
+
+			if (taken > 0)
+			{
+				character->AddItem(item->id, taken);
+
+				PacketBuilder reply(PACKET_ITEM, PACKET_GET, 9);
+				reply.AddShort(uid);
+				reply.AddShort(item->id);
+				reply.AddThree(taken);
+				reply.AddChar(character->weight);
+				reply.AddChar(character->maxweight);
+				character->Send(reply);
+
+				character->map->DelSomeItem(item->uid, taken, character);
+			}
+		}
+	}
+
+	PACKET_HANDLER_REGISTER(PACKET_ITEM)
 	Register(PACKET_USE, Item_Use, Playing);
 	Register(PACKET_DROP, Item_Drop, Playing);
 	Register(PACKET_JUNK, Item_Junk, Playing);
 	Register(PACKET_GET, Item_Get, Playing);
-PACKET_HANDLER_REGISTER_END(PACKET_ITEM)
+	PACKET_HANDLER_REGISTER_END(PACKET_ITEM)
 
 }

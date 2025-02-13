@@ -14,37 +14,37 @@
 namespace util
 {
 
-/**
- * A string wrapper which automatically nulls out it's memory buffer when
- * destroyed or overwritten
- */
-struct secure_string
-{
+	/**
+	 * A string wrapper which automatically nulls out it's memory buffer when
+	 * destroyed or overwritten
+	 */
+	struct secure_string
+	{
 	private:
 		std::string str_;
 
 	public:
-		secure_string(std::string&& s)
+		secure_string(std::string &&s)
 			: str_(s)
 		{
 			std::fill(UTIL_RANGE(s), '\0');
 			s.erase();
 		}
 
-		secure_string(const secure_string& other)
+		secure_string(const secure_string &other)
 		{
 			erase();
 			this->str_ = other.str_;
 		}
 
-		secure_string& operator =(const secure_string& rhs)
+		secure_string &operator=(const secure_string &rhs)
 		{
 			erase();
 			this->str_ = rhs.str_;
 			return *this;
 		}
 
-		secure_string& operator =(secure_string&& rhs)
+		secure_string &operator=(secure_string &&rhs)
 		{
 			erase();
 			this->str_ = rhs.str_;
@@ -52,7 +52,7 @@ struct secure_string
 			return *this;
 		}
 
-		secure_string& operator =(std::string&& rhs)
+		secure_string &operator=(std::string &&rhs)
 		{
 			erase();
 			this->str_ = rhs;
@@ -68,7 +68,7 @@ struct secure_string
 		}
 
 		/// Make sure nothing copies or mutates this string!
-		const std::string& str()
+		const std::string &str()
 		{
 			return this->str_;
 		}
@@ -77,7 +77,7 @@ struct secure_string
 		{
 			erase();
 		}
-};
+	};
 
 }
 

@@ -10,6 +10,6 @@ class Timer;
 
 struct TimeEvent;
 
-typedef void(*TimerCallback)(void *);
+typedef void (*TimerCallback)(void *);
 
 #endif // FWD_TIMER_HPP_INCLUDED

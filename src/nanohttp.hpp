@@ -17,26 +17,26 @@
  */
 class HTTP
 {
-	private:
-		Client *client;
-		std::string response;
-		int status;
-		bool done;
+private:
+	Client *client;
+	std::string response;
+	int status;
+	bool done;
 
-	public:
-		HTTP(std::string host, unsigned short port, std::string path, const IPAddress &outgoing = 0U);
+public:
+	HTTP(std::string host, unsigned short port, std::string path, const IPAddress &outgoing = 0U);
 
-		static HTTP *RequestURL(std::string url, const IPAddress &outgoing = 0U);
+	static HTTP *RequestURL(std::string url, const IPAddress &outgoing = 0U);
 
-		void Tick(double timeout);
+	void Tick(double timeout);
 
-		bool Done();
-		int StatusCode();
-		std::string Response();
+	bool Done();
+	int StatusCode();
+	std::string Response();
 
-		static std::string URLEncode(std::string);
+	static std::string URLEncode(std::string);
 
-		~HTTP();
+	~HTTP();
 };
 
 #endif // NANOHTTP_HPP_INCLUDED

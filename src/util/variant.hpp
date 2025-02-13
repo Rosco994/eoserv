@@ -11,12 +11,12 @@
 namespace util
 {
 
-/**
- * A type that can store any numeric/string value and convert between them.
- * It takes way too much effort to use, so it's only used by the Config class.
- */
-class variant
-{
+	/**
+	 * A type that can store any numeric/string value and convert between them.
+	 * It takes way too much effort to use, so it's only used by the Config class.
+	 */
+	class variant
+	{
 	protected:
 		/**
 		 * Value stored as an integer.
@@ -138,27 +138,27 @@ class variant
 		/**
 		 * Set the value to an integer.
 		 */
-		variant &operator =(int);
+		variant &operator=(int);
 
 		/**
 		 * Set the value to a float.
 		 */
-		variant &operator =(double);
+		variant &operator=(double);
 
 		/**
 		 * Set the value to a string.
 		 */
-		variant &operator =(const std::string &);
+		variant &operator=(const std::string &);
 
 		/**
 		 * Set the value to a string.
 		 */
-		variant &operator =(const char *);
+		variant &operator=(const char *);
 
 		/**
 		 * Set the value to a bool.
 		 */
-		variant &operator =(bool);
+		variant &operator=(bool);
 
 		/**
 		 * Return the value as an integer, casting if neccessary.
@@ -179,12 +179,12 @@ class variant
 		 * Return the value as an boolean, casting if neccessary.
 		 */
 		operator bool() const { return this->GetBool(); }
-};
+	};
 
-/**
- * Alternate name for variant.
- */
-typedef variant var;
+	/**
+	 * Alternate name for variant.
+	 */
+	typedef variant var;
 
 }
 

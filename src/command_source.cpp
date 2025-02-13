@@ -9,9 +9,10 @@
 
 #include <string>
 
-System_Command_Source::System_Command_Source(World* world)
+System_Command_Source::System_Command_Source(World *world)
 	: world(world)
-{ }
+{
+}
 
 AdminLevel System_Command_Source::SourceAccess() const
 {
@@ -28,12 +29,12 @@ std::string System_Command_Source::SourceName() const
 	return "server";
 }
 
-Character* System_Command_Source::SourceCharacter()
+Character *System_Command_Source::SourceCharacter()
 {
 	return 0;
 }
 
-World* System_Command_Source::SourceWorld()
+World *System_Command_Source::SourceWorld()
 {
 	return world;
 }

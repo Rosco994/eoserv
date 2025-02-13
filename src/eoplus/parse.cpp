@@ -14,9 +14,9 @@
 namespace EOPlus
 {
 	Parser_Token_Server_Base::Parser_Token_Server_Base()
-		: line(1)
-		, reject_line(1)
-	{ }
+		: line(1), reject_line(1)
+	{
+	}
 
 	Token Parser_Token_Server_Base::GetToken(unsigned int allow)
 	{
@@ -77,34 +77,57 @@ namespace EOPlus
 	}
 
 	Parser_Token_Server_Base::~Parser_Token_Server_Base()
-	{ }
+	{
+	}
 
 	static std::string op_to_string(unsigned char h)
 	{
 		switch (h)
 		{
-			case UOP1('('):          return "(";
-			case UOP1(')'):          return ")";
-			case UOP1('&'):          return "&";
-			case UOP2('&', '&'):     return "&&";
-			case UOP1('|'):          return "|";
-			case UOP2('|', '|'):     return "||";
-			case UOP1('='):          return "=";
-			case UOP2('=', '='):     return "==";
-			case UOP2('!', '='):     return "!=";
-			case UOP1('<'):          return "<";
-			case UOP2('<', '='):     return "<=";
-			case UOP1('>'):          return ">";
-			case UOP2('>', '='):     return ">=";
-			case UOP1('+'):          return "+";
-			case UOP1('-'):          return "-";
-			case UOP1('*'):          return "*";
-			case UOP1('/'):          return "/";
-			case UOP1('%'):          return "%";
-			case UOP1('~'):          return "~";
-			case UOP1('!'):          return "!";
-			case UOP2('-', UOP_ALT): return "-";
-			default:                 return "(unknown)";
+		case UOP1('('):
+			return "(";
+		case UOP1(')'):
+			return ")";
+		case UOP1('&'):
+			return "&";
+		case UOP2('&', '&'):
+			return "&&";
+		case UOP1('|'):
+			return "|";
+		case UOP2('|', '|'):
+			return "||";
+		case UOP1('='):
+			return "=";
+		case UOP2('=', '='):
+			return "==";
+		case UOP2('!', '='):
+			return "!=";
+		case UOP1('<'):
+			return "<";
+		case UOP2('<', '='):
+			return "<=";
+		case UOP1('>'):
+			return ">";
+		case UOP2('>', '='):
+			return ">=";
+		case UOP1('+'):
+			return "+";
+		case UOP1('-'):
+			return "-";
+		case UOP1('*'):
+			return "*";
+		case UOP1('/'):
+			return "/";
+		case UOP1('%'):
+			return "%";
+		case UOP1('~'):
+			return "~";
+		case UOP1('!'):
+			return "!";
+		case UOP2('-', UOP_ALT):
+			return "-";
+		default:
+			return "(unknown)";
 		}
 	}
 
@@ -120,16 +143,26 @@ namespace EOPlus
 	{
 		switch (t.type)
 		{
-			case Token::Invalid:    return "invalid token";
-			case Token::Identifier: return "identifier '" + std::string(t.data) + "'";
-			case Token::String:     return "string '" + cut_string(t.data) + "'";
-			case Token::Integer:    return "integer '" + std::string(t.data) + "'";
-			case Token::Float:      return "float '" + std::string(t.data) + "'";
-			case Token::Boolean:    return "boolean '" + std::string(bool(t.data) ? "true" : "false") + "'";
-			case Token::Operator:   return "operator '" + op_to_string(int(t.data)) + "'";
-			case Token::Symbol:     return "symbol '" + std::string(t.data) + "'";
-			case Token::NewLine:    return "new-line";
-			case Token::EndOfFile:  return "end of file";
+		case Token::Invalid:
+			return "invalid token";
+		case Token::Identifier:
+			return "identifier '" + std::string(t.data) + "'";
+		case Token::String:
+			return "string '" + cut_string(t.data) + "'";
+		case Token::Integer:
+			return "integer '" + std::string(t.data) + "'";
+		case Token::Float:
+			return "float '" + std::string(t.data) + "'";
+		case Token::Boolean:
+			return "boolean '" + std::string(bool(t.data) ? "true" : "false") + "'";
+		case Token::Operator:
+			return "operator '" + op_to_string(int(t.data)) + "'";
+		case Token::Symbol:
+			return "symbol '" + std::string(t.data) + "'";
+		case Token::NewLine:
+			return "new-line";
+		case Token::EndOfFile:
+			return "end of file";
 		}
 
 		return "unknown token";
@@ -148,7 +181,8 @@ namespace EOPlus
 		{
 			version += ui(int(t.data)) << 16;
 
-			if (this->GetTokenIf(t, [](const Token& t) { return std::string(t.data) == "."; }, Token::Symbol))
+			if (this->GetTokenIf(t, [](const Token &t)
+								 { return std::string(t.data) == "."; }, Token::Symbol))
 			{
 				if (this->GetToken(t, Token::Integer))
 					version |= ui(int(t.data)) & 0xFFFF;
@@ -170,8 +204,7 @@ namespace EOPlus
 			{"character", Scope::Character},
 			{"npc", Scope::NPC},
 			{"map", Scope::Map},
-			{"world", Scope::World}
-		};
+			{"world", Scope::World}};
 
 		std::deque<Scope> scopes;
 		Token t;
@@ -191,7 +224,8 @@ namespace EOPlus
 
 			scopes.push_back(s);
 
-			if (!this->GetTokenIf(t, [](const Token& t) { return std::string(t.data) == "."; }, Token::Symbol))
+			if (!this->GetTokenIf(t, [](const Token &t)
+								  { return std::string(t.data) == "."; }, Token::Symbol))
 				PARSER_ERROR_GOT("Expected '.' after scope-identifier.");
 		}
 
@@ -224,9 +258,11 @@ namespace EOPlus
 				expression.scopes = this->ParseScopes();
 				expression.function = std::string(t.data);
 
-				if (this->GetTokenIf(t, [](const Token& t) { return int(t.data) == UOP1('('); }, Token::Operator))
+				if (this->GetTokenIf(t, [](const Token &t)
+									 { return int(t.data) == UOP1('('); }, Token::Operator))
 				{
-					if (this->GetTokenIf(t, [](const Token& t) { return int(t.data) == UOP1(')'); }, Token::Operator))
+					if (this->GetTokenIf(t, [](const Token &t)
+										 { return int(t.data) == UOP1(')'); }, Token::Operator))
 					{
 						return expression;
 					}
@@ -235,11 +271,8 @@ namespace EOPlus
 					{
 						expression.args.push_back(t.data);
 
-						if (this->GetTokenIf(t, [](const Token& t)
-						{
-							return ((t.type == Token::Symbol && std::string(t.data) == ",")
-							     || (t.type == Token::Operator && int(t.data) == UOP1(')')));
-						}, Token::Symbol | Token::Operator))
+						if (this->GetTokenIf(t, [](const Token &t)
+											 { return ((t.type == Token::Symbol && std::string(t.data) == ",") || (t.type == Token::Operator && int(t.data) == UOP1(')'))); }, Token::Symbol | Token::Operator))
 						{
 							if (int(t.data) == UOP1(')'))
 								return expression;
@@ -298,7 +331,7 @@ namespace EOPlus
 		return rule;
 	}
 
-	void Parser::ParseRuleActionBlock(std::deque<Rule>& rules, std::deque<Action>& actions, std::function<bool(std::string)> custom_handler, std::function<void(std::string)> error_handler)
+	void Parser::ParseRuleActionBlock(std::deque<Rule> &rules, std::deque<Action> &actions, std::function<bool(std::string)> custom_handler, std::function<void(std::string)> error_handler)
 	{
 		Token t;
 
@@ -448,7 +481,7 @@ namespace EOPlus
 				State state;
 
 				ParseRuleActionBlock(state.rules, state.actions, [&](std::string entry) -> bool
-				{
+									 {
 					if (entry == "desc")
 					{
 						if (has_desc)
@@ -468,12 +501,8 @@ namespace EOPlus
 					else
 					{
 						return false;
-					}
-				},
-				[&](std::string expected)
-				{
-					PARSER_ERROR_GOT("Expected state-block entry (" + expected + "/goal/desc) or closing brace '}' in state '" + name + "'.");
-				});
+					} }, [&](std::string expected)
+									 { PARSER_ERROR_GOT("Expected state-block entry (" + expected + "/goal/desc) or closing brace '}' in state '" + name + "'."); });
 
 				state.name = name;
 				return std::pair<std::string, State>(name, state);

@@ -40,8 +40,8 @@ static std::size_t eoserv_strlcpy(char *dest, const char *src, std::size_t size)
 		if (src_size > size)
 			size = src_size;
 
-		std::memcpy(dest, src, size-1);
-		dest[size-1] = '\0';
+		std::memcpy(dest, src, size - 1);
+		dest[size - 1] = '\0';
 	}
 
 	return size;
@@ -77,7 +77,7 @@ const char *OSErrorString()
 void Socket_Init::init()
 {
 #ifdef WIN32
-	if (WSAStartup(MAKEWORD(2,0), &socket_wsadata) != 0)
+	if (WSAStartup(MAKEWORD(2, 0), &socket_wsadata) != 0)
 	{
 		throw Socket_InitFailed(OSErrorString());
 	}
@@ -163,17 +163,17 @@ IPAddress &IPAddress::SetString(std::string str_addr)
 	return *this;
 }
 
-IPAddress &IPAddress::operator =(std::string str_addr)
+IPAddress &IPAddress::operator=(std::string str_addr)
 {
 	return this->SetString(str_addr);
 }
 
-IPAddress &IPAddress::operator =(const char *str_addr)
+IPAddress &IPAddress::operator=(const char *str_addr)
 {
 	return this->SetString(str_addr);
 }
 
-IPAddress &IPAddress::operator =(unsigned int addr)
+IPAddress &IPAddress::operator=(unsigned int addr)
 {
 	return this->SetInt(addr);
 }
@@ -205,7 +205,7 @@ IPAddress::operator std::string() const
 	return this->GetString();
 }
 
-bool IPAddress::operator ==(const IPAddress &other) const
+bool IPAddress::operator==(const IPAddress &other) const
 {
 	return (this->address == other.address);
 }
@@ -216,64 +216,31 @@ struct Client::impl_
 	sockaddr_in sin;
 
 	impl_(const SOCKET &sock = SOCKET(), const sockaddr_in &sin = sockaddr_in())
-		: sock(sock)
-		, sin(sin)
-	{ }
+		: sock(sock), sin(sin)
+	{
+	}
 };
 
 Client::Client()
-	: impl(new impl_(socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)))
-	, server(0)
-	, connected(false)
-	, connect_time(0)
-	, recv_buffer_gpos(0)
-	, recv_buffer_ppos(0)
-	, recv_buffer_used(0)
-	, send_buffer_gpos(0)
-	, send_buffer_ppos(0)
-	, send_buffer_used(0)
-{ }
+	: impl(new impl_(socket(AF_INET, SOCK_STREAM, IPPROTO_TCP))), server(0), connected(false), connect_time(0), recv_buffer_gpos(0), recv_buffer_ppos(0), recv_buffer_used(0), send_buffer_gpos(0), send_buffer_ppos(0), send_buffer_used(0)
+{
+}
 
 Client::Client(const IPAddress &addr, uint16_t port)
-	: impl(new impl_(socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)))
-	, server(0)
-	, connected(false)
-	, connect_time(0)
-	, recv_buffer_gpos(0)
-	, recv_buffer_ppos(0)
-	, recv_buffer_used(0)
-	, send_buffer_gpos(0)
-	, send_buffer_ppos(0)
-	, send_buffer_used(0)
+	: impl(new impl_(socket(AF_INET, SOCK_STREAM, IPPROTO_TCP))), server(0), connected(false), connect_time(0), recv_buffer_gpos(0), recv_buffer_ppos(0), recv_buffer_used(0), send_buffer_gpos(0), send_buffer_ppos(0), send_buffer_used(0)
 {
 	this->Connect(addr, port);
 }
 
 Client::Client(Server *server)
-	: impl(new impl_(socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)))
-	, server(server)
-	, connected(false)
-	, connect_time(0)
-	, recv_buffer_gpos(0)
-	, recv_buffer_ppos(0)
-	, recv_buffer_used(0)
-	, send_buffer_gpos(0)
-	, send_buffer_ppos(0)
-	, send_buffer_used(0)
-{ }
+	: impl(new impl_(socket(AF_INET, SOCK_STREAM, IPPROTO_TCP))), server(server), connected(false), connect_time(0), recv_buffer_gpos(0), recv_buffer_ppos(0), recv_buffer_used(0), send_buffer_gpos(0), send_buffer_ppos(0), send_buffer_used(0)
+{
+}
 
 Client::Client(const Socket &sock, Server *server)
-	: impl(new impl_(sock.sock, sock.sin))
-	, server(server)
-	, connected(true)
-	, connect_time(std::time(0))
-	, recv_buffer_gpos(0)
-	, recv_buffer_ppos(0)
-	, recv_buffer_used(0)
-	, send_buffer_gpos(0)
-	, send_buffer_ppos(0)
-	, send_buffer_used(0)
-{ }
+	: impl(new impl_(sock.sock, sock.sin)), server(server), connected(true), connect_time(std::time(0)), recv_buffer_gpos(0), recv_buffer_ppos(0), recv_buffer_used(0), send_buffer_gpos(0), send_buffer_ppos(0), send_buffer_used(0)
+{
+}
 
 inline void assert_power_of_two(std::size_t size)
 {
@@ -322,7 +289,7 @@ void Client::Bind(const IPAddress &addr, uint16_t port)
 
 #ifdef WIN32
 	BOOL yes = 1;
-	setsockopt(this->impl->sock, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<const char*>(&yes), sizeof(BOOL));
+	setsockopt(this->impl->sock, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<const char *>(&yes), sizeof(BOOL));
 #else
 	int yes = 1;
 	setsockopt(this->impl->sock, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
@@ -484,12 +451,12 @@ bool Client::Select(double timeout)
 
 	return false;
 }
-#else // defined(SOCKET_POLL) && !defined(WIN32)
+#else  // defined(SOCKET_POLL) && !defined(WIN32)
 bool Client::Select(double timeout)
 {
 	fd_set read_fds, write_fds, except_fds;
 	long tsecs = long(timeout);
-	timeval timeout_val = {tsecs, long((timeout - double(tsecs))*1000000)};
+	timeval timeout_val = {tsecs, long((timeout - double(tsecs)) * 1000000)};
 
 	FD_ZERO(&read_fds);
 	FD_ZERO(&write_fds);
@@ -507,7 +474,7 @@ bool Client::Select(double timeout)
 
 	FD_SET(this->impl->sock, &except_fds);
 
-	int result = select(this->impl->sock+1, &read_fds, &write_fds, &except_fds, &timeout_val);
+	int result = select(this->impl->sock + 1, &read_fds, &write_fds, &except_fds, &timeout_val);
 	if (result == -1)
 	{
 		throw Socket_SelectFailed(OSErrorString());
@@ -568,7 +535,7 @@ void Client::Close(bool force)
 		{
 #ifdef WIN32
 			closesocket(this->impl->sock);
-#else // WIN32
+#else  // WIN32
 			close(this->impl->sock);
 #endif // WIN32
 		}
@@ -604,23 +571,17 @@ struct Server::impl_
 
 	impl_(const SOCKET &sock = INVALID_SOCKET)
 		: sock(sock)
-	{ }
+	{
+	}
 };
 
 Server::Server()
-	: impl(new impl_(socket(AF_INET, SOCK_STREAM, 0)))
-	, state(Created)
-	, recv_buffer_max(32 * 1024)
-	, send_buffer_max(32 * 1024)
-	, maxconn(0)
-{ }
+	: impl(new impl_(socket(AF_INET, SOCK_STREAM, 0))), state(Created), recv_buffer_max(32 * 1024), send_buffer_max(32 * 1024), maxconn(0)
+{
+}
 
 Server::Server(const IPAddress &addr, uint16_t port)
-	: impl(new impl_(socket(AF_INET, SOCK_STREAM, 0)))
-	, state(Created)
-	, recv_buffer_max(32 * 1024)
-	, send_buffer_max(32 * 1024)
-	, maxconn(0)
+	: impl(new impl_(socket(AF_INET, SOCK_STREAM, 0))), state(Created), recv_buffer_max(32 * 1024), send_buffer_max(32 * 1024), maxconn(0)
 {
 	this->Bind(addr, port);
 }
@@ -634,7 +595,7 @@ void Server::Bind(const IPAddress &addr, uint16_t port)
 
 #ifdef WIN32
 	BOOL yes = 1;
-	setsockopt(this->impl->sock, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<const char*>(&yes), sizeof(BOOL));
+	setsockopt(this->impl->sock, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<const char *>(&yes), sizeof(BOOL));
 #else
 	int yes = 1;
 	setsockopt(this->impl->sock, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
@@ -658,13 +619,13 @@ void Server::Listen(int maxconn, int backlog)
 {
 	this->maxconn = maxconn;
 
-	//if (this->state == Bound)
+	// if (this->state == Bound)
 	//{
-		if (listen(this->impl->sock, backlog) != SOCKET_ERROR)
-		{
-			this->state = Listening;
-			return;
-		}
+	if (listen(this->impl->sock, backlog) != SOCKET_ERROR)
+	{
+		this->state = Listening;
+		return;
+	}
 	//}
 
 	this->state = Invalid;
@@ -684,8 +645,8 @@ Client *Server::Poll()
 #ifdef WIN32
 	nonblocking = 1;
 	ioctlsocket(this->impl->sock, FIONBIO, &nonblocking);
-#else // WIN32
-	fcntl(this->impl->sock, F_SETFL, FNONBLOCK|FASYNC);
+#else  // WIN32
+	fcntl(this->impl->sock, F_SETFL, FNONBLOCK | FASYNC);
 #endif // WIN32
 	if ((newsock = accept(this->impl->sock, reinterpret_cast<sockaddr *>(&sin), &addrsize)) == INVALID_SOCKET)
 	{
@@ -694,7 +655,7 @@ Client *Server::Poll()
 #ifdef WIN32
 	nonblocking = 0;
 	ioctlsocket(this->impl->sock, FIONBIO, &nonblocking);
-#else // WIN32
+#else  // WIN32
 	fcntl(this->impl->sock, F_SETFL, 0);
 #endif // WIN32
 
@@ -702,16 +663,16 @@ Client *Server::Poll()
 	if (this->clients.size() >= this->maxconn)
 	{
 		for (auto it = this->clients.begin();
-		 it != this->clients.end() && this->clients.size() >= this->maxconn;
-		 ++it)
+			 it != this->clients.end() && this->clients.size() >= this->maxconn;
+			 ++it)
 		{
-			Client* client = *it;
+			Client *client = *it;
 			if (!client->accepted)
 			{
 				client->Close(true);
 #ifdef WIN32
 				closesocket(client->impl->sock);
-#else // WIN32
+#else  // WIN32
 				close(client->impl->sock);
 #endif // WIN32
 				delete client;
@@ -726,7 +687,7 @@ Client *Server::Poll()
 		{
 #ifdef WIN32
 			closesocket(newsock);
-#else // WIN32
+#else  // WIN32
 			close(newsock);
 #endif // WIN32
 			return 0;
@@ -740,7 +701,7 @@ Client *Server::Poll()
 		this->maxconn = std::min<unsigned>(this->maxconn, this->clients.size() - 1);
 #ifdef WIN32
 		closesocket(newsock);
-#else // WIN32
+#else  // WIN32
 		close(newsock);
 #endif // WIN32
 		return nullptr;
@@ -847,7 +808,7 @@ std::vector<Client *> *Server::Select(double timeout)
 std::vector<Client *> *Server::Select(double timeout)
 {
 	long tsecs = long(timeout);
-	timeval timeout_val = {tsecs, long((timeout - double(tsecs))*1000000)};
+	timeval timeout_val = {tsecs, long((timeout - double(tsecs)) * 1000000)};
 	static std::vector<Client *> selected;
 	SOCKET nfds = this->impl->sock;
 	int result;
@@ -878,7 +839,7 @@ std::vector<Client *> *Server::Select(double timeout)
 
 	FD_SET(this->impl->sock, &this->impl->except_fds);
 
-	result = select(nfds+1, &this->impl->read_fds, &this->impl->write_fds, &this->impl->except_fds, &timeout_val);
+	result = select(nfds + 1, &this->impl->read_fds, &this->impl->write_fds, &this->impl->except_fds, &timeout_val);
 
 	if (result == -1)
 	{
@@ -951,7 +912,7 @@ void Server::BuryTheDead()
 		{
 #ifdef WIN32
 			closesocket(client->impl->sock);
-#else // WIN32
+#else  // WIN32
 			close(client->impl->sock);
 #endif // WIN32
 			delete client;
@@ -968,7 +929,7 @@ Server::~Server()
 	{
 #ifdef WIN32
 		closesocket(client->impl->sock);
-#else // WIN32
+#else  // WIN32
 		close(client->impl->sock);
 #endif // WIN32
 		delete client;
@@ -976,7 +937,7 @@ Server::~Server()
 
 #ifdef WIN32
 	closesocket(this->impl->sock);
-#else // WIN32
+#else  // WIN32
 	close(this->impl->sock);
 #endif // WIN32
 

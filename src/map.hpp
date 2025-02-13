@@ -33,7 +33,7 @@ struct Map_Item
 	double unprotecttime;
 
 	Map_Item(short uid_, short id_, int amount_, unsigned char x_, unsigned char y_, unsigned int owner_, double unprotecttime_)
-	 : uid(uid_), id(id_), amount(amount_), x(x_), y(y_), owner(owner_), unprotecttime(unprotecttime_) { }
+		: uid(uid_), id(id_), amount(amount_), x(x_), y(y_), owner(owner_), unprotecttime(unprotecttime_) {}
 };
 
 /**
@@ -117,7 +117,7 @@ struct Map_Tile
 
 	Map_Warp warp;
 
-	Map_Tile() : tilespec(Map_Tile::None) { }
+	Map_Tile() : tilespec(Map_Tile::None) {}
 
 	bool Walkable(bool npc = false) const
 	{
@@ -128,31 +128,31 @@ struct Map_Tile
 
 		switch (this->tilespec)
 		{
-			case Wall:
-			case ChairDown:
-			case ChairLeft:
-			case ChairRight:
-			case ChairUp:
-			case ChairDownRight:
-			case ChairUpLeft:
-			case ChairAll:
-			case Chest:
-			case BankVault:
-			case MapEdge:
-			case Board1:
-			case Board2:
-			case Board3:
-			case Board4:
-			case Board5:
-			case Board6:
-			case Board7:
-			case Board8:
-			case Jukebox:
-				return false;
-			case NPCBoundary:
-				return !npc;
-			default:
-				return true;
+		case Wall:
+		case ChairDown:
+		case ChairLeft:
+		case ChairRight:
+		case ChairUp:
+		case ChairDownRight:
+		case ChairUpLeft:
+		case ChairAll:
+		case Chest:
+		case BankVault:
+		case MapEdge:
+		case Board1:
+		case Board2:
+		case Board3:
+		case Board4:
+		case Board5:
+		case Board6:
+		case Board7:
+		case Board8:
+		case Jukebox:
+			return false;
+		case NPCBoundary:
+			return !npc;
+		default:
+			return true;
 		}
 	}
 };
@@ -207,126 +207,126 @@ struct Map_Chest
  */
 class Map
 {
-	private:
-		bool Load();
-		void Unload();
+private:
+	bool Load();
+	void Unload();
 
-	public:
-		enum WalkResult
-		{
-			WalkFail = 0,
-			WalkOK = 1,
-			WalkWarped = 2
-		};
+public:
+	enum WalkResult
+	{
+		WalkFail = 0,
+		WalkOK = 1,
+		WalkWarped = 2
+	};
 
-		enum EffectType
-		{
-			EffectNone = 0,
-			EffectHPDrain = 1,
-			EffectTPDrain = 2,
-			EffectQuake1 = 3,
-			EffectQuake2 = 4,
-			EffectQuake3 = 5,
-			EffectQuake4 = 6
-		};
+	enum EffectType
+	{
+		EffectNone = 0,
+		EffectHPDrain = 1,
+		EffectTPDrain = 2,
+		EffectQuake1 = 3,
+		EffectQuake2 = 4,
+		EffectQuake3 = 5,
+		EffectQuake4 = 6
+	};
 
-		World *world;
-		short id;
-		char rid[4];
-		bool pk;
-		EffectType effect;
-		int filesize;
-		unsigned char width;
-		unsigned char height;
-		bool scroll;
-		unsigned char relog_x;
-		unsigned char relog_y;
-		std::list<Character *> characters;
-		std::vector<NPC *> npcs;
-		std::vector<std::shared_ptr<Map_Chest>> chests;
-		std::list<std::shared_ptr<Map_Item>> items;
-		std::vector<Map_Tile> tiles;
-		bool exists;
-		double jukebox_protect;
-		std::string jukebox_player;
-		bool evacuate_lock;
-		bool has_timed_spikes;
+	World *world;
+	short id;
+	char rid[4];
+	bool pk;
+	EffectType effect;
+	int filesize;
+	unsigned char width;
+	unsigned char height;
+	bool scroll;
+	unsigned char relog_x;
+	unsigned char relog_y;
+	std::list<Character *> characters;
+	std::vector<NPC *> npcs;
+	std::vector<std::shared_ptr<Map_Chest>> chests;
+	std::list<std::shared_ptr<Map_Item>> items;
+	std::vector<Map_Tile> tiles;
+	bool exists;
+	double jukebox_protect;
+	std::string jukebox_player;
+	bool evacuate_lock;
+	bool has_timed_spikes;
 
-		Arena *arena;
-		Wedding* wedding;
+	Arena *arena;
+	Wedding *wedding;
 
-		Map(int id, World *world);
-		void LoadArena();
+	Map(int id, World *world);
+	void LoadArena();
 
-		int GenerateItemID() const;
-		unsigned char GenerateNPCIndex() const;
+	int GenerateItemID() const;
+	unsigned char GenerateNPCIndex() const;
 
-		void Enter(Character *, WarpAnimation animation = WARP_ANIMATION_NONE);
-		void Leave(Character *, WarpAnimation animation = WARP_ANIMATION_NONE, bool silent = false);
+	void Enter(Character *, WarpAnimation animation = WARP_ANIMATION_NONE);
+	void Leave(Character *, WarpAnimation animation = WARP_ANIMATION_NONE, bool silent = false);
 
-		void Msg(Character *from, std::string message, bool echo = true);
-		void Msg(NPC *from, std::string message);
-		WalkResult Walk(Character *from, Direction direction, bool admin = false);
-		void Attack(Character *from, Direction direction);
-		bool AttackPK(Character *from, Direction direction);
-		void Face(Character *from, Direction direction);
-		void Sit(Character *from, SitState sit_type);
-		void Stand(Character *from);
-		void Emote(Character *from, enum Emote emote, bool echo = true);
-		bool OpenDoor(Character *from, unsigned char x, unsigned char y);
-		void CloseDoor(unsigned char x, unsigned char y);
+	void Msg(Character *from, std::string message, bool echo = true);
+	void Msg(NPC *from, std::string message);
+	WalkResult Walk(Character *from, Direction direction, bool admin = false);
+	void Attack(Character *from, Direction direction);
+	bool AttackPK(Character *from, Direction direction);
+	void Face(Character *from, Direction direction);
+	void Sit(Character *from, SitState sit_type);
+	void Stand(Character *from);
+	void Emote(Character *from, enum Emote emote, bool echo = true);
+	bool OpenDoor(Character *from, unsigned char x, unsigned char y);
+	void CloseDoor(unsigned char x, unsigned char y);
 
-		void SpellSelf(Character *from, unsigned short spell_id);
-		void SpellAttack(Character *from, NPC *victim, unsigned short spell_id);
-		void SpellAttackPK(Character *from, Character *victim, unsigned short spell_id);
-		void SpellGroup(Character *from, unsigned short spell_id);
+	void SpellSelf(Character *from, unsigned short spell_id);
+	void SpellAttack(Character *from, NPC *victim, unsigned short spell_id);
+	void SpellAttackPK(Character *from, Character *victim, unsigned short spell_id);
+	void SpellGroup(Character *from, unsigned short spell_id);
 
-		WalkResult Walk(NPC *from, Direction direction);
+	WalkResult Walk(NPC *from, Direction direction);
 
-		std::shared_ptr<Map_Item> AddItem(short id, int amount, unsigned char x, unsigned char y, Character *from = 0);
+	std::shared_ptr<Map_Item> AddItem(short id, int amount, unsigned char x, unsigned char y, Character *from = 0);
 
-		std::shared_ptr<Map_Item> GetItem(short uid);
-		std::shared_ptr<const Map_Item> GetItem(short uid) const;
+	std::shared_ptr<Map_Item> GetItem(short uid);
+	std::shared_ptr<const Map_Item> GetItem(short uid) const;
 
-		void DelItem(short uid, Character *from = 0);
-		void DelSomeItem(short uid, int amount, Character *from = 0);
-		std::list<std::shared_ptr<Map_Item>>::iterator DelItem(std::list<std::shared_ptr<Map_Item>>::iterator it, Character *from = 0);
+	void DelItem(short uid, Character *from = 0);
+	void DelSomeItem(short uid, int amount, Character *from = 0);
+	std::list<std::shared_ptr<Map_Item>>::iterator DelItem(std::list<std::shared_ptr<Map_Item>>::iterator it, Character *from = 0);
 
-		bool InBounds(unsigned char x, unsigned char y) const;
-		bool Walkable(unsigned char x, unsigned char y, bool npc = false) const;
-		Map_Tile& GetTile(unsigned char x, unsigned char y);
-		const Map_Tile& GetTile(unsigned char x, unsigned char y) const;
-		Map_Tile::TileSpec GetSpec(unsigned char x, unsigned char y) const;
-		Map_Warp& GetWarp(unsigned char x, unsigned char y);
-		const Map_Warp& GetWarp(unsigned char x, unsigned char y) const;
+	bool InBounds(unsigned char x, unsigned char y) const;
+	bool Walkable(unsigned char x, unsigned char y, bool npc = false) const;
+	Map_Tile &GetTile(unsigned char x, unsigned char y);
+	const Map_Tile &GetTile(unsigned char x, unsigned char y) const;
+	Map_Tile::TileSpec GetSpec(unsigned char x, unsigned char y) const;
+	Map_Warp &GetWarp(unsigned char x, unsigned char y);
+	const Map_Warp &GetWarp(unsigned char x, unsigned char y) const;
 
-		std::vector<Character *> CharactersInRange(unsigned char x, unsigned char y, unsigned char range);
-		std::vector<NPC *> NPCsInRange(unsigned char x, unsigned char y, unsigned char range);
+	std::vector<Character *> CharactersInRange(unsigned char x, unsigned char y, unsigned char range);
+	std::vector<NPC *> NPCsInRange(unsigned char x, unsigned char y, unsigned char range);
 
-		void Effect(MapEffect effect, unsigned char param);
+	void Effect(MapEffect effect, unsigned char param);
 
-		bool Evacuate();
+	bool Evacuate();
 
-		bool Reload();
+	bool Reload();
 
-		void TimedSpikes();
-		void TimedDrains();
-		void TimedQuakes();
+	void TimedSpikes();
+	void TimedDrains();
+	void TimedQuakes();
 
-		Character *GetCharacter(std::string name);
-		Character *GetCharacterPID(unsigned int id);
-		Character *GetCharacterCID(unsigned int id);
-		NPC *GetNPCIndex(unsigned char index);
+	Character *GetCharacter(std::string name);
+	Character *GetCharacterPID(unsigned int id);
+	Character *GetCharacterCID(unsigned int id);
+	NPC *GetNPCIndex(unsigned char index);
 
-		enum OccupiedTarget
-		{
-			PlayerOnly,
-			NPCOnly,
-			PlayerAndNPC
-		};
-		bool Occupied(unsigned char x, unsigned char y, Map::OccupiedTarget target, bool adminghost = false) const;
+	enum OccupiedTarget
+	{
+		PlayerOnly,
+		NPCOnly,
+		PlayerAndNPC
+	};
+	bool Occupied(unsigned char x, unsigned char y, Map::OccupiedTarget target, bool adminghost = false) const;
 
-		~Map();
+	~Map();
 };
 
 #endif // MAP_HPP_INCLUDED

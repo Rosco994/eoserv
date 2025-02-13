@@ -15,15 +15,14 @@
 
 Dialog::Dialog()
 {
-
 }
 
-void Dialog::AddPage(const std::string& text)
+void Dialog::AddPage(const std::string &text)
 {
 	this->pages.push_back(text);
 }
 
-void Dialog::AddLink(int id, const std::string& text)
+void Dialog::AddLink(int id, const std::string &text)
 {
 	this->links.insert(std::make_pair(id, text));
 }
@@ -51,7 +50,7 @@ int Dialog::PacketLength() const
 	return size;
 }
 
-void Dialog::BuildPacket(PacketBuilder& builder) const
+void Dialog::BuildPacket(PacketBuilder &builder) const
 {
 	builder.ReserveMore(this->PacketLength());
 
@@ -71,5 +70,4 @@ void Dialog::BuildPacket(PacketBuilder& builder) const
 
 Dialog::~Dialog()
 {
-
 }

@@ -39,27 +39,26 @@ static int quest_day()
 
 struct Validation_Error : public EOPlus::Runtime_Error
 {
-	private:
-		std::string state_;
+private:
+	std::string state_;
 
-	public:
-		Validation_Error(const std::string &what_, const std::string& state_)
-			: Runtime_Error(what_)
-			, state_(state_)
-		{ }
+public:
+	Validation_Error(const std::string &what_, const std::string &state_)
+		: Runtime_Error(what_), state_(state_)
+	{
+	}
 
-		const std::string& state() const
-		{
-			return state_;
-		}
+	const std::string &state() const
+	{
+		return state_;
+	}
 
-		~Validation_Error() noexcept
-		{
-
-		}
+	~Validation_Error() noexcept
+	{
+	}
 };
 
-static void validate_state(const EOPlus::Quest& quest, const std::string& name, const EOPlus::State& state)
+static void validate_state(const EOPlus::Quest &quest, const std::string &name, const EOPlus::State &state)
 {
 	struct info_t
 	{
@@ -67,9 +66,9 @@ static void validate_state(const EOPlus::Quest& quest, const std::string& name, 
 		int max_args;
 
 		info_t(int min_args, int max_args = 0)
-			: min_args(min_args)
-			, max_args(max_args < 0 ? max_args : std::max(min_args, max_args))
-		{ }
+			: min_args(min_args), max_args(max_args < 0 ? max_args : std::max(min_args, max_args))
+		{
+		}
 	};
 
 	static std::map<std::string, info_t> action_argument_info{
@@ -152,10 +151,9 @@ static void validate_state(const EOPlus::Quest& quest, const std::string& name, 
 		{"statgreater", 2},
 		{"statless", 2},
 		{"statbetween", 3},
-		{"statrpn", 1}
-	};
+		{"statrpn", 1}};
 
-	auto check = [&](std::string type, std::string function, const std::deque<util::variant>& args, info_t& info)
+	auto check = [&](std::string type, std::string function, const std::deque<util::variant> &args, info_t &info)
 	{
 		if (args.size() < std::size_t(info.min_args))
 			throw Validation_Error(type + " " + function + " requires at least " + util::to_string(info.min_args) + " argument(s)", name);
@@ -185,7 +183,7 @@ static void validate_state(const EOPlus::Quest& quest, const std::string& name, 
 
 	UTIL_FOREACH(state.rules, rule)
 	{
-		const EOPlus::Action& action = rule.action;
+		const EOPlus::Action &action = rule.action;
 
 		const auto it = action_argument_info.find(action.expr.function);
 
@@ -206,7 +204,7 @@ static void validate_state(const EOPlus::Quest& quest, const std::string& name, 
 	}
 }
 
-static void validate_quest(const EOPlus::Quest& quest)
+static void validate_quest(const EOPlus::Quest &quest)
 {
 	UTIL_CIFOREACH(quest.states, it)
 	{
@@ -214,7 +212,7 @@ static void validate_quest(const EOPlus::Quest& quest)
 	}
 }
 
-static bool modify_stat(std::string name, std::function<int(int)> f, Character* victim)
+static bool modify_stat(std::string name, std::function<int(int)> f, Character *victim)
 {
 	bool appearance = false;
 	bool level = false;
@@ -224,16 +222,26 @@ static bool modify_stat(std::string name, std::function<int(int)> f, Character* 
 	bool statpoints = false;
 	bool skillpoints = false;
 
-		 if (name == "level") (level = true, victim->level) = util::clamp<int>(f(victim->level), 0, victim->world->config["MaxLevel"]);
-	else if (name == "exp")   (level = true, victim->exp)   = util::clamp<int>(f(victim->exp),   0, victim->world->config["MaxEXP"]);
-	else if (name == "str")   (stats = true, victim->str)   = util::clamp<int>(f(victim->str),   0, victim->world->config["MaxStat"]);
-	else if (name == "int")   (stats = true, victim->intl)  = util::clamp<int>(f(victim->intl),  0, victim->world->config["MaxStat"]);
-	else if (name == "wis")   (stats = true, victim->wis)   = util::clamp<int>(f(victim->wis),   0, victim->world->config["MaxStat"]);
-	else if (name == "agi")   (stats = true, victim->agi)   = util::clamp<int>(f(victim->agi),   0, victim->world->config["MaxStat"]);
-	else if (name == "con")   (stats = true, victim->con)   = util::clamp<int>(f(victim->con),   0, victim->world->config["MaxStat"]);
-	else if (name == "cha")   (stats = true, victim->cha)   = util::clamp<int>(f(victim->cha),   0, victim->world->config["MaxStat"]);
-	else if (name == "statpoints")  (statpoints = true,  victim->statpoints)  = util::clamp<int>(f(victim->statpoints),  0, int(victim->world->config["MaxLevel"]) * int(victim->world->config["StatPerLevel"]));
-	else if (name == "skillpoints") (skillpoints = true, victim->skillpoints) = util::clamp<int>(f(victim->skillpoints), 0, int(victim->world->config["MaxLevel"]) * int(victim->world->config["SkillPerLevel"]));
+	if (name == "level")
+		(level = true, victim->level) = util::clamp<int>(f(victim->level), 0, victim->world->config["MaxLevel"]);
+	else if (name == "exp")
+		(level = true, victim->exp) = util::clamp<int>(f(victim->exp), 0, victim->world->config["MaxEXP"]);
+	else if (name == "str")
+		(stats = true, victim->str) = util::clamp<int>(f(victim->str), 0, victim->world->config["MaxStat"]);
+	else if (name == "int")
+		(stats = true, victim->intl) = util::clamp<int>(f(victim->intl), 0, victim->world->config["MaxStat"]);
+	else if (name == "wis")
+		(stats = true, victim->wis) = util::clamp<int>(f(victim->wis), 0, victim->world->config["MaxStat"]);
+	else if (name == "agi")
+		(stats = true, victim->agi) = util::clamp<int>(f(victim->agi), 0, victim->world->config["MaxStat"]);
+	else if (name == "con")
+		(stats = true, victim->con) = util::clamp<int>(f(victim->con), 0, victim->world->config["MaxStat"]);
+	else if (name == "cha")
+		(stats = true, victim->cha) = util::clamp<int>(f(victim->cha), 0, victim->world->config["MaxStat"]);
+	else if (name == "statpoints")
+		(statpoints = true, victim->statpoints) = util::clamp<int>(f(victim->statpoints), 0, int(victim->world->config["MaxLevel"]) * int(victim->world->config["StatPerLevel"]));
+	else if (name == "skillpoints")
+		(skillpoints = true, victim->skillpoints) = util::clamp<int>(f(victim->skillpoints), 0, int(victim->world->config["MaxLevel"]) * int(victim->world->config["SkillPerLevel"]));
 	else if (name == "admin")
 	{
 		AdminLevel level = util::clamp<AdminLevel>(AdminLevel(f(victim->admin)), ADMIN_PLAYER, ADMIN_HGM);
@@ -245,14 +253,22 @@ static bool modify_stat(std::string name, std::function<int(int)> f, Character* 
 
 		victim->admin = level;
 	}
-	else if (name == "gender")    (appearance = true, victim->gender)    = util::clamp<Gender>(Gender(f(victim->gender)), Gender(0), Gender(1));
-	else if (name == "hairstyle") (appearance = true, victim->hairstyle) = util::clamp<int>(f(victim->hairstyle),         0, victim->world->config["MaxHairStyle"]);
-	else if (name == "haircolor") (appearance = true, victim->haircolor) = util::clamp<int>(f(victim->haircolor),         0, victim->world->config["MaxHairColor"]);
-	else if (name == "race")      (appearance = true, victim->race)      = util::clamp<Skin>(Skin(f(victim->race)),       Skin(0), Skin(int(victim->world->config["MaxSkin"])));
-	else if (name == "guildrank") victim->guild_rank = util::clamp<int>(f(victim->guild_rank), 0, 9);
-	else if (name == "karma") (karma = true, victim->karma) = util::clamp<int>(f(victim->karma), 0, 2000);
-	else if (name == "class") (stats = true, victim->clas)  = util::clamp<int>(f(victim->clas),  0, victim->world->ecf->data.size() - 1);
-	else return false;
+	else if (name == "gender")
+		(appearance = true, victim->gender) = util::clamp<Gender>(Gender(f(victim->gender)), Gender(0), Gender(1));
+	else if (name == "hairstyle")
+		(appearance = true, victim->hairstyle) = util::clamp<int>(f(victim->hairstyle), 0, victim->world->config["MaxHairStyle"]);
+	else if (name == "haircolor")
+		(appearance = true, victim->haircolor) = util::clamp<int>(f(victim->haircolor), 0, victim->world->config["MaxHairColor"]);
+	else if (name == "race")
+		(appearance = true, victim->race) = util::clamp<Skin>(Skin(f(victim->race)), Skin(0), Skin(int(victim->world->config["MaxSkin"])));
+	else if (name == "guildrank")
+		victim->guild_rank = util::clamp<int>(f(victim->guild_rank), 0, 9);
+	else if (name == "karma")
+		(karma = true, victim->karma) = util::clamp<int>(f(victim->karma), 0, 2000);
+	else if (name == "class")
+		(stats = true, victim->clas) = util::clamp<int>(f(victim->clas), 0, victim->world->ecf->data.size() - 1);
+	else
+		return false;
 
 	// Easiest way to get the character to update on everyone nearby's screen
 	if (appearance)
@@ -312,10 +328,8 @@ static bool modify_stat(std::string name, std::function<int(int)> f, Character* 
 	return true;
 }
 
-Quest::Quest(short id, World* world)
-	: world(world)
-	, quest(0)
-	, id(id)
+Quest::Quest(short id, World *world)
+	: world(world), quest(0), id(id)
 {
 	this->Load();
 }
@@ -339,13 +353,13 @@ void Quest::Load()
 		this->quest = new EOPlus::Quest(f);
 		validate_quest(*this->quest);
 	}
-	catch (EOPlus::Syntax_Error& e)
+	catch (EOPlus::Syntax_Error &e)
 	{
 		Console::Err("Could not load quest: %s", filename.c_str());
 		Console::Err("Syntax Error: %s (Line %i)", e.what(), e.line());
 		throw;
 	}
-	catch (Validation_Error& e)
+	catch (Validation_Error &e)
 	{
 		Console::Err("Could not load quest: %s", filename.c_str());
 		Console::Err("Validation Error: %s (State: %s)", e.what(), e.state().c_str());
@@ -379,17 +393,16 @@ Quest::~Quest()
 		delete this->quest;
 }
 
-Quest_Context::Quest_Context(Character* character, const Quest* quest)
-	: Context(quest->GetQuest())
-	, character(character)
-	, quest(quest)
-{ }
+Quest_Context::Quest_Context(Character *character, const Quest *quest)
+	: Context(quest->GetQuest()), character(character), quest(quest)
+{
+}
 
-void Quest_Context::BeginState(const std::string& name, const EOPlus::State& state)
+void Quest_Context::BeginState(const std::string &name, const EOPlus::State &state)
 {
 	this->state_desc = state.desc;
 
-	for (auto it = this->progress.begin(); it != this->progress.end(); )
+	for (auto it = this->progress.begin(); it != this->progress.end();)
 	{
 		if (it->first != "d" && it->first != "c")
 			it = this->progress.erase(it);
@@ -422,7 +435,7 @@ void Quest_Context::BeginState(const std::string& name, const EOPlus::State& sta
 	}
 }
 
-bool Quest_Context::DoAction(const EOPlus::Action& action)
+bool Quest_Context::DoAction(const EOPlus::Action &action)
 {
 	if (this->quest->Disabled())
 		return false;
@@ -474,7 +487,7 @@ bool Quest_Context::DoAction(const EOPlus::Action& action)
 			if (it != this->character->world->quests.end())
 			{
 				// WARNING: holds a non-tracked reference to shared_ptr
-				Quest* quest = it->second.get();
+				Quest *quest = it->second.get();
 				auto context = std::make_shared<Quest_Context>(this->character, quest);
 				this->character->quests[it->first] = context;
 				context->SetState(action.expr.args.size() >= 2 ? std::string(action.expr.args[1]) : "begin");
@@ -513,7 +526,7 @@ bool Quest_Context::DoAction(const EOPlus::Action& action)
 		std::string state = std::string(action.expr.args[1]);
 
 		// WARNING: holds a non-tracked reference to shared_ptr
-		Quest_Context* quest = this->character->GetQuest(id).get();
+		Quest_Context *quest = this->character->GetQuest(id).get();
 
 		if (quest)
 		{
@@ -565,8 +578,7 @@ bool Quest_Context::DoAction(const EOPlus::Action& action)
 
 		this->character->exp = std::min(this->character->exp, int(this->character->map->world->config["MaxExp"]));
 
-		while (this->character->level < int(this->character->map->world->config["MaxLevel"])
-		 && this->character->exp >= this->character->map->world->exp_table[this->character->level+1])
+		while (this->character->level < int(this->character->map->world->config["MaxLevel"]) && this->character->exp >= this->character->map->world->exp_table[this->character->level + 1])
 		{
 			level_up = true;
 			++this->character->level;
@@ -721,7 +733,8 @@ bool Quest_Context::DoAction(const EOPlus::Action& action)
 		std::string stat = action.expr.args[0];
 		int value = action.expr.args[1];
 
-		if (!modify_stat(stat, [value](int) { return value; }, this->character))
+		if (!modify_stat(stat, [value](int)
+						 { return value; }, this->character))
 			throw EOPlus::Runtime_Error("Unknown stat: " + stat);
 	}
 	else if (function_name == "givestat")
@@ -729,7 +742,8 @@ bool Quest_Context::DoAction(const EOPlus::Action& action)
 		std::string stat = action.expr.args[0];
 		int value = action.expr.args[1];
 
-		if (!modify_stat(stat, [value](int x) { return x + value; }, this->character))
+		if (!modify_stat(stat, [value](int x)
+						 { return x + value; }, this->character))
 			throw EOPlus::Runtime_Error("Unknown stat: " + stat);
 	}
 	else if (function_name == "removestat")
@@ -737,7 +751,8 @@ bool Quest_Context::DoAction(const EOPlus::Action& action)
 		std::string stat = action.expr.args[0];
 		int value = action.expr.args[1];
 
-		if (!modify_stat(stat, [value](int x) { return x - value; }, this->character))
+		if (!modify_stat(stat, [value](int x)
+						 { return x - value; }, this->character))
 			throw EOPlus::Runtime_Error("Unknown stat: " + stat);
 	}
 	else if (function_name == "roll")
@@ -748,21 +763,21 @@ bool Quest_Context::DoAction(const EOPlus::Action& action)
 	return false;
 }
 
-static bool rpn_char_eval(std::stack<std::string>&& s, Character* character)
+static bool rpn_char_eval(std::stack<std::string> &&s, Character *character)
 {
 	std::unordered_map<std::string, double> formula_vars;
 	character->FormulaVars(formula_vars);
 	return bool(util::rpn_eval(s, formula_vars));
 }
 
-static bool rpn_char_eval(std::deque<std::string>&& dq, Character* character)
+static bool rpn_char_eval(std::deque<std::string> &&dq, Character *character)
 {
 	std::reverse(UTIL_RANGE(dq));
 	std::stack<std::string> s(std::move(dq));
 	return rpn_char_eval(std::move(s), character);
 }
 
-bool Quest_Context::CheckRule(const EOPlus::Expression& expr)
+bool Quest_Context::CheckRule(const EOPlus::Expression &expr)
 {
 	if (this->quest->Disabled())
 		return false;
@@ -792,9 +807,7 @@ bool Quest_Context::CheckRule(const EOPlus::Expression& expr)
 	}
 	else if (function_name == "entercoord")
 	{
-		return this->character->map->id == int(expr.args[0])
-		    && this->character->x == int(expr.args[1])
-		    && this->character->y == int(expr.args[2]);
+		return this->character->map->id == int(expr.args[0]) && this->character->x == int(expr.args[1]) && this->character->y == int(expr.args[2]);
 	}
 	else if (function_name == "leavemap")
 	{
@@ -802,9 +815,7 @@ bool Quest_Context::CheckRule(const EOPlus::Expression& expr)
 	}
 	else if (function_name == "leavecoord")
 	{
-		return this->character->map->id != int(expr.args[0])
-		    || this->character->x != int(expr.args[1])
-		    || this->character->y != int(expr.args[2]);
+		return this->character->map->id != int(expr.args[0]) || this->character->x != int(expr.args[1]) || this->character->y != int(expr.args[2]);
 	}
 	else if (function_name == "gotitems")
 	{
@@ -816,8 +827,7 @@ bool Quest_Context::CheckRule(const EOPlus::Expression& expr)
 	}
 	else if (function_name == "gotspell")
 	{
-		return this->character->HasSpell(int(expr.args[0]))
-		    && (expr.args.size() < 2 || this->character->SpellLevel(int(expr.args[0])) >= int(expr.args[1]));
+		return this->character->HasSpell(int(expr.args[0])) && (expr.args.size() < 2 || this->character->SpellLevel(int(expr.args[0])) >= int(expr.args[1]));
 	}
 	else if (function_name == "lostspell")
 	{
@@ -853,8 +863,7 @@ bool Quest_Context::CheckRule(const EOPlus::Expression& expr)
 		}
 		else
 		{
-			return roll >= int(expr.args[0])
-			    && roll <= int(expr.args[1]);
+			return roll >= int(expr.args[0]) && roll <= int(expr.args[1]);
 		}
 	}
 	else if (function_name == "statis")
@@ -889,12 +898,12 @@ bool Quest_Context::CheckRule(const EOPlus::Expression& expr)
 	return false;
 }
 
-const Quest* Quest_Context::GetQuest() const
+const Quest *Quest_Context::GetQuest() const
 {
 	return this->quest;
 }
 
-const Dialog* Quest_Context::GetDialog(short id) const
+const Dialog *Quest_Context::GetDialog(short id) const
 {
 	if (this->quest->Disabled())
 		return 0;
@@ -920,7 +929,7 @@ Quest_Context::ProgressInfo Quest_Context::Progress() const
 	short goal_progress = 0;
 	short goal_goal = 0;
 
-	const EOPlus::Rule* goal = this->GetGoal();
+	const EOPlus::Rule *goal = this->GetGoal();
 
 	if (goal)
 	{
@@ -1041,7 +1050,8 @@ bool Quest_Context::DialogInput(char link_id)
 	if (this->quest->Disabled())
 		return false;
 
-	return this->TriggerRule("inputnpc", [link_id](const std::deque<util::variant>& args) { return int(args[0]) == link_id; });
+	return this->TriggerRule("inputnpc", [link_id](const std::deque<util::variant> &args)
+							 { return int(args[0]) == link_id; });
 }
 
 bool Quest_Context::TalkedNPC(char vendor_id)
@@ -1049,7 +1059,8 @@ bool Quest_Context::TalkedNPC(char vendor_id)
 	if (this->quest->Disabled())
 		return false;
 
-	return this->TriggerRule("talkedtonpc", [vendor_id](const std::deque<util::variant>& args) { return int(args[0]) == vendor_id; });
+	return this->TriggerRule("talkedtonpc", [vendor_id](const std::deque<util::variant> &args)
+							 { return int(args[0]) == vendor_id; });
 }
 
 void Quest_Context::UsedItem(short id)
@@ -1057,13 +1068,15 @@ void Quest_Context::UsedItem(short id)
 	if (this->quest->Disabled())
 		return;
 
-	bool check = this->QueryRule("useditem", [id](const std::deque<util::variant>& args) { return int(args[0]) == id; });
+	bool check = this->QueryRule("useditem", [id](const std::deque<util::variant> &args)
+								 { return int(args[0]) == id; });
 	short amount = 0;
 
 	if (check)
 		amount = ++this->progress["useditem/" + util::to_string(id)];
 
-	if (this->TriggerRule("useditem", [id, amount](const std::deque<util::variant>& args) { return int(args[0]) == id && amount >= int(args[1]); }))
+	if (this->TriggerRule("useditem", [id, amount](const std::deque<util::variant> &args)
+						  { return int(args[0]) == id && amount >= int(args[1]); }))
 		this->progress.erase("useditem/" + util::to_string(id));
 }
 
@@ -1072,13 +1085,15 @@ void Quest_Context::UsedSpell(short id)
 	if (this->quest->Disabled())
 		return;
 
-	bool check = this->QueryRule("usedspell", [id](const std::deque<util::variant>& args) { return int(args[0]) == id; });
+	bool check = this->QueryRule("usedspell", [id](const std::deque<util::variant> &args)
+								 { return int(args[0]) == id; });
 	short amount = 0;
 
 	if (check)
 		amount = ++this->progress["usedspell/" + util::to_string(id)];
 
-	if (this->TriggerRule("usedspell", [id, amount](const std::deque<util::variant>& args) { return int(args[0]) == id && amount >= int(args[1]); }))
+	if (this->TriggerRule("usedspell", [id, amount](const std::deque<util::variant> &args)
+						  { return int(args[0]) == id && amount >= int(args[1]); }))
 		this->progress.erase("usedspell/" + util::to_string(id));
 }
 
@@ -1087,13 +1102,15 @@ void Quest_Context::KilledNPC(short id)
 	if (this->quest->Disabled())
 		return;
 
-	bool check = this->QueryRule("killednpcs", [id](const std::deque<util::variant>& args) { return int(args[0]) == id; });
+	bool check = this->QueryRule("killednpcs", [id](const std::deque<util::variant> &args)
+								 { return int(args[0]) == id; });
 	short amount = 0;
 
 	if (check)
 		amount = ++this->progress["killednpcs/" + util::to_string(id)];
 
-	if (this->TriggerRule("killednpcs", [id, amount](const std::deque<util::variant>& args) { return int(args[0]) == id && amount >= int(args[1]); }))
+	if (this->TriggerRule("killednpcs", [id, amount](const std::deque<util::variant> &args)
+						  { return int(args[0]) == id && amount >= int(args[1]); }))
 		this->progress.erase("killednpcs/" + util::to_string(id));
 }
 
@@ -1108,18 +1125,16 @@ void Quest_Context::KilledPlayer()
 	if (check)
 		amount = ++this->progress["killedplayers"];
 
-	if (this->TriggerRule("killedplayers", [amount](const std::deque<util::variant>& args) { return amount >= int(args[0]); }))
+	if (this->TriggerRule("killedplayers", [amount](const std::deque<util::variant> &args)
+						  { return amount >= int(args[0]); }))
 		this->progress.erase("killedplayers");
 }
 
 bool Quest_Context::IsHidden() const
 {
-	return this->GetQuest()->GetQuest()->info.hidden == EOPlus::Info::Hidden
-		|| (this->GetQuest()->GetQuest()->info.hidden == EOPlus::Info::HiddenEnd && this->StateName() == "end")
-	    || this->StateName() == "done";
+	return this->GetQuest()->GetQuest()->info.hidden == EOPlus::Info::Hidden || (this->GetQuest()->GetQuest()->info.hidden == EOPlus::Info::HiddenEnd && this->StateName() == "end") || this->StateName() == "done";
 }
 
 Quest_Context::~Quest_Context()
 {
-
 }

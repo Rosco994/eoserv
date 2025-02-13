@@ -47,7 +47,7 @@ void character_cast_spell(void *character_void)
 
 	character->spell_event = 0;
 
-	const ESF_Data& spell = character->world->esf->Get(character->spell_id);
+	const ESF_Data &spell = character->world->esf->Get(character->spell_id);
 
 	if (spell.id == 0)
 		return;
@@ -73,7 +73,7 @@ std::string ItemSerialize(const std::list<Character_Item> &list)
 	return serialized;
 }
 
-std::list<Character_Item> ItemUnserialize(const std::string& serialized)
+std::list<Character_Item> ItemUnserialize(const std::string &serialized)
 {
 	std::list<Character_Item> list;
 
@@ -120,7 +120,7 @@ std::string DollSerialize(const std::array<int, 15> &list)
 	return serialized;
 }
 
-std::array<int, 15> DollUnserialize(const std::string& serialized)
+std::array<int, 15> DollUnserialize(const std::string &serialized)
 {
 	std::array<int, 15> list{{}};
 	std::size_t i = 0;
@@ -162,7 +162,7 @@ std::string SpellSerialize(const std::list<Character_Spell> &list)
 	return serialized;
 }
 
-std::list<Character_Spell> SpellUnserialize(const std::string& serialized)
+std::list<Character_Spell> SpellUnserialize(const std::string &serialized)
 {
 	std::list<Character_Spell> list;
 
@@ -177,7 +177,7 @@ std::list<Character_Spell> SpellUnserialize(const std::string& serialized)
 			continue;
 
 		int id = util::to_int(part.substr(0, pp));
-		int level = util::to_int(part.substr(pp+1));
+		int level = util::to_int(part.substr(pp + 1));
 
 		if (id < 1 || id > 65535 || level < 0)
 		{
@@ -195,7 +195,7 @@ std::list<Character_Spell> SpellUnserialize(const std::string& serialized)
 	return list;
 }
 
-std::string QuestSerialize(const std::map<short, std::shared_ptr<Quest_Context>>& list, const std::set<Character_QuestState>& list_inactive)
+std::string QuestSerialize(const std::map<short, std::shared_ptr<Quest_Context>> &list, const std::set<Character_QuestState> &list_inactive)
 {
 	std::string serialized;
 
@@ -233,7 +233,7 @@ std::string QuestSerialize(const std::map<short, std::shared_ptr<Quest_Context>>
 	return serialized;
 }
 
-void QuestUnserialize(std::string serialized, Character* character)
+void QuestUnserialize(std::string serialized, Character *character)
 {
 	bool conversion_warned = false;
 
@@ -311,7 +311,7 @@ void QuestUnserialize(std::string serialized, Character* character)
 		}
 
 		// WARNING: holds a non-tracked reference to shared_ptr
-		Quest* quest = quest_it->second.get();
+		Quest *quest = quest_it->second.get();
 		auto quest_context(std::make_shared<Quest_Context>(character, quest));
 
 		try
@@ -319,7 +319,7 @@ void QuestUnserialize(std::string serialized, Character* character)
 			quest_context->SetState(state.quest_state, false);
 			quest_context->UnserializeProgress(UTIL_CRANGE(state.quest_progress));
 		}
-		catch (EOPlus::Runtime_Error& ex)
+		catch (EOPlus::Runtime_Error &ex)
 		{
 			Console::Wrn(ex.what());
 			Console::Wrn("Could not resume quest: %i. Marking as inactive.", state.quest_id);
@@ -343,26 +343,19 @@ void QuestUnserialize(std::string serialized, Character* character)
 std::vector<std::string> BotListUnserialize(std::string serialized)
 {
 	std::vector<std::string> bots = util::explode(',', serialized);
-	std::transform(UTIL_CRANGE(bots), bots.begin(), [](std::string s) { return util::lowercase(util::trim(s)); });
+	std::transform(UTIL_CRANGE(bots), bots.begin(), [](std::string s)
+				   { return util::lowercase(util::trim(s)); });
 	return bots;
 }
 
-template <typename T> static T GetRow(std::unordered_map<std::string, util::variant> &row, const char *col)
+template <typename T>
+static T GetRow(std::unordered_map<std::string, util::variant> &row, const char *col)
 {
 	return row[col];
 }
 
 Character::Character(std::string name, World *world)
-	: muted_until(0)
-	, bot(false)
-	, cosmetic_paperdoll{{}}
-	, world(world)
-	, display_str(this->world->config["UseAdjustedStats"] ? adj_str : str)
-	, display_intl(this->world->config["UseAdjustedStats"] ? adj_intl : intl)
-	, display_wis(this->world->config["UseAdjustedStats"] ? adj_wis : wis)
-	, display_agi(this->world->config["UseAdjustedStats"] ? adj_agi : agi)
-	, display_con(this->world->config["UseAdjustedStats"] ? adj_con : con)
-	, display_cha(this->world->config["UseAdjustedStats"] ? adj_cha : cha)
+	: muted_until(0), bot(false), cosmetic_paperdoll{{}}, world(world), display_str(this->world->config["UseAdjustedStats"] ? adj_str : str), display_intl(this->world->config["UseAdjustedStats"] ? adj_intl : intl), display_wis(this->world->config["UseAdjustedStats"] ? adj_wis : wis), display_agi(this->world->config["UseAdjustedStats"] ? adj_agi : agi), display_con(this->world->config["UseAdjustedStats"] ? adj_con : con), display_cha(this->world->config["UseAdjustedStats"] ? adj_cha : cha)
 {
 	{
 		std::vector<std::string> bot_characters = BotListUnserialize(this->world->config["BotCharacters"]);
@@ -371,9 +364,10 @@ Character::Character(std::string name, World *world)
 	}
 
 	Database_Result res = this->world->db.Query("SELECT `name`, `title`, `home`, `fiance`, `partner`, `admin`, `class`, `gender`, `race`, `hairstyle`, `haircolor`,"
-	"`map`, `x`, `y`, `direction`, `level`, `exp`, `hp`, `tp`, `str`, `int`, `wis`, `agi`, `con`, `cha`, `statpoints`, `skillpoints`, "
-	"`karma`, `sitting`, `hidden`, `bankmax`, `goldbank`, `usage`, `inventory`, `bank`, `paperdoll`, `spells`, `guild`, `guild_rank`, `guild_rank_string`, `quest`, `vars`, "
-	"`nointeract` FROM `characters` WHERE `name` = '$'", name.c_str());
+												"`map`, `x`, `y`, `direction`, `level`, `exp`, `hp`, `tp`, `str`, `int`, `wis`, `agi`, `con`, `cha`, `statpoints`, `skillpoints`, "
+												"`karma`, `sitting`, `hidden`, `bankmax`, `goldbank`, `usage`, `inventory`, `bank`, `paperdoll`, `spells`, `guild`, `guild_rank`, `guild_rank_string`, `quest`, `vars`, "
+												"`nointeract` FROM `characters` WHERE `name` = '$'",
+												name.c_str());
 	std::unordered_map<std::string, util::variant> row = res.front();
 
 	this->login_time = std::time(0);
@@ -518,7 +512,7 @@ void Character::Login()
 		if (it != this->world->quests.end())
 		{
 			// WARNING: holds a non-tracked reference to shared_ptr
-			Quest* quest = it->second.get();
+			Quest *quest = it->second.get();
 
 			if (!quest->Disabled())
 			{
@@ -639,7 +633,7 @@ void Character::Effect(int effect, bool echo)
 	}
 }
 
-void Character::PlayBard(unsigned char instrument, unsigned char note, bool echo )
+void Character::PlayBard(unsigned char instrument, unsigned char note, bool echo)
 {
 	PacketBuilder builder(PACKET_JUKEBOX, PACKET_MSG, 5);
 
@@ -689,12 +683,14 @@ int Character::HasItem(short item, bool include_trade)
 
 bool Character::HasSpell(short spell)
 {
-	return (std::find_if(UTIL_RANGE(this->spells), [&](Character_Spell cs) { return cs.id == spell; }) != this->spells.end());
+	return (std::find_if(UTIL_RANGE(this->spells), [&](Character_Spell cs)
+						 { return cs.id == spell; }) != this->spells.end());
 }
 
 short Character::SpellLevel(short spell)
 {
-	auto it = std::find_if(UTIL_RANGE(this->spells), [&](Character_Spell cs) { return cs.id == spell; });
+	auto it = std::find_if(UTIL_RANGE(this->spells), [&](Character_Spell cs)
+						   { return cs.id == spell; });
 
 	if (it != this->spells.end())
 		return it->level;
@@ -799,8 +795,7 @@ int Character::CanHoldItem(short itemid, int max_amount)
 {
 	int amount = max_amount;
 
-	if (int(this->world->config["EnforceWeight"]) >= 2
-	 && SourceDutyAccess() < static_cast<int>(world->config["unlimitedweight"]))
+	if (int(this->world->config["EnforceWeight"]) >= 2 && SourceDutyAccess() < static_cast<int>(world->config["unlimitedweight"]))
 	{
 		const EIF_Data &item = this->world->eif->Get(itemid);
 
@@ -850,7 +845,6 @@ bool Character::AddTradeItem(short item, int amount)
 		{
 			return false;
 		}
-
 	}
 
 	UTIL_FOREACH_REF(this->trade_inventory, character_item)
@@ -908,7 +902,8 @@ bool Character::AddSpell(short spell)
 
 bool Character::DelSpell(short spell)
 {
-	auto remove_it = std::remove_if(UTIL_RANGE(this->spells), [&](Character_Spell cs) { return cs.id == spell; });
+	auto remove_it = std::remove_if(UTIL_RANGE(this->spells), [&](Character_Spell cs)
+									{ return cs.id == spell; });
 	bool removed = (remove_it != this->spells.end());
 	this->spells.erase(remove_it, this->spells.end());
 
@@ -952,51 +947,51 @@ void Character::SpellAct()
 
 	switch (spell_target)
 	{
-		case TargetSelf:
-			if (spell.target_restrict != ESF::Friendly || spell.target != ESF::Self)
-				return;
-
-			this->map->SpellSelf(this, spell_id);
-
-			break;
-
-		case TargetNPC:
-			if (spell.target_restrict == ESF::Friendly || spell.target != ESF::Normal)
-				return;
-
-			npc_victim = this->map->GetNPCIndex(spell_target_id);
-
-			if (npc_victim)
-				this->map->SpellAttack(this, npc_victim, spell_id);
-
-			// *npc_victim may not be valid here
-
-			break;
-
-		case TargetPlayer:
-			if (spell.target_restrict == ESF::NPCOnly || spell.target != ESF::Normal)
-				return;
-
-			victim = this->map->GetCharacterPID(spell_target_id);
-
-			if (spell.target_restrict != ESF::Friendly && victim == this)
-				return;
-
-			if (victim)
-				this->map->SpellAttackPK(this, victim, spell_id);
-
-			break;
-
-		case TargetGroup:
-			if (spell.target_restrict != ESF::Friendly || spell.target != ESF::Group)
-				return;
-
-			this->map->SpellGroup(this, spell_id);
-
-			break;
-
-		default:
+	case TargetSelf:
+		if (spell.target_restrict != ESF::Friendly || spell.target != ESF::Self)
 			return;
+
+		this->map->SpellSelf(this, spell_id);
+
+		break;
+
+	case TargetNPC:
+		if (spell.target_restrict == ESF::Friendly || spell.target != ESF::Normal)
+			return;
+
+		npc_victim = this->map->GetNPCIndex(spell_target_id);
+
+		if (npc_victim)
+			this->map->SpellAttack(this, npc_victim, spell_id);
+
+		// *npc_victim may not be valid here
+
+		break;
+
+	case TargetPlayer:
+		if (spell.target_restrict == ESF::NPCOnly || spell.target != ESF::Normal)
+			return;
+
+		victim = this->map->GetCharacterPID(spell_target_id);
+
+		if (spell.target_restrict != ESF::Friendly && victim == this)
+			return;
+
+		if (victim)
+			this->map->SpellAttackPK(this, victim, spell_id);
+
+		break;
+
+	case TargetGroup:
+		if (spell.target_restrict != ESF::Friendly || spell.target != ESF::Group)
+			return;
+
+		this->map->SpellGroup(this, spell_id);
+
+		break;
+
+	default:
+		return;
 	}
 
 	UTIL_FOREACH(this->quests, q)
@@ -1105,7 +1100,7 @@ bool Character::Equip(short item, unsigned char subloc)
 	{
 		if (this->paperdoll[Shield])
 		{
-			const EIF_Data& shield_eif = this->world->eif->Get(this->paperdoll[Shield]);
+			const EIF_Data &shield_eif = this->world->eif->Get(this->paperdoll[Shield]);
 
 			if (eif.dual_wield_dollgraphic || (shield_eif.subtype != EIF::Arrows && shield_eif.subtype != EIF::Wings))
 			{
@@ -1119,10 +1114,9 @@ bool Character::Equip(short item, unsigned char subloc)
 	{
 		if (this->paperdoll[Weapon])
 		{
-			const EIF_Data& weapon_eif = this->world->eif->Get(this->paperdoll[Weapon]);
+			const EIF_Data &weapon_eif = this->world->eif->Get(this->paperdoll[Weapon]);
 
-			if (weapon_eif.subtype == EIF::TwoHanded
-			 && (weapon_eif.dual_wield_dollgraphic || (eif.subtype != EIF::Arrows && eif.subtype != EIF::Wings)))
+			if (weapon_eif.subtype == EIF::TwoHanded && (weapon_eif.dual_wield_dollgraphic || (eif.subtype != EIF::Arrows && eif.subtype != EIF::Wings)))
 			{
 				this->StatusMsg(this->world->i18n.Format("two_handed_fail_2"));
 				return false;
@@ -1130,29 +1124,39 @@ bool Character::Equip(short item, unsigned char subloc)
 		}
 	}
 
-	if (this->level < eif.levelreq || (this->clas != eif.classreq && ecf.base != eif.classreq)
-	 || this->display_str < eif.strreq || this->display_intl < eif.intreq
-	 || this->display_wis < eif.wisreq || this->display_agi < eif.agireq
-	 || this->display_con < eif.conreq || this->display_cha < eif.chareq)
+	if (this->level < eif.levelreq || (this->clas != eif.classreq && ecf.base != eif.classreq) || this->display_str < eif.strreq || this->display_intl < eif.intreq || this->display_wis < eif.wisreq || this->display_agi < eif.agireq || this->display_con < eif.conreq || this->display_cha < eif.chareq)
 	{
 		return false;
 	}
 
 	switch (eif.type)
 	{
-		case EIF::Weapon: return character_equip_oneslot(this, item, subloc, Weapon);
-		case EIF::Shield: return character_equip_oneslot(this, item, subloc, Shield);
-		case EIF::Hat: return character_equip_oneslot(this, item, subloc, Hat);
-		case EIF::Boots: return character_equip_oneslot(this, item, subloc, Boots);
-		case EIF::Gloves: return character_equip_oneslot(this, item, subloc, Gloves);
-		case EIF::Accessory: return character_equip_oneslot(this, item, subloc, Accessory);
-		case EIF::Belt: return character_equip_oneslot(this, item, subloc, Belt);
-		case EIF::Armor: return character_equip_oneslot(this, item, subloc, Armor);
-		case EIF::Necklace: return character_equip_oneslot(this, item, subloc, Necklace);
-		case EIF::Ring: return character_equip_twoslot(this, item, subloc, Ring1, Ring2);
-		case EIF::Armlet: return character_equip_twoslot(this, item, subloc, Armlet1, Armlet2);
-		case EIF::Bracer: return character_equip_twoslot(this, item, subloc, Bracer1, Bracer2);
-		default: return false;
+	case EIF::Weapon:
+		return character_equip_oneslot(this, item, subloc, Weapon);
+	case EIF::Shield:
+		return character_equip_oneslot(this, item, subloc, Shield);
+	case EIF::Hat:
+		return character_equip_oneslot(this, item, subloc, Hat);
+	case EIF::Boots:
+		return character_equip_oneslot(this, item, subloc, Boots);
+	case EIF::Gloves:
+		return character_equip_oneslot(this, item, subloc, Gloves);
+	case EIF::Accessory:
+		return character_equip_oneslot(this, item, subloc, Accessory);
+	case EIF::Belt:
+		return character_equip_oneslot(this, item, subloc, Belt);
+	case EIF::Armor:
+		return character_equip_oneslot(this, item, subloc, Armor);
+	case EIF::Necklace:
+		return character_equip_oneslot(this, item, subloc, Necklace);
+	case EIF::Ring:
+		return character_equip_twoslot(this, item, subloc, Ring1, Ring2);
+	case EIF::Armlet:
+		return character_equip_twoslot(this, item, subloc, Armlet1, Armlet2);
+	case EIF::Bracer:
+		return character_equip_twoslot(this, item, subloc, Bracer1, Bracer2);
+	default:
+		return false;
 	}
 }
 
@@ -1517,7 +1521,7 @@ void Character::CheckQuestRules()
 
 void Character::CalculateStats(bool trigger_quests)
 {
-	const ECF_Data& ecf = world->ecf->Get(this->clas);
+	const ECF_Data &ecf = world->ecf->Get(this->clas);
 
 	int max_weight = this->world->config["MaxWeight"];
 	int max_hptp = this->world->config["MaxHPTP"];
@@ -1555,7 +1559,7 @@ void Character::CalculateStats(bool trigger_quests)
 	{
 		if (i)
 		{
-			const EIF_Data& item = this->world->eif->Get(i);
+			const EIF_Data &item = this->world->eif->Get(i);
 			this->weight += item.weight;
 			this->maxhp += item.hp;
 			this->maxtp += item.tp;
@@ -1647,7 +1651,8 @@ void Character::CalculateStats(bool trigger_quests)
 
 void Character::DropAll(Character *killer)
 {
-	if (!CanInteractItems()) return;
+	if (!CanInteractItems())
+		return;
 
 	std::list<Character_Item>::iterator it = this->inventory.begin();
 
@@ -1858,7 +1863,7 @@ void Character::SpikeDamage(int amount)
 
 	this->Send(builder2);
 
-	for (Character* watcher : this->map->CharactersInRange(this->x, this->y, static_cast<int>(this->world->config["SeeDistance"])))
+	for (Character *watcher : this->map->CharactersInRange(this->x, this->y, static_cast<int>(this->world->config["SeeDistance"])))
 	{
 		if (watcher == this)
 			continue;
@@ -1866,7 +1871,6 @@ void Character::SpikeDamage(int amount)
 		watcher->Send(builder3);
 	}
 }
-
 
 void Character::DeathRespawn()
 {
@@ -1885,20 +1889,22 @@ void Character::DeathRespawn()
 	this->y = this->SpawnY();
 
 	this->player->client->queue.AddAction(PacketReader(std::array<char, 2>{
-		{char(PACKET_INTERNAL_NULL), char(PACKET_INTERNAL)}
-	}.data()), 1.5);
+											  {char(PACKET_INTERNAL_NULL), char(PACKET_INTERNAL)}}
+														   .data()),
+										  1.5);
 
 	this->player->client->queue.AddAction(PacketReader(std::array<char, 2>{
-		{char(PACKET_INTERNAL_WARP), char(PACKET_INTERNAL)}
-	}.data()), 0.0);
+											  {char(PACKET_INTERNAL_WARP), char(PACKET_INTERNAL)}}
+														   .data()),
+										  0.0);
 }
 
 void Character::Mute(const Command_Source *by)
 {
 	this->muted_until = time(0) + int(this->world->config["MuteLength"]);
-    PacketBuilder builder(PACKET_TALK, PACKET_SPEC, by->SourceName().length());
-    builder.AddString(by->SourceName());
-    this->Send(builder);
+	PacketBuilder builder(PACKET_TALK, PACKET_SPEC, by->SourceName().length());
+	builder.AddString(by->SourceName());
+	this->Send(builder);
 }
 
 void Character::PlaySound(unsigned char id)
@@ -1914,14 +1920,14 @@ void Character::PlaySound(unsigned char id)
 void Character::FormulaVars(std::unordered_map<std::string, double> &vars, std::string prefix)
 {
 	v(level) vv(exp, "experience") v(hp) v(maxhp) v(tp) v(maxtp) v(maxsp)
-	v(weight) v(maxweight) v(karma) v(mindam) v(maxdam)
-	vv(adj_str, "str") vv(adj_intl, "int") vv(adj_wis, "wis") vv(adj_agi, "agi") vv(adj_con, "con") vv(adj_cha, "cha")
-	vv(str, "base_str") vv(intl, "base_int") vv(wis, "base_wis") vv(agi, "base_agi") vv(con, "base_con") vv(cha, "base_cha")
-	v(display_str) vv(display_intl, "display_int") v(display_wis) v(display_agi) v(display_con) v(display_cha)
-	v(accuracy) v(evade) v(armor) v(admin) v(bot) v(usage)
-	vv(clas, "class") v(gender) v(race) v(hairstyle) v(haircolor)
-	v(mapid) v(x) v(y) v(direction) v(sitting) v(hidden) v(whispers) v(goldbank)
-	v(statpoints) v(skillpoints)
+		v(weight) v(maxweight) v(karma) v(mindam) v(maxdam)
+			vv(adj_str, "str") vv(adj_intl, "int") vv(adj_wis, "wis") vv(adj_agi, "agi") vv(adj_con, "con") vv(adj_cha, "cha")
+				vv(str, "base_str") vv(intl, "base_int") vv(wis, "base_wis") vv(agi, "base_agi") vv(con, "base_con") vv(cha, "base_cha")
+					v(display_str) vv(display_intl, "display_int") v(display_wis) v(display_agi) v(display_con) v(display_cha)
+						v(accuracy) v(evade) v(armor) v(admin) v(bot) v(usage)
+							vv(clas, "class") v(gender) v(race) v(hairstyle) v(haircolor)
+								v(mapid) v(x) v(y) v(direction) v(sitting) v(hidden) v(whispers) v(goldbank)
+									v(statpoints) v(skillpoints)
 }
 
 #undef vv
@@ -1988,9 +1994,9 @@ void Character::Undress(EquipLocation loc)
 	}
 }
 
-void Character::AddPaperdollData(PacketBuilder& builder, const char* format)
+void Character::AddPaperdollData(PacketBuilder &builder, const char *format)
 {
-	const EIF_Data& wep = this->world->eif->Get(this->paperdoll[Character::Weapon]);
+	const EIF_Data &wep = this->world->eif->Get(this->paperdoll[Character::Weapon]);
 
 	unsigned short boots = this->world->eif->Get(this->paperdoll[Character::Boots]).dollgraphic;
 	unsigned short armor = this->world->eif->Get(this->paperdoll[Character::Armor]).dollgraphic;
@@ -2001,28 +2007,50 @@ void Character::AddPaperdollData(PacketBuilder& builder, const char* format)
 	if (wep.subtype == EIF::TwoHanded && wep.dual_wield_dollgraphic)
 		shield = wep.dual_wield_dollgraphic;
 
-	if (this->cosmetic_paperdoll[Character::Boots])  boots = this->cosmetic_paperdoll[Character::Boots];
-	if (this->cosmetic_paperdoll[Character::Armor])  armor = this->cosmetic_paperdoll[Character::Armor];
-	if (this->cosmetic_paperdoll[Character::Hat])    hat = this->cosmetic_paperdoll[Character::Hat];
-	if (this->cosmetic_paperdoll[Character::Weapon]) weapon = this->cosmetic_paperdoll[Character::Weapon];
-	if (this->cosmetic_paperdoll[Character::Shield]) shield = this->cosmetic_paperdoll[Character::Shield];
+	if (this->cosmetic_paperdoll[Character::Boots])
+		boots = this->cosmetic_paperdoll[Character::Boots];
+	if (this->cosmetic_paperdoll[Character::Armor])
+		armor = this->cosmetic_paperdoll[Character::Armor];
+	if (this->cosmetic_paperdoll[Character::Hat])
+		hat = this->cosmetic_paperdoll[Character::Hat];
+	if (this->cosmetic_paperdoll[Character::Weapon])
+		weapon = this->cosmetic_paperdoll[Character::Weapon];
+	if (this->cosmetic_paperdoll[Character::Shield])
+		shield = this->cosmetic_paperdoll[Character::Shield];
 
-	if (boots == 65535)  boots = 0;
-	if (armor == 65535)  armor = 0;
-	if (hat == 65535)    hat = 0;
-	if (weapon == 65535) weapon = 0;
-	if (shield == 65535) shield = 0;
+	if (boots == 65535)
+		boots = 0;
+	if (armor == 65535)
+		armor = 0;
+	if (hat == 65535)
+		hat = 0;
+	if (weapon == 65535)
+		weapon = 0;
+	if (shield == 65535)
+		shield = 0;
 
-	for (const char* p = format; *p != '\0'; ++p)
+	for (const char *p = format; *p != '\0'; ++p)
 	{
 		switch (*p)
 		{
-			case 'B': builder.AddShort(boots); break;
-			case 'A': builder.AddShort(armor); break;
-			case 'H': builder.AddShort(hat); break;
-			case 'W': builder.AddShort(weapon); break;
-			case 'S': builder.AddShort(shield); break;
-			case '0': builder.AddShort(0); break;
+		case 'B':
+			builder.AddShort(boots);
+			break;
+		case 'A':
+			builder.AddShort(armor);
+			break;
+		case 'H':
+			builder.AddShort(hat);
+			break;
+		case 'W':
+			builder.AddShort(weapon);
+			break;
+		case 'S':
+			builder.AddShort(shield);
+			break;
+		case '0':
+			builder.AddShort(0);
+			break;
 		}
 	}
 }
@@ -2039,7 +2067,7 @@ std::string Character::GetChatLogDump()
 {
 	std::string result;
 
-	for (const std::string& line : chat_log)
+	for (const std::string &line : chat_log)
 	{
 		result += line;
 		result += "\r\n";
@@ -2117,9 +2145,9 @@ void Character::Logout()
 
 void Character::Save()
 {
-	const std::string & quest_data = (!this->quest_string.empty())
-	                               ? this->quest_string
-	                               : QuestSerialize(this->quests, this->quests_inactive);
+	const std::string &quest_data = (!this->quest_string.empty())
+										? this->quest_string
+										: QuestSerialize(this->quests, this->quests_inactive);
 
 	int nointeract = this->nointeract;
 
@@ -2130,16 +2158,16 @@ void Character::Save()
 	Console::Dbg("Saving character '%s' (session lasted %i minutes)", this->real_name.c_str(), int(std::time(0) - this->login_time) / 60);
 #endif // DEBUG
 	this->world->db.Query("UPDATE `characters` SET `title` = '$', `home` = '$', `fiance` = '$', `partner` = '$', `admin` = #, `class` = #, `gender` = #, `race` = #, "
-		"`hairstyle` = #, `haircolor` = #, `map` = #, `x` = #, `y` = #, `direction` = #, `level` = #, `exp` = #, `hp` = #, `tp` = #, "
-		"`str` = #, `int` = #, `wis` = #, `agi` = #, `con` = #, `cha` = #, `statpoints` = #, `skillpoints` = #, `karma` = #, `sitting` = #, `hidden` = #, "
-		"`nointeract` = #, `bankmax` = #, `goldbank` = #, `usage` = #, `inventory` = '$', `bank` = '$', `paperdoll` = '$', "
-		"`spells` = '$', `guild` = '$', `guild_rank` = #, `guild_rank_string` = '$', `quest` = '$', `vars` = '$' WHERE `name` = '$'",
-		this->title.c_str(), this->home.c_str(), this->fiance.c_str(), this->partner.c_str(), int(this->admin), this->clas, int(this->gender), int(this->race),
-		this->hairstyle, this->haircolor, this->mapid, this->x, this->y, int(this->direction), this->level, this->exp, this->hp, this->tp,
-		this->str, this->intl, this->wis, this->agi, this->con, this->cha, this->statpoints, this->skillpoints, this->karma, int(this->sitting), int(this->hidden),
-		nointeract, this->bankmax, this->goldbank, this->Usage(), ItemSerialize(this->inventory).c_str(), ItemSerialize(this->bank).c_str(),
-		DollSerialize(this->paperdoll).c_str(), SpellSerialize(this->spells).c_str(), (this->guild ? this->guild->tag.c_str() : ""),
-		this->guild_rank, this->guild_rank_string.c_str(), quest_data.c_str(), "", this->real_name.c_str());
+						  "`hairstyle` = #, `haircolor` = #, `map` = #, `x` = #, `y` = #, `direction` = #, `level` = #, `exp` = #, `hp` = #, `tp` = #, "
+						  "`str` = #, `int` = #, `wis` = #, `agi` = #, `con` = #, `cha` = #, `statpoints` = #, `skillpoints` = #, `karma` = #, `sitting` = #, `hidden` = #, "
+						  "`nointeract` = #, `bankmax` = #, `goldbank` = #, `usage` = #, `inventory` = '$', `bank` = '$', `paperdoll` = '$', "
+						  "`spells` = '$', `guild` = '$', `guild_rank` = #, `guild_rank_string` = '$', `quest` = '$', `vars` = '$' WHERE `name` = '$'",
+						  this->title.c_str(), this->home.c_str(), this->fiance.c_str(), this->partner.c_str(), int(this->admin), this->clas, int(this->gender), int(this->race),
+						  this->hairstyle, this->haircolor, this->mapid, this->x, this->y, int(this->direction), this->level, this->exp, this->hp, this->tp,
+						  this->str, this->intl, this->wis, this->agi, this->con, this->cha, this->statpoints, this->skillpoints, this->karma, int(this->sitting), int(this->hidden),
+						  nointeract, this->bankmax, this->goldbank, this->Usage(), ItemSerialize(this->inventory).c_str(), ItemSerialize(this->bank).c_str(),
+						  DollSerialize(this->paperdoll).c_str(), SpellSerialize(this->spells).c_str(), (this->guild ? this->guild->tag.c_str() : ""),
+						  this->guild_rank, this->guild_rank_string.c_str(), quest_data.c_str(), "", this->real_name.c_str());
 }
 
 AdminLevel Character::SourceAccess() const
@@ -2157,12 +2185,12 @@ std::string Character::SourceName() const
 	return faux_name.empty() ? real_name : faux_name;
 }
 
-Character* Character::SourceCharacter()
+Character *Character::SourceCharacter()
 {
 	return this;
 }
 
-World* Character::SourceWorld()
+World *Character::SourceWorld()
 {
 	return this->world;
 }

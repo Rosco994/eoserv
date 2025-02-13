@@ -20,84 +20,81 @@
 namespace Commands
 {
 
-static void do_punishment(Command_Source* from, Character* victim, std::function<void(World*, Command_Source*, Character*, bool)> f, bool announce)
-{
-	World* world = from->SourceWorld();
+	static void do_punishment(Command_Source *from, Character *victim, std::function<void(World *, Command_Source *, Character *, bool)> f, bool announce)
+	{
+		World *world = from->SourceWorld();
 
-	if (!victim || victim->nowhere)
-	{
-		from->ServerMsg(world->i18n.Format("character_not_found"));
-	}
-	else
-	{
-		if (victim->SourceAccess() < from->SourceAccess())
+		if (!victim || victim->nowhere)
 		{
-			f(world, from, victim, announce);
+			from->ServerMsg(world->i18n.Format("character_not_found"));
 		}
 		else
 		{
-			from->ServerMsg(world->i18n.Format("command_access_denied"));
+			if (victim->SourceAccess() < from->SourceAccess())
+			{
+				f(world, from, victim, announce);
+			}
+			else
+			{
+				from->ServerMsg(world->i18n.Format("command_access_denied"));
+			}
 		}
 	}
-}
 
-void Kick(const std::vector<std::string>& arguments, Command_Source* from, bool announce = true)
-{
-	Character* victim = from->SourceWorld()->GetCharacter(arguments[0]);
-	do_punishment(from, victim, std::mem_fn(&World::Kick), announce);
-}
-
-void Ban(const std::vector<std::string>& arguments, Command_Source* from, bool announce = true)
-{
-	Character* victim = from->SourceWorld()->GetCharacter(arguments[0]);
-	int duration = -1;
-
-	if (arguments.size() >= 2)
+	void Kick(const std::vector<std::string> &arguments, Command_Source *from, bool announce = true)
 	{
-		if (util::lowercase(arguments[1]) != "forever")
-			duration = int(util::tdparse(arguments[1]));
-	}
-	else
-	{
-		duration = int(util::tdparse(from->SourceWorld()->config["DefaultBanLength"]));
+		Character *victim = from->SourceWorld()->GetCharacter(arguments[0]);
+		do_punishment(from, victim, std::mem_fn(&World::Kick), announce);
 	}
 
-	do_punishment(from, victim, [duration](World* world, Command_Source* from, Character* victim, bool announce)
+	void Ban(const std::vector<std::string> &arguments, Command_Source *from, bool announce = true)
+	{
+		Character *victim = from->SourceWorld()->GetCharacter(arguments[0]);
+		int duration = -1;
+
+		if (arguments.size() >= 2)
 		{
-			world->Ban(from, victim, duration, announce);
-		}, announce);
-}
+			if (util::lowercase(arguments[1]) != "forever")
+				duration = int(util::tdparse(arguments[1]));
+		}
+		else
+		{
+			duration = int(util::tdparse(from->SourceWorld()->config["DefaultBanLength"]));
+		}
 
-void Jail(const std::vector<std::string>& arguments, Command_Source* from, bool announce = true)
-{
-	Character* victim = from->SourceWorld()->GetCharacter(arguments[0]);
-	do_punishment(from, victim, std::mem_fn(&World::Jail), announce);
-}
-
-void Unjail(const std::vector<std::string>& arguments, Command_Source* from)
-{
-	Character* victim = from->SourceWorld()->GetCharacter(arguments[0]);
-
-	if (victim && victim->mapid != static_cast<int>(from->SourceWorld()->config["JailMap"]))
-	{
-		from->ServerMsg(from->SourceWorld()->i18n.Format("command_access_denied"));
-		return;
+		do_punishment(from, victim, [duration](World *world, Command_Source *from, Character *victim, bool announce)
+					  { world->Ban(from, victim, duration, announce); }, announce);
 	}
 
-	do_punishment(from, victim, [](World* world, Command_Source* from, Character* victim, bool announce)
+	void Jail(const std::vector<std::string> &arguments, Command_Source *from, bool announce = true)
+	{
+		Character *victim = from->SourceWorld()->GetCharacter(arguments[0]);
+		do_punishment(from, victim, std::mem_fn(&World::Jail), announce);
+	}
+
+	void Unjail(const std::vector<std::string> &arguments, Command_Source *from)
+	{
+		Character *victim = from->SourceWorld()->GetCharacter(arguments[0]);
+
+		if (victim && victim->mapid != static_cast<int>(from->SourceWorld()->config["JailMap"]))
 		{
+			from->ServerMsg(from->SourceWorld()->i18n.Format("command_access_denied"));
+			return;
+		}
+
+		do_punishment(from, victim, [](World *world, Command_Source *from, Character *victim, bool announce)
+					  {
 			(void)announce;
-			world->Unjail(from, victim);
-		}, false);
-}
+			world->Unjail(from, victim); }, false);
+	}
 
-void Mute(const std::vector<std::string>& arguments, Command_Source* from, bool announce = true)
-{
-	Character* victim = from->SourceWorld()->GetCharacter(arguments[0]);
-	do_punishment(from, victim, std::mem_fn(&World::Mute), announce);
-}
+	void Mute(const std::vector<std::string> &arguments, Command_Source *from, bool announce = true)
+	{
+		Character *victim = from->SourceWorld()->GetCharacter(arguments[0]);
+		do_punishment(from, victim, std::mem_fn(&World::Mute), announce);
+	}
 
-COMMAND_HANDLER_REGISTER(moderation)
+	COMMAND_HANDLER_REGISTER(moderation)
 	using namespace std::placeholders;
 	Register({"kick", {"victim"}, {}}, std::bind(Kick, _1, _2, true));
 	Register({"skick", {"victim"}, {}, 2}, std::bind(Kick, _1, _2, false));
@@ -115,6 +112,6 @@ COMMAND_HANDLER_REGISTER(moderation)
 	RegisterAlias("u", "unjail");
 	RegisterAlias("uj", "unjail");
 	RegisterAlias("m", "mute");
-COMMAND_HANDLER_REGISTER_END(moderation)
+	COMMAND_HANDLER_REGISTER_END(moderation)
 
 }

@@ -10,16 +10,16 @@
 namespace Handlers
 {
 
-// User requesting data of all objects in their location
-void Refresh_Request(Character *character, PacketReader &reader)
-{
-	(void)reader;
+	// User requesting data of all objects in their location
+	void Refresh_Request(Character *character, PacketReader &reader)
+	{
+		(void)reader;
 
-	character->Refresh();
-}
+		character->Refresh();
+	}
 
-PACKET_HANDLER_REGISTER(PACKET_REFRESH)
+	PACKET_HANDLER_REGISTER(PACKET_REFRESH)
 	Register(PACKET_REQUEST, Refresh_Request, Playing);
-PACKET_HANDLER_REGISTER_END(PACKET_REFRESH)
+	PACKET_HANDLER_REGISTER_END(PACKET_REFRESH)
 
 }

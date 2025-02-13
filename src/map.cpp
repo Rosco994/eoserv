@@ -44,8 +44,20 @@ static void map_safe_fail(int line)
 	Console::Err("Invalid file / failed read/seek: %s -- %i", map_safe_fail_filename, line);
 }
 
-#define SAFE_SEEK(fh, offset, from) if (std::fseek(fh, offset, from) != 0) { std::fclose(fh); map_safe_fail(__LINE__); return false; }
-#define SAFE_READ(buf, size, count, fh) if (std::fread(buf, size, count, fh) != static_cast<int>(count)) {  std::fclose(fh); map_safe_fail(__LINE__);return false; }
+#define SAFE_SEEK(fh, offset, from)        \
+	if (std::fseek(fh, offset, from) != 0) \
+	{                                      \
+		std::fclose(fh);                   \
+		map_safe_fail(__LINE__);           \
+		return false;                      \
+	}
+#define SAFE_READ(buf, size, count, fh)                              \
+	if (std::fread(buf, size, count, fh) != static_cast<int>(count)) \
+	{                                                                \
+		std::fclose(fh);                                             \
+		map_safe_fail(__LINE__);                                     \
+		return false;                                                \
+	}
 
 void map_spawn_chests(void *map_void)
 {
@@ -61,7 +73,7 @@ void map_spawn_chests(void *map_void)
 
 		UTIL_FOREACH(chest->spawns, spawn)
 		{
-			if (spawn.last_taken + spawn.time*60.0 < current_time)
+			if (spawn.last_taken + spawn.time * 60.0 < current_time)
 			{
 				bool slot_used = false;
 
@@ -84,7 +96,7 @@ void map_spawn_chests(void *map_void)
 		{
 			if (!slot_spawns.empty())
 			{
-				const Map_Chest_Spawn& spawn = *std::next(slot_spawns.cbegin(), util::rand(0, slot_spawns.size() - 1));
+				const Map_Chest_Spawn &spawn = *std::next(slot_spawns.cbegin(), util::rand(0, slot_spawns.size() - 1));
 
 				chest->AddItem(spawn.item.id, spawn.item.amount, spawn.slot);
 				needs_update = true;
@@ -145,7 +157,7 @@ void map_evacuate(void *map_evacuate_void)
 	}
 	else
 	{
-		std::vector<Character*> evac_chars;
+		std::vector<Character *> evac_chars;
 
 		UTIL_FOREACH(evac->map->characters, character)
 		{
@@ -353,7 +365,7 @@ Map::Map(int id, World *world)
 		TimeEvent *event = new TimeEvent(map_spawn_chests, this, 60.0, Timer::FOREVER);
 		this->world->timer.Register(event);
 	}
-	for (NPC* npc : this->npcs)
+	for (NPC *npc : this->npcs)
 	{
 		if (npc->ENF().type == ENF::Priest)
 		{
@@ -404,24 +416,24 @@ void Map::LoadArena()
 
 				switch (i++ % 4)
 				{
-					case 1:
-						s = new Arena_Spawn;
-						s->sx = util::to_int(spawn);
-						break;
+				case 1:
+					s = new Arena_Spawn;
+					s->sx = util::to_int(spawn);
+					break;
 
-					case 2:
-						s->sy = util::to_int(spawn);
-						break;
+				case 2:
+					s->sy = util::to_int(spawn);
+					break;
 
-					case 3:
-						s->dx = util::to_int(spawn);
-						break;
+				case 3:
+					s->dx = util::to_int(spawn);
+					break;
 
-					case 0:
-						s->dy = util::to_int(spawn);
-						this->arena->spawns.push_back(s);
-						s = 0;
-						break;
+				case 0:
+					s->dy = util::to_int(spawn);
+					this->arena->spawns.push_back(s);
+					s = 0;
+					break;
 				}
 			}
 
@@ -658,20 +670,19 @@ bool Map::Load()
 			{
 				Map_Chest_Spawn spawn;
 
-				spawn.slot = slot+1;
+				spawn.slot = slot + 1;
 				spawn.time = time;
 				spawn.last_taken = Timer::GetTime();
 				spawn.item.id = itemid;
 				spawn.item.amount = amount;
 
 				chest->spawns.push_back(spawn);
-				chest->slots = std::max(chest->slots, slot+1);
+				chest->slots = std::max(chest->slots, slot + 1);
 				goto skip_warning;
 			}
 		}
 		Console::Wrn("A chest spawn on map %i points to a non-chest (%s x%i at %ix%i)", this->id, this->world->eif->Get(itemid).name.c_str(), amount, x, y);
-		skip_warning:
-		;
+	skip_warning:;
 	}
 
 	SAFE_SEEK(fh, 0x00, SEEK_END);
@@ -694,8 +705,7 @@ void Map::Unload()
 		{
 			opponent->attacker->unregister_npc.erase(
 				std::remove(UTIL_RANGE(opponent->attacker->unregister_npc), npc),
-				opponent->attacker->unregister_npc.end()
-			);
+				opponent->attacker->unregister_npc.end());
 		}
 	}
 
@@ -704,7 +714,7 @@ void Map::Unload()
 	if (this->arena)
 	{
 		UTIL_FOREACH(this->arena->spawns, spawn)
-			delete spawn;
+		delete spawn;
 
 		delete this->arena;
 	}
@@ -718,7 +728,7 @@ void Map::Unload()
 int Map::GenerateItemID() const
 {
 	int lowest_free_id = 1;
-	restart_loop:
+restart_loop:
 	UTIL_FOREACH(this->items, item)
 	{
 		if (item->uid == lowest_free_id)
@@ -733,7 +743,7 @@ int Map::GenerateItemID() const
 unsigned char Map::GenerateNPCIndex() const
 {
 	unsigned char lowest_free_id = 1;
-	restart_loop:
+restart_loop:
 	UTIL_FOREACH(this->npcs, npc)
 	{
 		if (npc->index == lowest_free_id)
@@ -820,8 +830,7 @@ void Map::Leave(Character *character, WarpAnimation animation, bool silent)
 
 	this->characters.erase(
 		std::remove(UTIL_RANGE(this->characters), character),
-		this->characters.end()
-	);
+		this->characters.end());
 
 	character->map = 0;
 }
@@ -874,45 +883,45 @@ Map::WalkResult Map::Walk(Character *from, Direction direction, bool admin)
 
 	switch (direction)
 	{
-		case DIRECTION_UP:
-			target_y -= 1;
+	case DIRECTION_UP:
+		target_y -= 1;
 
-			if (target_y > from->y)
-			{
-				return WalkFail;
-			}
+		if (target_y > from->y)
+		{
+			return WalkFail;
+		}
 
-			break;
+		break;
 
-		case DIRECTION_RIGHT:
-			target_x += 1;
+	case DIRECTION_RIGHT:
+		target_x += 1;
 
-			if (target_x < from->x)
-			{
-				return WalkFail;
-			}
+		if (target_x < from->x)
+		{
+			return WalkFail;
+		}
 
-			break;
+		break;
 
-		case DIRECTION_DOWN:
-			target_y += 1;
+	case DIRECTION_DOWN:
+		target_y += 1;
 
-			if (target_x < from->x)
-			{
-				return WalkFail;
-			}
+		if (target_x < from->x)
+		{
+			return WalkFail;
+		}
 
-			break;
+		break;
 
-		case DIRECTION_LEFT:
-			target_x -= 1;
+	case DIRECTION_LEFT:
+		target_x -= 1;
 
-			if (target_x > from->x)
-			{
-				return WalkFail;
-			}
+		if (target_x > from->x)
+		{
+			return WalkFail;
+		}
 
-			break;
+		break;
 	}
 
 	if (!this->InBounds(target_x, target_y))
@@ -927,13 +936,13 @@ Map::WalkResult Map::Walk(Character *from, Direction direction, bool admin)
 			return WalkFail;
 	}
 
-	const Map_Warp& warp = this->GetWarp(target_x, target_y);
+	const Map_Warp &warp = this->GetWarp(target_x, target_y);
 
 	if (warp)
 	{
 		if (from->level >= warp.levelreq && (warp.spec == Map_Warp::NoDoor || warp.open))
 		{
-			Map* map = this->world->GetMap(warp.map);
+			Map *map = this->world->GetMap(warp.map);
 			if (from->SourceAccess() < ADMIN_GUIDE && map->evacuate_lock && map->id != from->map->id)
 			{
 				from->StatusMsg(this->world->i18n.Format("map_evacuate_block"));
@@ -951,9 +960,9 @@ Map::WalkResult Map::Walk(Character *from, Direction direction, bool admin)
 			return WalkFail;
 	}
 
-    from->last_walk = Timer::GetTime();
-    from->attacks = 0;
-    from->CancelSpell();
+	from->last_walk = Timer::GetTime();
+	from->attacks = 0;
+	from->CancelSpell();
 
 	from->direction = direction;
 
@@ -976,58 +985,57 @@ Map::WalkResult Map::Walk(Character *from, Direction direction, bool admin)
 
 	switch (direction)
 	{
-		case DIRECTION_UP:
-			for (int i = -seedistance; i <= seedistance; ++i)
-			{
-				newy = from->y - seedistance + std::abs(i);
-				newx = from->x + i;
-				oldy = from->y + seedistance + 1 - std::abs(i);
-				oldx = from->x + i;
+	case DIRECTION_UP:
+		for (int i = -seedistance; i <= seedistance; ++i)
+		{
+			newy = from->y - seedistance + std::abs(i);
+			newx = from->x + i;
+			oldy = from->y + seedistance + 1 - std::abs(i);
+			oldx = from->x + i;
 
-				newcoords.push_back(std::make_pair(newx, newy));
-				oldcoords.push_back(std::make_pair(oldx, oldy));
-			}
-			break;
+			newcoords.push_back(std::make_pair(newx, newy));
+			oldcoords.push_back(std::make_pair(oldx, oldy));
+		}
+		break;
 
-		case DIRECTION_RIGHT:
-			for (int i = -seedistance; i <= seedistance; ++i)
-			{
-				newx = from->x + seedistance - std::abs(i);
-				newy = from->y + i;
-				oldx = from->x - seedistance - 1 + std::abs(i);
-				oldy = from->y + i;
+	case DIRECTION_RIGHT:
+		for (int i = -seedistance; i <= seedistance; ++i)
+		{
+			newx = from->x + seedistance - std::abs(i);
+			newy = from->y + i;
+			oldx = from->x - seedistance - 1 + std::abs(i);
+			oldy = from->y + i;
 
-				newcoords.push_back(std::make_pair(newx, newy));
-				oldcoords.push_back(std::make_pair(oldx, oldy));
-			}
-			break;
+			newcoords.push_back(std::make_pair(newx, newy));
+			oldcoords.push_back(std::make_pair(oldx, oldy));
+		}
+		break;
 
-		case DIRECTION_DOWN:
-			for (int i = -seedistance; i <= seedistance; ++i)
-			{
-				newy = from->y + seedistance - std::abs(i);
-				newx = from->x + i;
-				oldy = from->y - seedistance - 1 + std::abs(i);
-				oldx = from->x + i;
+	case DIRECTION_DOWN:
+		for (int i = -seedistance; i <= seedistance; ++i)
+		{
+			newy = from->y + seedistance - std::abs(i);
+			newx = from->x + i;
+			oldy = from->y - seedistance - 1 + std::abs(i);
+			oldx = from->x + i;
 
-				newcoords.push_back(std::make_pair(newx, newy));
-				oldcoords.push_back(std::make_pair(oldx, oldy));
-			}
-			break;
+			newcoords.push_back(std::make_pair(newx, newy));
+			oldcoords.push_back(std::make_pair(oldx, oldy));
+		}
+		break;
 
-		case DIRECTION_LEFT:
-			for (int i = -seedistance; i <= seedistance; ++i)
-			{
-				newx = from->x - seedistance + std::abs(i);
-				newy = from->y + i;
-				oldx = from->x + seedistance + 1 - std::abs(i);
-				oldy = from->y + i;
+	case DIRECTION_LEFT:
+		for (int i = -seedistance; i <= seedistance; ++i)
+		{
+			newx = from->x - seedistance + std::abs(i);
+			newy = from->y + i;
+			oldx = from->x + seedistance + 1 - std::abs(i);
+			oldy = from->y + i;
 
-				newcoords.push_back(std::make_pair(newx, newy));
-				oldcoords.push_back(std::make_pair(oldx, oldy));
-			}
-			break;
-
+			newcoords.push_back(std::make_pair(newx, newy));
+			oldcoords.push_back(std::make_pair(oldx, oldy));
+		}
+		break;
 	}
 
 	UTIL_FOREACH(this->characters, checkchar)
@@ -1223,7 +1231,7 @@ Map::WalkResult Map::Walk(Character *from, Direction direction, bool admin)
 		{
 			from->DeathRespawn();
 			return WalkWarped;
-		}	
+		}
 	}
 
 	return WalkOK;
@@ -1238,45 +1246,45 @@ Map::WalkResult Map::Walk(NPC *from, Direction direction)
 
 	switch (direction)
 	{
-		case DIRECTION_UP:
-			target_y -= 1;
+	case DIRECTION_UP:
+		target_y -= 1;
 
-			if (target_y > from->y)
-			{
-				return WalkFail;
-			}
+		if (target_y > from->y)
+		{
+			return WalkFail;
+		}
 
-			break;
+		break;
 
-		case DIRECTION_RIGHT:
-			target_x += 1;
+	case DIRECTION_RIGHT:
+		target_x += 1;
 
-			if (target_x < from->x)
-			{
-				return WalkFail;
-			}
+		if (target_x < from->x)
+		{
+			return WalkFail;
+		}
 
-			break;
+		break;
 
-		case DIRECTION_DOWN:
-			target_y += 1;
+	case DIRECTION_DOWN:
+		target_y += 1;
 
-			if (target_x < from->x)
-			{
-				return WalkFail;
-			}
+		if (target_x < from->x)
+		{
+			return WalkFail;
+		}
 
-			break;
+		break;
 
-		case DIRECTION_LEFT:
-			target_x -= 1;
+	case DIRECTION_LEFT:
+		target_x -= 1;
 
-			if (target_x > from->x)
-			{
-				return WalkFail;
-			}
+		if (target_x > from->x)
+		{
+			return WalkFail;
+		}
 
-			break;
+		break;
 	}
 
 	bool adminghost = (from->ENF().type == ENF::Aggressive || from->parent);
@@ -1302,58 +1310,57 @@ Map::WalkResult Map::Walk(NPC *from, Direction direction)
 
 	switch (direction)
 	{
-		case DIRECTION_UP:
-			for (int i = -seedistance; i <= seedistance; ++i)
-			{
-				newy = from->y - seedistance + std::abs(i);
-				newx = from->x + i;
-				oldy = from->y + seedistance + 1 - std::abs(i);
-				oldx = from->x + i;
+	case DIRECTION_UP:
+		for (int i = -seedistance; i <= seedistance; ++i)
+		{
+			newy = from->y - seedistance + std::abs(i);
+			newx = from->x + i;
+			oldy = from->y + seedistance + 1 - std::abs(i);
+			oldx = from->x + i;
 
-				newcoords.push_back(std::make_pair(newx, newy));
-				oldcoords.push_back(std::make_pair(oldx, oldy));
-			}
-			break;
+			newcoords.push_back(std::make_pair(newx, newy));
+			oldcoords.push_back(std::make_pair(oldx, oldy));
+		}
+		break;
 
-		case DIRECTION_RIGHT:
-			for (int i = -seedistance; i <= seedistance; ++i)
-			{
-				newx = from->x + seedistance - std::abs(i);
-				newy = from->y + i;
-				oldx = from->x - seedistance - 1 + std::abs(i);
-				oldy = from->y + i;
+	case DIRECTION_RIGHT:
+		for (int i = -seedistance; i <= seedistance; ++i)
+		{
+			newx = from->x + seedistance - std::abs(i);
+			newy = from->y + i;
+			oldx = from->x - seedistance - 1 + std::abs(i);
+			oldy = from->y + i;
 
-				newcoords.push_back(std::make_pair(newx, newy));
-				oldcoords.push_back(std::make_pair(oldx, oldy));
-			}
-			break;
+			newcoords.push_back(std::make_pair(newx, newy));
+			oldcoords.push_back(std::make_pair(oldx, oldy));
+		}
+		break;
 
-		case DIRECTION_DOWN:
-			for (int i = -seedistance; i <= seedistance; ++i)
-			{
-				newy = from->y + seedistance - std::abs(i);
-				newx = from->x + i;
-				oldy = from->y - seedistance - 1 + std::abs(i);
-				oldx = from->x + i;
+	case DIRECTION_DOWN:
+		for (int i = -seedistance; i <= seedistance; ++i)
+		{
+			newy = from->y + seedistance - std::abs(i);
+			newx = from->x + i;
+			oldy = from->y - seedistance - 1 + std::abs(i);
+			oldx = from->x + i;
 
-				newcoords.push_back(std::make_pair(newx, newy));
-				oldcoords.push_back(std::make_pair(oldx, oldy));
-			}
-			break;
+			newcoords.push_back(std::make_pair(newx, newy));
+			oldcoords.push_back(std::make_pair(oldx, oldy));
+		}
+		break;
 
-		case DIRECTION_LEFT:
-			for (int i = -seedistance; i <= seedistance; ++i)
-			{
-				newx = from->x - seedistance + std::abs(i);
-				newy = from->y + i;
-				oldx = from->x + seedistance + 1 - std::abs(i);
-				oldy = from->y + i;
+	case DIRECTION_LEFT:
+		for (int i = -seedistance; i <= seedistance; ++i)
+		{
+			newx = from->x - seedistance + std::abs(i);
+			newy = from->y + i;
+			oldx = from->x + seedistance + 1 - std::abs(i);
+			oldy = from->y + i;
 
-				newcoords.push_back(std::make_pair(newx, newy));
-				oldcoords.push_back(std::make_pair(oldx, oldy));
-			}
-			break;
-
+			newcoords.push_back(std::make_pair(newx, newy));
+			oldcoords.push_back(std::make_pair(oldx, oldy));
+		}
+		break;
 	}
 
 	from->direction = direction;
@@ -1418,8 +1425,8 @@ Map::WalkResult Map::Walk(NPC *from, Direction direction)
 
 void Map::Attack(Character *from, Direction direction)
 {
-	const EIF_Data& wepdata = this->world->eif->Get(from->paperdoll[Character::Weapon]);
-	const EIF_Data& shielddata = this->world->eif->Get(from->paperdoll[Character::Shield]);
+	const EIF_Data &wepdata = this->world->eif->Get(from->paperdoll[Character::Weapon]);
+	const EIF_Data &shielddata = this->world->eif->Get(from->paperdoll[Character::Shield]);
 
 	if (wepdata.subtype == EIF::Ranged && shielddata.subtype != EIF::Arrows)
 	{
@@ -1486,27 +1493,26 @@ void Map::Attack(Character *from, Direction direction)
 	{
 		switch (from->direction)
 		{
-			case DIRECTION_UP:
-				target_y -= 1;
-				break;
+		case DIRECTION_UP:
+			target_y -= 1;
+			break;
 
-			case DIRECTION_RIGHT:
-				target_x += 1;
-				break;
+		case DIRECTION_RIGHT:
+			target_x += 1;
+			break;
 
-			case DIRECTION_DOWN:
-				target_y += 1;
-				break;
+		case DIRECTION_DOWN:
+			target_y += 1;
+			break;
 
-			case DIRECTION_LEFT:
-				target_x -= 1;
-				break;
+		case DIRECTION_LEFT:
+			target_x -= 1;
+			break;
 		}
 
 		UTIL_FOREACH(this->npcs, npc)
 		{
-			if ((npc->ENF().type == ENF::Passive || npc->ENF().type == ENF::Aggressive || from->SourceDutyAccess() >= static_cast<int>(this->world->admin_config["killnpc"]))
-			 && npc->alive && npc->x == target_x && npc->y == target_y)
+			if ((npc->ENF().type == ENF::Passive || npc->ENF().type == ENF::Aggressive || from->SourceDutyAccess() >= static_cast<int>(this->world->admin_config["killnpc"])) && npc->alive && npc->x == target_x && npc->y == target_y)
 			{
 				int amount = util::rand(from->mindam, from->maxdam);
 				double rand = util::rand(0.0, 1.0);
@@ -1576,21 +1582,21 @@ bool Map::AttackPK(Character *from, Direction direction)
 	{
 		switch (from->direction)
 		{
-			case DIRECTION_UP:
-				target_y -= 1;
-				break;
+		case DIRECTION_UP:
+			target_y -= 1;
+			break;
 
-			case DIRECTION_RIGHT:
-				target_x += 1;
-				break;
+		case DIRECTION_RIGHT:
+			target_x += 1;
+			break;
 
-			case DIRECTION_DOWN:
-				target_y += 1;
-				break;
+		case DIRECTION_DOWN:
+			target_y += 1;
+			break;
 
-			case DIRECTION_LEFT:
-				target_x -= 1;
-				break;
+		case DIRECTION_LEFT:
+			target_x -= 1;
+			break;
 		}
 
 		UTIL_FOREACH(this->characters, character)
@@ -1818,7 +1824,7 @@ bool Map::OpenDoor(Character *from, unsigned char x, unsigned char y)
 		return false;
 	}
 
-	if (Map_Warp& warp = this->GetWarp(x, y))
+	if (Map_Warp &warp = this->GetWarp(x, y))
 	{
 		if (warp.spec == Map_Warp::NoDoor || warp.open)
 		{
@@ -1827,8 +1833,7 @@ bool Map::OpenDoor(Character *from, unsigned char x, unsigned char y)
 
 		if (from && warp.spec > Map_Warp::Door)
 		{
-			if (!from->CanInteractDoors()
-			 || !from->HasItem(this->world->eif->GetKey(warp.spec - static_cast<int>(Map_Warp::Door) + 1)))
+			if (!from->CanInteractDoors() || !from->HasItem(this->world->eif->GetKey(warp.spec - static_cast<int>(Map_Warp::Door) + 1)))
 			{
 				return false;
 			}
@@ -1867,7 +1872,7 @@ void Map::CloseDoor(unsigned char x, unsigned char y)
 	if (!this->InBounds(x, y))
 		return;
 
-	if (Map_Warp& warp = this->GetWarp(x, y))
+	if (Map_Warp &warp = this->GetWarp(x, y))
 	{
 		if (warp.spec == Map_Warp::NoDoor || !warp.open)
 		{
@@ -1880,7 +1885,7 @@ void Map::CloseDoor(unsigned char x, unsigned char y)
 
 void Map::SpellSelf(Character *from, unsigned short spell_id)
 {
-	const ESF_Data& spell = from->world->esf->Get(spell_id);
+	const ESF_Data &spell = from->world->esf->Get(spell_id);
 
 	if (!spell || spell.type != ESF::Heal || from->tp < spell.tp)
 		return;
@@ -1922,7 +1927,7 @@ void Map::SpellAttack(Character *from, NPC *npc, unsigned short spell_id)
 	if (!from->CanInteractCombat())
 		return;
 
-	const ESF_Data& spell = from->world->esf->Get(spell_id);
+	const ESF_Data &spell = from->world->esf->Get(spell_id);
 
 	if (!spell || spell.type != ESF::Damage || from->tp < spell.tp)
 		return;
@@ -1968,7 +1973,7 @@ void Map::SpellAttack(Character *from, NPC *npc, unsigned short spell_id)
 
 void Map::SpellAttackPK(Character *from, Character *victim, unsigned short spell_id)
 {
-	const ESF_Data& spell = from->world->esf->Get(spell_id);
+	const ESF_Data &spell = from->world->esf->Get(spell_id);
 
 	if (!spell || (spell.type != ESF::Heal && spell.type != ESF::Damage) || from->tp < spell.tp)
 		return;
@@ -2106,7 +2111,7 @@ void Map::SpellAttackPK(Character *from, Character *victim, unsigned short spell
 
 void Map::SpellGroup(Character *from, unsigned short spell_id)
 {
-	const ESF_Data& spell = from->world->esf->Get(spell_id);
+	const ESF_Data &spell = from->world->esf->Get(spell_id);
 
 	if (!spell || spell.type != ESF::Heal || !from->party || from->tp < spell.tp)
 		return;
@@ -2344,7 +2349,7 @@ bool Map::Walkable(unsigned char x, unsigned char y, bool npc) const
 	return true;
 }
 
-Map_Tile& Map::GetTile(unsigned char x, unsigned char y)
+Map_Tile &Map::GetTile(unsigned char x, unsigned char y)
 {
 	if (!InBounds(x, y))
 		throw std::out_of_range("Map tile out of range");
@@ -2352,7 +2357,7 @@ Map_Tile& Map::GetTile(unsigned char x, unsigned char y)
 	return this->tiles[y * this->width + x];
 }
 
-const Map_Tile& Map::GetTile(unsigned char x, unsigned char y) const
+const Map_Tile &Map::GetTile(unsigned char x, unsigned char y) const
 {
 	if (!InBounds(x, y))
 		throw std::out_of_range("Map tile out of range");
@@ -2368,12 +2373,12 @@ Map_Tile::TileSpec Map::GetSpec(unsigned char x, unsigned char y) const
 	return this->GetTile(x, y).tilespec;
 }
 
-Map_Warp& Map::GetWarp(unsigned char x, unsigned char y)
+Map_Warp &Map::GetWarp(unsigned char x, unsigned char y)
 {
 	return this->GetTile(x, y).warp;
 }
 
-const Map_Warp& Map::GetWarp(unsigned char x, unsigned char y) const
+const Map_Warp &Map::GetWarp(unsigned char x, unsigned char y) const
 {
 	return this->GetTile(x, y).warp;
 }
@@ -2461,8 +2466,7 @@ bool Map::Reload()
 
 	std::fclose(fh);
 
-	if (this->rid[0] == checkrid[0] && this->rid[1] == checkrid[1]
-	 && this->rid[2] == checkrid[2] && this->rid[3] == checkrid[3])
+	if (this->rid[0] == checkrid[0] && this->rid[1] == checkrid[1] && this->rid[2] == checkrid[2] && this->rid[3] == checkrid[3])
 	{
 		return true;
 	}
@@ -2499,9 +2503,9 @@ void Map::TimedSpikes()
 
 	double spike_damage = this->world->config["SpikeDamage"];
 
-	std::vector<Character*> killed;
+	std::vector<Character *> killed;
 
-	for (Character* character : this->characters)
+	for (Character *character : this->characters)
 	{
 		if (character->nowhere || character->IsHideInvisible())
 			continue;
@@ -2523,7 +2527,7 @@ void Map::TimedSpikes()
 		}
 	}
 
-	for (Character* character : killed)
+	for (Character *character : killed)
 	{
 		character->DeathRespawn();
 	}
@@ -2540,7 +2544,7 @@ void Map::TimedDrains()
 
 		std::size_t i = 0;
 
-		for (Character* character : this->characters)
+		for (Character *character : this->characters)
 		{
 			if (character->nowhere || character->IsHideInvisible())
 				continue;
@@ -2554,7 +2558,7 @@ void Map::TimedDrains()
 
 		i = 0;
 
-		for (Character* character : this->characters)
+		for (Character *character : this->characters)
 		{
 			if (character->nowhere || character->IsHideInvisible())
 				continue;
@@ -2570,7 +2574,7 @@ void Map::TimedDrains()
 
 				std::size_t ii = 0;
 
-				for (Character* other : this->characters)
+				for (Character *other : this->characters)
 				{
 					if (other->nowhere || other->IsHideInvisible())
 						continue;
@@ -2589,12 +2593,12 @@ void Map::TimedDrains()
 			}
 		}
 	}
-	
+
 	if (this->effect == EffectTPDrain)
 	{
 		double tpdrain_damage = this->world->config["DrainTPDamage"];
 
-		for (Character* character : this->characters)
+		for (Character *character : this->characters)
 		{
 			if (character->nowhere || character->IsHideInvisible())
 				continue;
@@ -2602,7 +2606,7 @@ void Map::TimedDrains()
 			if (tpdrain_damage > 0.0)
 			{
 				int amount = character->maxtp * tpdrain_damage;
-				
+
 				amount = std::min(amount, int(character->tp));
 
 				character->tp -= amount;
@@ -2621,7 +2625,6 @@ void Map::TimedDrains()
 
 void Map::TimedQuakes()
 {
-
 }
 
 Character *Map::GetCharacter(std::string name)

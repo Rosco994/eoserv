@@ -25,7 +25,7 @@
 #include <string.h>
 
 #define BLOCK_SIZE SHA256_BLOCK_SIZE
-#define HASH_SIZE  SHA256_HASH_SIZE
+#define HASH_SIZE SHA256_HASH_SIZE
 
 static const uint32_t k[BLOCK_SIZE] = {
 	0x428A2F98, 0x71374491, 0xB5C0FBCF, 0xE9B5DBA5,
@@ -43,28 +43,26 @@ static const uint32_t k[BLOCK_SIZE] = {
 	0x19A4C116, 0x1E376C08, 0x2748774C, 0x34B0BCB5,
 	0x391C0CB3, 0x4ED8AA4A, 0x5B9CCA4F, 0x682E6FF3,
 	0x748F82EE, 0x78A5636F, 0x84C87814, 0x8CC70208,
-	0x90BEFFFA, 0xA4506CEB, 0xBEF9A3F7, 0xC67178F2
-};
+	0x90BEFFFA, 0xA4506CEB, 0xBEF9A3F7, 0xC67178F2};
 
 static const uint32_t h[HASH_SIZE] = {
 	0x6A09E667, 0xBB67AE85, 0x3C6EF372, 0xA54FF53A,
-	0x510E527F, 0x9B05688C, 0x1F83D9AB, 0x5BE0CD19
-};
+	0x510E527F, 0x9B05688C, 0x1F83D9AB, 0x5BE0CD19};
 
 static inline uint32_t pack_u32(const char *src)
 {
 	return ((uint32_t)(unsigned char)src[0] << 24) |
-	       ((uint32_t)(unsigned char)src[1] << 16) |
-	       ((uint32_t)(unsigned char)src[2] <<  8) |
-	       ((uint32_t)(unsigned char)src[3]      );
+		   ((uint32_t)(unsigned char)src[1] << 16) |
+		   ((uint32_t)(unsigned char)src[2] << 8) |
+		   ((uint32_t)(unsigned char)src[3]);
 }
 
 static inline void unpack_u32(char *dest, uint32_t src)
 {
 	dest[0] = (char)(unsigned char)(src >> 24);
 	dest[1] = (char)(unsigned char)(src >> 16);
-	dest[2] = (char)(unsigned char)(src >>  8);
-	dest[3] = (char)(unsigned char)(src      );
+	dest[2] = (char)(unsigned char)(src >> 8);
+	dest[3] = (char)(unsigned char)(src);
 }
 
 static inline uint32_t rr32(uint32_t x, int y)
@@ -103,8 +101,7 @@ static void sha256_process(sha256_context *ctx, const char data[BLOCK_SIZE])
 
 	for (; i < 64; ++i)
 	{
-		w[i] = w[i - 16] + (rr32(w[i - 15],  7) ^ rr32(w[i - 15], 18) ^ (w[i - 15] >>  3))
-		     + w[i -  7] + (rr32(w[i -  2], 17) ^ rr32(w[i -  2], 19) ^ (w[i -  2] >> 10));
+		w[i] = w[i - 16] + (rr32(w[i - 15], 7) ^ rr32(w[i - 15], 18) ^ (w[i - 15] >> 3)) + w[i - 7] + (rr32(w[i - 2], 17) ^ rr32(w[i - 2], 19) ^ (w[i - 2] >> 10));
 	}
 
 	for (i = 0; i < 64; ++i)
@@ -162,7 +159,7 @@ void sha256_finish(sha256_context *ctx, char digest[HASH_SIZE * 4])
 {
 	char length[8];
 	uint32_t h = (uint32_t)(ctx->length >> 29); // Truncation
-	uint32_t l = (uint32_t)(ctx->length <<  3); // Truncation
+	uint32_t l = (uint32_t)(ctx->length << 3);	// Truncation
 	size_t pos = (size_t)(ctx->length & 0x3F);
 
 	ctx->buf[pos++] = 0x80;

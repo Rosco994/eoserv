@@ -24,22 +24,22 @@ struct Arena_Spawn
 
 class Arena
 {
-	public:
-		int occupants;
-		int time;
-		int block;
+public:
+	int occupants;
+	int time;
+	int block;
 
-		TimeEvent *spawn_timer;
-		Map *map;
-		std::vector<Arena_Spawn *> spawns;
+	TimeEvent *spawn_timer;
+	Map *map;
+	std::vector<Arena_Spawn *> spawns;
 
-		Arena(Map *map, int time, int block);
+	Arena(Map *map, int time, int block);
 
-		void Spawn(bool force = false);
+	void Spawn(bool force = false);
 
-		void Attack(Character *from, Direction);
+	void Attack(Character *from, Direction);
 
-		~Arena();
+	~Arena();
 };
 
 #endif // ARENA_HPP_INCLUDED

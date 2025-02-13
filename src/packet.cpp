@@ -17,67 +17,116 @@
 #include <string>
 
 PacketProcessor::PacketProcessor()
-	: emulti_e(0)
-	, emulti_d(0)
+	: emulti_e(0), emulti_d(0)
 {
-
 }
 
 std::string PacketProcessor::GetFamilyName(PacketFamily family)
 {
 	switch (family)
 	{
-		case PACKET_INTERNAL: return "INTERNAL";
-		case PACKET_CONNECTION: return "Connection";
-		case PACKET_ACCOUNT: return "Account";
-		case PACKET_CHARACTER: return "Character";
-		case PACKET_LOGIN: return "Login";
-		case PACKET_WELCOME: return "Welcome";
-		case PACKET_WALK: return "Walk";
-		case PACKET_FACE: return "Face";
-		case PACKET_CHAIR: return "Chair";
-		case PACKET_EMOTE: return "Emote";
-		case PACKET_ATTACK: return "Attack";
-		case PACKET_SPELL: return "Spell";
-		case PACKET_SHOP: return "Shop";
-		case PACKET_ITEM: return "Item";
-		case PACKET_STATSKILL: return "StatSkill";
-		case PACKET_GLOBAL: return "Global";
-		case PACKET_TALK: return "Talk";
-		case PACKET_WARP: return "Warp";
-		case PACKET_JUKEBOX: return "Jukebox";
-		case PACKET_PLAYERS: return "Players";
-		case PACKET_AVATAR: return "Avatar";
-		case PACKET_PARTY: return "Party";
-		case PACKET_REFRESH: return "Refresh";
-		case PACKET_NPC: return "NPC";
-		case PACKET_PLAYER_RANGE: return "Player_Range";
-		case PACKET_NPC_RANGE: return "NPC_Range";
-		case PACKET_RANGE: return "Range";
-		case PACKET_PAPERDOLL: return "Paperdoll";
-		case PACKET_EFFECT: return "Effect";
-		case PACKET_TRADE: return "Trade";
-		case PACKET_CHEST: return "Chest";
-		case PACKET_DOOR: return "Door";
-		case PACKET_MESSAGE: return "Message";
-		case PACKET_BANK: return "Bank";
-		case PACKET_LOCKER: return "Locker";
-		case PACKET_BARBER: return "Barber";
-		case PACKET_GUILD: return "Guild";
-		case PACKET_MUSIC: return "Music";
-		case PACKET_SIT: return "Sit";
-		case PACKET_RECOVER: return "Recover";
-		case PACKET_BOARD: return "Board";
-		case PACKET_CAST: return "Cast";
-		case PACKET_ARENA: return "Arena";
-		case PACKET_PRIEST: return "Priest";
-		case PACKET_MARRIAGE: return "Marriage";
-		case PACKET_ADMININTERACT: return "AdminInteract";
-		case PACKET_CITIZEN: return "Citizen";
-		case PACKET_QUEST: return "Quest";
-		case PACKET_BOOK: return "Book";
-		case PACKET_F_INIT: return "Init";
-		default: return "UNKNOWN";
+	case PACKET_INTERNAL:
+		return "INTERNAL";
+	case PACKET_CONNECTION:
+		return "Connection";
+	case PACKET_ACCOUNT:
+		return "Account";
+	case PACKET_CHARACTER:
+		return "Character";
+	case PACKET_LOGIN:
+		return "Login";
+	case PACKET_WELCOME:
+		return "Welcome";
+	case PACKET_WALK:
+		return "Walk";
+	case PACKET_FACE:
+		return "Face";
+	case PACKET_CHAIR:
+		return "Chair";
+	case PACKET_EMOTE:
+		return "Emote";
+	case PACKET_ATTACK:
+		return "Attack";
+	case PACKET_SPELL:
+		return "Spell";
+	case PACKET_SHOP:
+		return "Shop";
+	case PACKET_ITEM:
+		return "Item";
+	case PACKET_STATSKILL:
+		return "StatSkill";
+	case PACKET_GLOBAL:
+		return "Global";
+	case PACKET_TALK:
+		return "Talk";
+	case PACKET_WARP:
+		return "Warp";
+	case PACKET_JUKEBOX:
+		return "Jukebox";
+	case PACKET_PLAYERS:
+		return "Players";
+	case PACKET_AVATAR:
+		return "Avatar";
+	case PACKET_PARTY:
+		return "Party";
+	case PACKET_REFRESH:
+		return "Refresh";
+	case PACKET_NPC:
+		return "NPC";
+	case PACKET_PLAYER_RANGE:
+		return "Player_Range";
+	case PACKET_NPC_RANGE:
+		return "NPC_Range";
+	case PACKET_RANGE:
+		return "Range";
+	case PACKET_PAPERDOLL:
+		return "Paperdoll";
+	case PACKET_EFFECT:
+		return "Effect";
+	case PACKET_TRADE:
+		return "Trade";
+	case PACKET_CHEST:
+		return "Chest";
+	case PACKET_DOOR:
+		return "Door";
+	case PACKET_MESSAGE:
+		return "Message";
+	case PACKET_BANK:
+		return "Bank";
+	case PACKET_LOCKER:
+		return "Locker";
+	case PACKET_BARBER:
+		return "Barber";
+	case PACKET_GUILD:
+		return "Guild";
+	case PACKET_MUSIC:
+		return "Music";
+	case PACKET_SIT:
+		return "Sit";
+	case PACKET_RECOVER:
+		return "Recover";
+	case PACKET_BOARD:
+		return "Board";
+	case PACKET_CAST:
+		return "Cast";
+	case PACKET_ARENA:
+		return "Arena";
+	case PACKET_PRIEST:
+		return "Priest";
+	case PACKET_MARRIAGE:
+		return "Marriage";
+	case PACKET_ADMININTERACT:
+		return "AdminInteract";
+	case PACKET_CITIZEN:
+		return "Citizen";
+	case PACKET_QUEST:
+		return "Quest";
+	case PACKET_BOOK:
+		return "Book";
+	case PACKET_F_INIT:
+		return "Init";
+	default:
+		return "UNKNOWN";
 	}
 }
 
@@ -85,45 +134,84 @@ std::string PacketProcessor::GetActionName(PacketAction action)
 {
 	switch (action)
 	{
-		case PACKET_REQUEST: return "Request";
-		case PACKET_ACCEPT: return "Accept";
-		case PACKET_REPLY: return "Reply";
-		case PACKET_REMOVE: return "Remove";
-		case PACKET_AGREE: return "Agree";
-		case PACKET_CREATE: return "Create";
-		case PACKET_ADD: return "Add";
-		case PACKET_PLAYER: return "Player";
-		case PACKET_TAKE: return "Take";
-		case PACKET_USE: return "Use";
-		case PACKET_BUY: return "Buy";
-		case PACKET_SELL: return "Sell";
-		case PACKET_OPEN: return "Open";
-		case PACKET_CLOSE: return "Close";
-		case PACKET_MSG: return "Msg";
-		case PACKET_SPEC: return "Spec";
-		case PACKET_ADMIN: return "Admin";
-		case PACKET_LIST: return "List";
-		case PACKET_TELL: return "Tell";
-		case PACKET_REPORT: return "Report";
-		case PACKET_ANNOUNCE: return "Announce";
-		case PACKET_SERVER: return "Server";
-		case PACKET_DROP: return "Drop";
-		case PACKET_JUNK: return "Junk";
-		case PACKET_OBTAIN: return "Obtain";
-		case PACKET_GET: return "Get";
-		case PACKET_KICK: return "Kick";
-		case PACKET_RANK: return "Rank";
-		case PACKET_TARGET_SELF: return "TargetSelf";
-		case PACKET_TARGET_OTHER: return "TargetOther";
-		case PACKET_TARGET_GROUP: return "TargetGroup";
-		case PACKET_DIALOG: return "Dialog";
-		case PACKET_INTERNAL_NULL: return "INTERNAL_NULL";
-		case PACKET_INTERNAL_WARP: return "INTERNAL_WARP";
-		case PACKET_PING: return "Ping";
-		case PACKET_PONG: return "Pong";
-		case PACKET_NET3: return "Net3";
-		case PACKET_A_INIT: return "Init";
-		default: return "UNKNOWN";
+	case PACKET_REQUEST:
+		return "Request";
+	case PACKET_ACCEPT:
+		return "Accept";
+	case PACKET_REPLY:
+		return "Reply";
+	case PACKET_REMOVE:
+		return "Remove";
+	case PACKET_AGREE:
+		return "Agree";
+	case PACKET_CREATE:
+		return "Create";
+	case PACKET_ADD:
+		return "Add";
+	case PACKET_PLAYER:
+		return "Player";
+	case PACKET_TAKE:
+		return "Take";
+	case PACKET_USE:
+		return "Use";
+	case PACKET_BUY:
+		return "Buy";
+	case PACKET_SELL:
+		return "Sell";
+	case PACKET_OPEN:
+		return "Open";
+	case PACKET_CLOSE:
+		return "Close";
+	case PACKET_MSG:
+		return "Msg";
+	case PACKET_SPEC:
+		return "Spec";
+	case PACKET_ADMIN:
+		return "Admin";
+	case PACKET_LIST:
+		return "List";
+	case PACKET_TELL:
+		return "Tell";
+	case PACKET_REPORT:
+		return "Report";
+	case PACKET_ANNOUNCE:
+		return "Announce";
+	case PACKET_SERVER:
+		return "Server";
+	case PACKET_DROP:
+		return "Drop";
+	case PACKET_JUNK:
+		return "Junk";
+	case PACKET_OBTAIN:
+		return "Obtain";
+	case PACKET_GET:
+		return "Get";
+	case PACKET_KICK:
+		return "Kick";
+	case PACKET_RANK:
+		return "Rank";
+	case PACKET_TARGET_SELF:
+		return "TargetSelf";
+	case PACKET_TARGET_OTHER:
+		return "TargetOther";
+	case PACKET_TARGET_GROUP:
+		return "TargetGroup";
+	case PACKET_DIALOG:
+		return "Dialog";
+	case PACKET_INTERNAL_NULL:
+		return "INTERNAL_NULL";
+	case PACKET_INTERNAL_WARP:
+		return "INTERNAL_WARP";
+	case PACKET_PING:
+		return "Ping";
+	case PACKET_PONG:
+		return "Pong";
+	case PACKET_NET3:
+		return "Net3";
+	case PACKET_A_INIT:
+		return "Init";
+	default:
+		return "UNKNOWN";
 	}
 }
 
@@ -284,22 +372,30 @@ void PacketProcessor::SetEMulti(unsigned char emulti_e, unsigned char emulti_d)
 
 unsigned int PacketProcessor::Number(unsigned char b1, unsigned char b2, unsigned char b3, unsigned char b4)
 {
-	if (b1 == 254) b1 = 1;
-	if (b2 == 254) b2 = 1;
-	if (b3 == 254) b3 = 1;
-	if (b4 == 254) b4 = 1;
+	if (b1 == 254)
+		b1 = 1;
+	if (b2 == 254)
+		b2 = 1;
+	if (b3 == 254)
+		b3 = 1;
+	if (b4 == 254)
+		b4 = 1;
 
-	if (b1 == 0) b1 = 128;
-	if (b2 == 0) b2 = 128;
-	if (b3 == 0) b3 = 128;
-	if (b4 == 0) b4 = 128;
+	if (b1 == 0)
+		b1 = 128;
+	if (b2 == 0)
+		b2 = 128;
+	if (b3 == 0)
+		b3 = 128;
+	if (b4 == 0)
+		b4 = 128;
 
 	--b1;
 	--b2;
 	--b3;
 	--b4;
 
-	return (b4*PacketProcessor::MAX3 + b3*PacketProcessor::MAX2 + b2*PacketProcessor::MAX1 + b1);
+	return (b4 * PacketProcessor::MAX3 + b3 * PacketProcessor::MAX2 + b2 * PacketProcessor::MAX1 + b1);
 }
 
 std::array<unsigned char, 4> PacketProcessor::ENumber(unsigned int number)
@@ -364,9 +460,9 @@ std::array<unsigned char, 2> PacketProcessor::EPID(unsigned short pid)
 }
 
 PacketReader::PacketReader(const std::string &data)
-	: data(data)
-	, pos(2)
-{ }
+	: data(data), pos(2)
+{
+}
 
 std::size_t PacketReader::Length() const
 {
@@ -486,7 +582,7 @@ unsigned short PacketBuilder::SetID(unsigned short id)
 
 unsigned short PacketBuilder::SetID(PacketFamily family, PacketAction action)
 {
-	return this->SetID(PacketProcessor::PID(family,action));
+	return this->SetID(PacketProcessor::PID(family, action));
 }
 
 unsigned short PacketBuilder::GetID() const
@@ -648,12 +744,11 @@ PacketBuilder &PacketBuilder::AddBreakString(const std::string &str, unsigned ch
 	while (breakin != std::string::npos)
 	{
 		tempstr[breakin] = 'y';
-		breakin = tempstr.find_first_of(breakchar, breakin+1);
+		breakin = tempstr.find_first_of(breakchar, breakin + 1);
 	}
 
 	this->data += tempstr;
 	this->data += breakchar;
-
 
 #ifdef DEBUG
 	if (this->data.length() > capacity_before)

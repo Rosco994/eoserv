@@ -20,13 +20,12 @@ namespace EOPlus
 	static int recursive_depth = 0;
 	static const int max_recursion = 100;
 
-	Context::Context(const Quest* quest)
-		: quest(quest)
-		, state(0)
-		, finished(false)
-	{ }
+	Context::Context(const Quest *quest)
+		: quest(quest), state(0), finished(false)
+	{
+	}
 
-	const State* Context::GetState() const
+	const State *Context::GetState() const
 	{
 		return this->state;
 	}
@@ -36,7 +35,7 @@ namespace EOPlus
 		return this->state_name;
 	}
 
-	void Context::SetState(const std::string& state, bool do_actions)
+	void Context::SetState(const std::string &state, bool do_actions)
 	{
 		std::string state_id = util::lowercase(state);
 
@@ -84,7 +83,7 @@ namespace EOPlus
 
 		try
 		{
-			auto do_action = [&](const EOPlus::Action& action)
+			auto do_action = [&](const EOPlus::Action &action)
 			{
 				if (this->DoAction(action))
 				{
@@ -127,7 +126,7 @@ namespace EOPlus
 		this->CheckRules();
 	}
 
-	const Rule* Context::GetGoal() const
+	const Rule *Context::GetGoal() const
 	{
 		if (!this->state || this->state->rules.empty())
 			return 0;
@@ -142,10 +141,11 @@ namespace EOPlus
 
 	bool Context::QueryRule(std::string rule) const
 	{
-		return this->QueryRule(rule, [](const std::deque<util::variant>&) { return true; });
+		return this->QueryRule(rule, [](const std::deque<util::variant> &)
+							   { return true; });
 	}
 
-	bool Context::QueryRule(std::string rule, std::function<bool(const std::deque<util::variant>&)> arg_check) const
+	bool Context::QueryRule(std::string rule, std::function<bool(const std::deque<util::variant> &)> arg_check) const
 	{
 		if (!this->state)
 			return false;
@@ -161,10 +161,11 @@ namespace EOPlus
 
 	bool Context::TriggerRule(std::string rule)
 	{
-		return this->TriggerRule(rule, [](const std::deque<util::variant>&) { return true; });
+		return this->TriggerRule(rule, [](const std::deque<util::variant> &)
+								 { return true; });
 	}
 
-	bool Context::TriggerRule(std::string rule, std::function<bool(const std::deque<util::variant>&)> arg_check)
+	bool Context::TriggerRule(std::string rule, std::function<bool(const std::deque<util::variant> &)> arg_check)
 	{
 		if (!this->state)
 			return false;
@@ -226,6 +227,5 @@ namespace EOPlus
 
 	Context::~Context()
 	{
-
 	}
 }

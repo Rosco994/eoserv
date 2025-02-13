@@ -107,16 +107,16 @@ enum SitAction : unsigned char
 
 enum TrainType : unsigned char
 {
-    TRAIN_STAT = 1,
-    TRAIN_SKILL = 2
+	TRAIN_STAT = 1,
+	TRAIN_SKILL = 2
 };
 
 enum BookIcon : short
 {
-    BOOK_ICON_ITEM = 3,
-    BOOK_ICON_TALK = 5,
-    BOOK_ICON_KILL = 8,
-    BOOK_ICON_STEP = 10,
+	BOOK_ICON_ITEM = 3,
+	BOOK_ICON_TALK = 5,
+	BOOK_ICON_KILL = 8,
+	BOOK_ICON_STEP = 10,
 };
 
 #endif // FWD_CHARACTER_HPP_INCLUDED

@@ -25,12 +25,13 @@
  */
 class Socket_Exception : public std::exception
 {
-	protected:
-		const char *err;
-	public:
-		Socket_Exception(const char *e) : err(e) {};
-		const char *error()  const noexcept { return err; };
-		virtual const char *what() const noexcept { return "Socket_Exception"; }
+protected:
+	const char *err;
+
+public:
+	Socket_Exception(const char *e) : err(e) {};
+	const char *error() const noexcept { return err; };
+	virtual const char *what() const noexcept { return "Socket_Exception"; }
 };
 
 /**
@@ -38,9 +39,9 @@ class Socket_Exception : public std::exception
  */
 class Socket_InitFailed : public Socket_Exception
 {
-	public:
-		Socket_InitFailed(const char *e) : Socket_Exception(e) {}
-		const char *what() const noexcept { return "Socket_InitFailed"; }
+public:
+	Socket_InitFailed(const char *e) : Socket_Exception(e) {}
+	const char *what() const noexcept { return "Socket_InitFailed"; }
 };
 
 /**
@@ -48,9 +49,9 @@ class Socket_InitFailed : public Socket_Exception
  */
 class Socket_BindFailed : public Socket_Exception
 {
-	public:
-		Socket_BindFailed(const char *e) : Socket_Exception(e) {}
-		const char *what() const noexcept { return "Socket_BindFailed"; }
+public:
+	Socket_BindFailed(const char *e) : Socket_Exception(e) {}
+	const char *what() const noexcept { return "Socket_BindFailed"; }
 };
 
 /**
@@ -58,9 +59,9 @@ class Socket_BindFailed : public Socket_Exception
  */
 class Socket_ListenFailed : public Socket_Exception
 {
-	public:
-		Socket_ListenFailed(const char *e) : Socket_Exception(e) {}
-		const char *what() const noexcept { return "Socket_ListenFailed"; }
+public:
+	Socket_ListenFailed(const char *e) : Socket_Exception(e) {}
+	const char *what() const noexcept { return "Socket_ListenFailed"; }
 };
 
 /**
@@ -68,9 +69,9 @@ class Socket_ListenFailed : public Socket_Exception
  */
 class Socket_SelectFailed : public Socket_Exception
 {
-	public:
-		Socket_SelectFailed(const char *e) : Socket_Exception(e) {}
-		const char *what() const noexcept { return "Socket_SelectFailed"; }
+public:
+	Socket_SelectFailed(const char *e) : Socket_Exception(e) {}
+	const char *what() const noexcept { return "Socket_SelectFailed"; }
 };
 
 /**
@@ -97,105 +98,106 @@ struct Socket_Init
  */
 class IPAddress
 {
-	protected:
-		/**
-		 * Integer version of the IP address.
-		 */
-		std::uint32_t address;
+protected:
+	/**
+	 * Integer version of the IP address.
+	 */
+	std::uint32_t address;
 
-	public:
-		/**
-		 * Initialize the address as 0.0.0.0.
-		 */
-		IPAddress();
+public:
+	/**
+	 * Initialize the address as 0.0.0.0.
+	 */
+	IPAddress();
 
-		/**
-		 * Initialize the address to the integer value.
-		 */
-		IPAddress(unsigned int);
+	/**
+	 * Initialize the address to the integer value.
+	 */
+	IPAddress(unsigned int);
 
-		/**
-		 * Initialize the address using 4 octets.
-		 */
-		IPAddress(unsigned char, unsigned char, unsigned char, unsigned char);
+	/**
+	 * Initialize the address using 4 octets.
+	 */
+	IPAddress(unsigned char, unsigned char, unsigned char, unsigned char);
 
-		/**
-		 * Initialize the address using a string (eg 255.255.255.255).
-		 */
-		IPAddress(const char *);
+	/**
+	 * Initialize the address using a string (eg 255.255.255.255).
+	 */
+	IPAddress(const char *);
 
-		/**
-		 * Initialize the address using a string (eg 255.255.255.255).
-		 * Only accepts IP addresses, see Lookup to lookup hostnames
-		 */
-		IPAddress(std::string);
+	/**
+	 * Initialize the address using a string (eg 255.255.255.255).
+	 * Only accepts IP addresses, see Lookup to lookup hostnames
+	 */
+	IPAddress(std::string);
 
-		/**
-		 * Lookup a hostname and use that to create an IPAddress class
-		 */
-		static IPAddress Lookup(std::string host);
+	/**
+	 * Lookup a hostname and use that to create an IPAddress class
+	 */
+	static IPAddress Lookup(std::string host);
 
-		/**
-		 * Set the address to an integer value
-		 */
-		IPAddress &SetInt(unsigned int);
+	/**
+	 * Set the address to an integer value
+	 */
+	IPAddress &SetInt(unsigned int);
 
-		/**
-		 * Set the address using 4 octets.
-		 */
-		IPAddress &SetOctets(unsigned char, unsigned char, unsigned char, unsigned char);
+	/**
+	 * Set the address using 4 octets.
+	 */
+	IPAddress &SetOctets(unsigned char, unsigned char, unsigned char, unsigned char);
 
-		/**
-		 * Set the address using a string (eg 255.255.255.255).
-		 */
-		IPAddress &SetString(const char *);
+	/**
+	 * Set the address using a string (eg 255.255.255.255).
+	 */
+	IPAddress &SetString(const char *);
 
-		/**
-		 * Set the address using a string (eg 255.255.255.255).
-		 */
-		IPAddress &SetString(std::string);
+	/**
+	 * Set the address using a string (eg 255.255.255.255).
+	 */
+	IPAddress &SetString(std::string);
 
-		/**
-		 * Set the address to an integer value
-		 */
-		IPAddress &operator =(unsigned int);
+	/**
+	 * Set the address to an integer value
+	 */
+	IPAddress &operator=(unsigned int);
 
-		/**
-		 * Set the address using a string (eg 255.255.255.255).
-		 */
-		IPAddress &operator =(const char *);
+	/**
+	 * Set the address using a string (eg 255.255.255.255).
+	 */
+	IPAddress &operator=(const char *);
 
-		/**
-		 * Set the address using a string (eg 255.255.255.255).
-		 */
-		IPAddress &operator =(std::string);
+	/**
+	 * Set the address using a string (eg 255.255.255.255).
+	 */
+	IPAddress &operator=(std::string);
 
-		/**
-		 * Return the IP address as an integer.
-		 */
-		unsigned int GetInt() const;
+	/**
+	 * Return the IP address as an integer.
+	 */
+	unsigned int GetInt() const;
 
-		/**
-		 * Return the IP address as a string (eg 255.255.255.255).
-		 */
-		std::string GetString() const;
+	/**
+	 * Return the IP address as a string (eg 255.255.255.255).
+	 */
+	std::string GetString() const;
 
-		/**
-		 * Return the IP address as an integer.
-		 */
-		operator unsigned int() const;
+	/**
+	 * Return the IP address as an integer.
+	 */
+	operator unsigned int() const;
 
-		/**
-		 * Return the IP address as a string (eg 255.255.255.255).
-		 */
-		operator std::string() const;
+	/**
+	 * Return the IP address as a string (eg 255.255.255.255).
+	 */
+	operator std::string() const;
 
-		bool operator ==(const IPAddress &) const;
+	bool operator==(const IPAddress &) const;
 };
 
 namespace std
 {
-	template <> struct hash<IPAddress>
+	template <>
+	struct hash<IPAddress>
 	{
 		std::size_t operator()(const IPAddress &ipaddress) const
 		{
@@ -214,65 +216,65 @@ struct Socket;
  */
 class Client
 {
-	private:
-		struct impl_;
-		std::unique_ptr<impl_> impl;
+private:
+	struct impl_;
+	std::unique_ptr<impl_> impl;
 
-	protected:
-		Server *server;
-		bool connected;
-		bool finished_writing = false;
-		bool accepted = false;
-		std::time_t closed_time;
-		std::time_t connect_time;
+protected:
+	Server *server;
+	bool connected;
+	bool finished_writing = false;
+	bool accepted = false;
+	std::time_t closed_time;
+	std::time_t connect_time;
 
-		std::string recv_buffer;
-		std::size_t recv_buffer_gpos;
-		std::size_t recv_buffer_ppos;
-		std::size_t recv_buffer_used;
+	std::string recv_buffer;
+	std::size_t recv_buffer_gpos;
+	std::size_t recv_buffer_ppos;
+	std::size_t recv_buffer_used;
 
-		std::string send_buffer;
-		std::size_t send_buffer_gpos;
-		std::size_t send_buffer_ppos;
-		std::size_t send_buffer_used;
+	std::string send_buffer;
+	std::size_t send_buffer_gpos;
+	std::size_t send_buffer_ppos;
+	std::size_t send_buffer_used;
 
-	public:
-		Client();
-		Client(const IPAddress &addr, std::uint16_t port);
-		Client(Server *);
-		Client(const Socket &, Server *);
+public:
+	Client();
+	Client(const IPAddress &addr, std::uint16_t port);
+	Client(Server *);
+	Client(const Socket &, Server *);
 
-		virtual bool NeedTick() { return false; }
+	virtual bool NeedTick() { return false; }
 
-		void SetRecvBuffer(std::size_t size);
-		void SetSendBuffer(std::size_t size);
+	void SetRecvBuffer(std::size_t size);
+	void SetSendBuffer(std::size_t size);
 
-		bool Connect(const IPAddress &addr, std::uint16_t port);
-		void Bind(const IPAddress &addr, std::uint16_t port);
+	bool Connect(const IPAddress &addr, std::uint16_t port);
+	void Bind(const IPAddress &addr, std::uint16_t port);
 
-		std::size_t RecvBufferRemaining() { return this->recv_buffer.length() - this->recv_buffer_used; }
-		std::size_t SendBufferRemaining() { return this->send_buffer.length() - this->send_buffer_used; }
+	std::size_t RecvBufferRemaining() { return this->recv_buffer.length() - this->recv_buffer_used; }
+	std::size_t SendBufferRemaining() { return this->send_buffer.length() - this->send_buffer_used; }
 
-		std::string Recv(std::size_t length);
-		void Send(const std::string &data);
+	std::string Recv(std::size_t length);
+	void Send(const std::string &data);
 
-		bool DoRecv();
-		bool DoSend();
+	bool DoRecv();
+	bool DoSend();
 
-		bool Select(double timeout);
+	bool Select(double timeout);
 
-		bool Accepted() const { return accepted; }
-		void MarkAccepted() { accepted = true; }
+	bool Accepted() const { return accepted; }
+	void MarkAccepted() { accepted = true; }
 
-		bool Connected() const;
-		IPAddress GetRemoteAddr() const;
+	bool Connected() const;
+	IPAddress GetRemoteAddr() const;
 
-		void Close(bool force = false);
-		void FinishWriting();
+	void Close(bool force = false);
+	void FinishWriting();
 
-		std::time_t ConnectTime() const;
+	std::time_t ConnectTime() const;
 
-		virtual ~Client();
+	virtual ~Client();
 
 	// TODO: Separate Socket type
 	friend class Server;
@@ -283,148 +285,147 @@ class Client
  */
 class Server
 {
-	public:
-		enum State
-		{
-			/**
-			 * There was an error preparing the server.
-			 */
-			Invalid,
-
-			/**
-			 * Newly created server, not listening yet.
-			 */
-			Created,
-
-			/**
-			 * Server has been bound to a port but is not yet listening.
-			 */
-			Bound,
-
-			/**
-			 * Server is listening and is ready to accept clients.
-			 */
-			Listening
-		};
-
-	private:
-		struct impl_;
-
-		impl_ *impl;
-
-	protected:
-		virtual Client *ClientFactory(const Socket &sock) { return new Client(sock, this); }
+public:
+	enum State
+	{
+		/**
+		 * There was an error preparing the server.
+		 */
+		Invalid,
 
 		/**
-		 * The address the server will listen on.
+		 * Newly created server, not listening yet.
 		 */
-		IPAddress address;
+		Created,
 
 		/**
-		 * The port the server will listen on in host order.
+		 * Server has been bound to a port but is not yet listening.
 		 */
-		uint16_t port;
+		Bound,
 
 		/**
-		 * The port the server will listen on in network order.
+		 * Server is listening and is ready to accept clients.
 		 */
-		uint16_t portn;
+		Listening
+	};
 
-		/**
-		 * Current server state.
-		 * @sa State
-		 */
-		State state;
+private:
+	struct impl_;
 
-		/**
-		 * Maximum amount of data that will be buffered for recieving per client.
-		 */
-		std::size_t recv_buffer_max;
+	impl_ *impl;
 
-		/**
-		 * Maximum amount of data that will be buffered for sending per client.
-		 */
-		std::size_t send_buffer_max;
+protected:
+	virtual Client *ClientFactory(const Socket &sock) { return new Client(sock, this); }
 
-		/**
-		 * Maximum number of connections the server will hold at one time.
-		 */
-		unsigned int maxconn;
+	/**
+	 * The address the server will listen on.
+	 */
+	IPAddress address;
 
-	public:
-		/**
-		 * List of connected clients.
-		 */
-		std::list<Client *> clients;
+	/**
+	 * The port the server will listen on in host order.
+	 */
+	uint16_t port;
 
-		/**
-		 * Initializes the Server.
-		 */
-		Server();
+	/**
+	 * The port the server will listen on in network order.
+	 */
+	uint16_t portn;
 
-		/**
-		 * Initializes the Server and binds to the specified address and port.
-		 * @param addr Address to bind to
-		 * @param port Port number to bind to
-		 */
-		Server(const IPAddress &addr, uint16_t port);
+	/**
+	 * Current server state.
+	 * @sa State
+	 */
+	State state;
 
-		/**
-		 * Bind the Server to the specified address and port.
-		 * Once this succeeds you should call Listen().
-		 * @param addr Address to bind to.
-		 * @param port Port number to bind to.
-		 * @throw Socket_BindFailed
-		 */
-		void Bind(const IPAddress &addr, uint16_t port);
+	/**
+	 * Maximum amount of data that will be buffered for recieving per client.
+	 */
+	std::size_t recv_buffer_max;
 
-		/**
-		 * Bind the Server to the specified address and port.
-		 * @param maxconn Maximum number of clients to have at one time.
-		 * @param backlog Number of connections to keep in the queue.
-		 * @throw Socket_ListenFailed
-		 */
-		void Listen(int maxconn, int backlog = 10);
+	/**
+	 * Maximum amount of data that will be buffered for sending per client.
+	 */
+	std::size_t send_buffer_max;
 
-		/**
-		 * Check for new connection requests.
-		 * @return NULL if there are no pending connections, a pointer to the Client otherwise.
-		 */
-		Client *Poll();
+	/**
+	 * Maximum number of connections the server will hold at one time.
+	 */
+	unsigned int maxconn;
 
-		/**
-		 * Check clients for incoming data and errors, and sends data in their send_buffer.
-		 * If data is recieved, it is added to their recv_buffer.
-		 * @param timeout Max number of seconds to block for
-		 * @throw Socket_SelectFailed
-		 * @throw Socket_Exception
-		 * @return Returns a list of clients that have data in their recv_buffer.
-		 */
-		std::vector<Client *> *Select(double timeout);
+public:
+	/**
+	 * List of connected clients.
+	 */
+	std::list<Client *> clients;
 
-		/**
-		 * Destroys any dead clients, should be called periodically.
-		 * All pointers to Client objects from this Server should be considered invalid after execution.
-		 */
-		void BuryTheDead();
+	/**
+	 * Initializes the Server.
+	 */
+	Server();
 
-		State State() const
-		{
-			return this->state;
-		}
+	/**
+	 * Initializes the Server and binds to the specified address and port.
+	 * @param addr Address to bind to
+	 * @param port Port number to bind to
+	 */
+	Server(const IPAddress &addr, uint16_t port);
 
-		int Connections() const
-		{
-			return this->clients.size();
-		}
+	/**
+	 * Bind the Server to the specified address and port.
+	 * Once this succeeds you should call Listen().
+	 * @param addr Address to bind to.
+	 * @param port Port number to bind to.
+	 * @throw Socket_BindFailed
+	 */
+	void Bind(const IPAddress &addr, uint16_t port);
 
-		int MaxConnections() const
-		{
-			return this->maxconn;
-		}
+	/**
+	 * Bind the Server to the specified address and port.
+	 * @param maxconn Maximum number of clients to have at one time.
+	 * @param backlog Number of connections to keep in the queue.
+	 * @throw Socket_ListenFailed
+	 */
+	void Listen(int maxconn, int backlog = 10);
 
-		virtual ~Server();
+	/**
+	 * Check for new connection requests.
+	 * @return NULL if there are no pending connections, a pointer to the Client otherwise.
+	 */
+	Client *Poll();
+
+	/**
+	 * Check clients for incoming data and errors, and sends data in their send_buffer.
+	 * If data is recieved, it is added to their recv_buffer.
+	 * @param timeout Max number of seconds to block for
+	 * @throw Socket_SelectFailed
+	 * @throw Socket_Exception
+	 * @return Returns a list of clients that have data in their recv_buffer.
+	 */
+	std::vector<Client *> *Select(double timeout);
+
+	/**
+	 * Destroys any dead clients, should be called periodically.
+	 * All pointers to Client objects from this Server should be considered invalid after execution.
+	 */
+	void BuryTheDead();
+
+	State State() const
+	{
+		return this->state;
+	}
+
+	int Connections() const
+	{
+		return this->clients.size();
+	}
+
+	int MaxConnections() const
+	{
+		return this->maxconn;
+	}
+
+	virtual ~Server();
 };
-
 
 #endif // SOCKET_HPP_INCLUDED

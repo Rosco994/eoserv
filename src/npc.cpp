@@ -77,12 +77,12 @@ NPC::NPC(Map *map, short id, unsigned char x, unsigned char y, unsigned char spa
 	this->parent = 0;
 }
 
-const NPC_Data& NPC::Data() const
+const NPC_Data &NPC::Data() const
 {
 	return *this->map->world->GetNpcData(this->id);
 }
 
-const ENF_Data& NPC::ENF() const
+const ENF_Data &NPC::ENF() const
 {
 	return this->Data().ENF();
 }
@@ -120,13 +120,13 @@ void NPC::Spawn(NPC *parent)
 			}
 			else
 			{
-				this->x = util::rand(this->spawn_x-2, this->spawn_x+2);
-				this->y = util::rand(this->spawn_y-2, this->spawn_y+2);
+				this->x = util::rand(this->spawn_x - 2, this->spawn_x + 2);
+				this->y = util::rand(this->spawn_y - 2, this->spawn_y + 2);
 			}
 
 			if (this->map->Walkable(this->x, this->y, true) && (i > 100 || !this->map->Occupied(this->x, this->y, Map::NPCOnly)))
 			{
-				this->direction = static_cast<Direction>(util::rand(0,3));
+				this->direction = static_cast<Direction>(util::rand(0, 3));
 				found = true;
 				break;
 			}
@@ -135,9 +135,9 @@ void NPC::Spawn(NPC *parent)
 		if (!found)
 		{
 			Console::Wrn("An NPC on map %i at %i,%i is being placed by linear scan of spawn area (%s)", this->map->id, this->spawn_x, this->spawn_y, this->map->world->enf->Get(this->id).name.c_str());
-			for (this->x = this->spawn_x-2; this->x <= spawn_x+2; ++this->x)
+			for (this->x = this->spawn_x - 2; this->x <= spawn_x + 2; ++this->x)
 			{
-				for (this->y = this->spawn_y-2; this->y <= this->spawn_y+2; ++this->y)
+				for (this->y = this->spawn_y - 2; this->y <= this->spawn_y + 2; ++this->y)
 				{
 					if (this->map->Walkable(this->x, this->y, true))
 					{
@@ -148,7 +148,7 @@ void NPC::Spawn(NPC *parent)
 				}
 			}
 		}
-		end_linear_scan:
+	end_linear_scan:
 
 		if (!found)
 		{
@@ -284,7 +284,7 @@ void NPC::Act()
 			attacker = closest;
 		}
 	}
-	
+
 	if (attacker)
 	{
 		int xdiff = this->x - attacker->x;
@@ -336,7 +336,7 @@ void NPC::Act()
 
 			if (this->Walk(static_cast<Direction>(this->direction)) == Map::WalkFail)
 			{
-				this->Walk(static_cast<Direction>(util::rand(0,3)));
+				this->Walk(static_cast<Direction>(util::rand(0, 3)));
 			}
 		}
 	}
@@ -347,7 +347,7 @@ void NPC::Act()
 		int act;
 		if (this->walk_idle_for == 0)
 		{
-			act = util::rand(1,10);
+			act = util::rand(1, 10);
 		}
 		else
 		{
@@ -362,12 +362,12 @@ void NPC::Act()
 
 		if (act >= 7 && act <= 9) // 30% change direction
 		{
-			this->Walk(static_cast<Direction>(util::rand(0,3)));
+			this->Walk(static_cast<Direction>(util::rand(0, 3)));
 		}
 
 		if (act == 10) // 10% take a break
 		{
-			this->walk_idle_for = util::rand(1,4);
+			this->walk_idle_for = util::rand(1, 4);
 		}
 	}
 }
@@ -479,16 +479,16 @@ void NPC::RemoveFromView(Character *target)
 
 	PacketBuilder builder2(PACKET_NPC, PACKET_SPEC, 5);
 	builder2.AddShort(0); // killer pid
-	builder2.AddChar(0); // killer direction
+	builder2.AddChar(0);  // killer direction
 	builder2.AddShort(this->index);
-/*
-	builder2.AddShort(0); // dropped item uid
-	builder2.AddShort(0); // dropped item id
-	builder2.AddChar(this->x);
-	builder2.AddChar(this->y);
-	builder2.AddInt(0); // dropped item amount
-	builder2.AddThree(0); // damage
-*/
+	/*
+		builder2.AddShort(0); // dropped item uid
+		builder2.AddShort(0); // dropped item id
+		builder2.AddChar(this->x);
+		builder2.AddChar(this->y);
+		builder2.AddInt(0); // dropped item amount
+		builder2.AddThree(0); // damage
+	*/
 
 	target->Send(builder);
 	target->Send(builder2);
@@ -525,7 +525,7 @@ void NPC::Killed(Character *from, int amount, int spell_id)
 
 		if (drops.size() > 0)
 		{
-			drop = drops[util::rand(0, drops.size()-1)];
+			drop = drops[util::rand(0, drops.size() - 1)];
 		}
 	}
 	else if (dropratemode == 2)
@@ -545,7 +545,7 @@ void NPC::Killed(Character *from, int amount, int spell_id)
 
 		UTIL_FOREACH_CREF(this->Data().drops, checkdrop)
 		{
-			if (roll >= checkdrop->chance_offset && roll < checkdrop->chance_offset+checkdrop->chance)
+			if (roll >= checkdrop->chance_offset && roll < checkdrop->chance_offset + checkdrop->chance)
 			{
 				drop = checkdrop.get();
 				break;
@@ -568,7 +568,7 @@ void NPC::Killed(Character *from, int amount, int spell_id)
 	int dropuid = 0;
 	int dropid = 0;
 	int dropamount = 0;
-	Character* drop_winner = nullptr;
+	Character *drop_winner = nullptr;
 
 	if (drop)
 	{
@@ -586,54 +586,54 @@ void NPC::Killed(Character *from, int amount, int spell_id)
 		// Selects a random number between 0 and maxhp, and decides the winner based on that
 		switch (sharemode)
 		{
-			case 0:
-				drop_winner = from;
-				break;
+		case 0:
+			drop_winner = from;
+			break;
 
-			case 1:
-				drop_winner = most_damage;
-				break;
+		case 1:
+			drop_winner = most_damage;
+			break;
 
-			case 2:
+		case 2:
+		{
+			int rewarded_hp = util::rand(0, this->totaldamage - 1);
+			int count_hp = 0;
+			UTIL_FOREACH_CREF(this->damagelist, opponent)
 			{
-				int rewarded_hp = util::rand(0, this->totaldamage - 1);
-				int count_hp = 0;
-				UTIL_FOREACH_CREF(this->damagelist, opponent)
+				if (opponent->attacker->InRange(this))
 				{
-					if (opponent->attacker->InRange(this))
+					if (rewarded_hp >= count_hp && rewarded_hp < opponent->damage)
 					{
-						if (rewarded_hp >= count_hp && rewarded_hp < opponent->damage)
-						{
-							drop_winner = opponent->attacker;
-							break;
-						}
+						drop_winner = opponent->attacker;
+						break;
+					}
 
-						count_hp += opponent->damage;
+					count_hp += opponent->damage;
+				}
+			}
+		}
+		break;
+
+		case 3:
+		{
+			int rand = util::rand(0, this->damagelist.size() - 1);
+			int i = 0;
+			UTIL_FOREACH_CREF(this->damagelist, opponent)
+			{
+				if (opponent->attacker->InRange(this))
+				{
+					if (rand == i++)
+					{
+						drop_winner = opponent->attacker;
+						break;
 					}
 				}
 			}
-				break;
-
-			case 3:
-			{
-				int rand = util::rand(0, this->damagelist.size() - 1);
-				int i = 0;
-				UTIL_FOREACH_CREF(this->damagelist, opponent)
-				{
-					if (opponent->attacker->InRange(this))
-					{
-						if (rand == i++)
-						{
-							drop_winner = opponent->attacker;
-							break;
-						}
-					}
-				}
-			}
-				break;
+		}
+		break;
 		}
 	}
-	abort_drop:
+abort_drop:
 
 	if (drop_winner)
 		this->map->items.back()->owner = drop_winner->PlayerID();
@@ -641,7 +641,8 @@ void NPC::Killed(Character *from, int amount, int spell_id)
 	UTIL_FOREACH(this->map->characters, character)
 	{
 		std::list<std::unique_ptr<NPC_Opponent>>::iterator findopp = this->damagelist.begin();
-		for (; findopp != this->damagelist.end() && (*findopp)->attacker != character; ++findopp); // no loop body
+		for (; findopp != this->damagelist.end() && (*findopp)->attacker != character; ++findopp)
+			; // no loop body
 
 		if (findopp != this->damagelist.end() || character->InRange(this))
 		{
@@ -656,60 +657,10 @@ void NPC::Killed(Character *from, int amount, int spell_id)
 					int reward;
 					switch (sharemode)
 					{
-						case 0:
-							if (character == from)
-							{
-								reward = int(std::ceil(double(this->ENF().exp) * exprate));
-
-								if (reward > 0)
-								{
-									if (partysharemode)
-									{
-										if (character->party)
-										{
-											character->party->ShareEXP(reward, partysharemode, this->map);
-										}
-										else
-										{
-											character->exp += reward;
-										}
-									}
-									else
-									{
-										character->exp += reward;
-									}
-								}
-							}
-							break;
-
-						case 1:
-							if (character == most_damage)
-							{
-								reward = int(std::ceil(double(this->ENF().exp) * exprate));
-
-								if (reward > 0)
-								{
-									if (partysharemode)
-									{
-										if (character->party)
-										{
-											character->party->ShareEXP(reward, partysharemode, this->map);
-										}
-										else
-										{
-											character->exp += reward;
-										}
-									}
-									else
-									{
-										character->exp += reward;
-									}
-								}
-							}
-							break;
-
-						case 2:
-							reward = int(std::ceil(double(this->ENF().exp) * exprate * (double((*findopp)->damage) / double(this->totaldamage))));
+					case 0:
+						if (character == from)
+						{
+							reward = int(std::ceil(double(this->ENF().exp) * exprate));
 
 							if (reward > 0)
 							{
@@ -717,8 +668,7 @@ void NPC::Killed(Character *from, int amount, int spell_id)
 								{
 									if (character->party)
 									{
-										character->party->temp_expsum += reward;
-										parties.insert(character->party);
+										character->party->ShareEXP(reward, partysharemode, this->map);
 									}
 									else
 									{
@@ -730,10 +680,13 @@ void NPC::Killed(Character *from, int amount, int spell_id)
 									character->exp += reward;
 								}
 							}
-							break;
+						}
+						break;
 
-						case 3:
-							reward = int(std::ceil(double(this->ENF().exp) * exprate * (double(this->damagelist.size()) / 1.0)));
+					case 1:
+						if (character == most_damage)
+						{
+							reward = int(std::ceil(double(this->ENF().exp) * exprate));
 
 							if (reward > 0)
 							{
@@ -741,7 +694,7 @@ void NPC::Killed(Character *from, int amount, int spell_id)
 								{
 									if (character->party)
 									{
-										character->party->temp_expsum += reward;
+										character->party->ShareEXP(reward, partysharemode, this->map);
 									}
 									else
 									{
@@ -753,12 +706,60 @@ void NPC::Killed(Character *from, int amount, int spell_id)
 									character->exp += reward;
 								}
 							}
-							break;
+						}
+						break;
+
+					case 2:
+						reward = int(std::ceil(double(this->ENF().exp) * exprate * (double((*findopp)->damage) / double(this->totaldamage))));
+
+						if (reward > 0)
+						{
+							if (partysharemode)
+							{
+								if (character->party)
+								{
+									character->party->temp_expsum += reward;
+									parties.insert(character->party);
+								}
+								else
+								{
+									character->exp += reward;
+								}
+							}
+							else
+							{
+								character->exp += reward;
+							}
+						}
+						break;
+
+					case 3:
+						reward = int(std::ceil(double(this->ENF().exp) * exprate * (double(this->damagelist.size()) / 1.0)));
+
+						if (reward > 0)
+						{
+							if (partysharemode)
+							{
+								if (character->party)
+								{
+									character->party->temp_expsum += reward;
+								}
+								else
+								{
+									character->exp += reward;
+								}
+							}
+							else
+							{
+								character->exp += reward;
+							}
+						}
+						break;
 					}
 
 					character->exp = std::min(character->exp, static_cast<int>(this->map->world->config["MaxExp"]));
 
-					while (character->level < static_cast<int>(this->map->world->config["MaxLevel"]) && character->exp >= this->map->world->exp_table[character->level+1])
+					while (character->level < static_cast<int>(this->map->world->config["MaxLevel"]) && character->exp >= this->map->world->exp_table[character->level + 1])
 					{
 						level_up = true;
 						++character->level;
@@ -820,8 +821,7 @@ void NPC::Killed(Character *from, int amount, int spell_id)
 	{
 		opponent->attacker->unregister_npc.erase(
 			std::remove(UTIL_RANGE(opponent->attacker->unregister_npc), this),
-			opponent->attacker->unregister_npc.end()
-		);
+			opponent->attacker->unregister_npc.end());
 	}
 
 	this->damagelist.clear();
@@ -831,7 +831,7 @@ void NPC::Killed(Character *from, int amount, int spell_id)
 
 	if (this->ENF().boss)
 	{
-		std::vector<NPC*> child_npcs;
+		std::vector<NPC *> child_npcs;
 
 		UTIL_FOREACH(this->map->npcs, npc)
 		{
@@ -870,8 +870,7 @@ void NPC::Killed(Character *from, int amount, int spell_id)
 	{
 		this->map->npcs.erase(
 			std::remove(this->map->npcs.begin(), this->map->npcs.end(), this),
-			this->map->npcs.end()
-		);
+			this->map->npcs.end());
 	}
 
 	UTIL_FOREACH(from->quests, q)
@@ -902,8 +901,7 @@ void NPC::Die(bool show)
 	{
 		opponent->attacker->unregister_npc.erase(
 			std::remove(UTIL_RANGE(opponent->attacker->unregister_npc), this),
-			opponent->attacker->unregister_npc.end()
-		);
+			opponent->attacker->unregister_npc.end());
 	}
 
 	this->damagelist.clear();
@@ -913,13 +911,13 @@ void NPC::Die(bool show)
 	{
 		PacketBuilder builder(PACKET_NPC, PACKET_SPEC, 18);
 		builder.AddShort(0); // killer pid
-		builder.AddChar(0); // killer direction
+		builder.AddChar(0);	 // killer direction
 		builder.AddShort(this->index);
 		builder.AddShort(0); // dropped item uid
 		builder.AddShort(0); // dropped item id
 		builder.AddChar(this->x);
 		builder.AddChar(this->y);
-		builder.AddInt(0); // dropped item amount
+		builder.AddInt(0);			// dropped item amount
 		builder.AddThree(this->hp); // damage
 
 		UTIL_FOREACH(this->map->characters, character)
@@ -935,8 +933,7 @@ void NPC::Die(bool show)
 	{
 		this->map->npcs.erase(
 			std::remove(this->map->npcs.begin(), this->map->npcs.end(), this),
-			this->map->npcs.end()
-		);
+			this->map->npcs.end());
 
 		delete this;
 	}
@@ -1038,7 +1035,7 @@ void NPC::Attack(Character *target)
 	target->Send(builder);
 }
 
-void NPC::Say(const std::string& message)
+void NPC::Say(const std::string &message)
 {
 	PacketBuilder builder(PACKET_NPC, PACKET_PLAYER, 5 + message.length());
 	builder.AddByte(255);
@@ -1065,11 +1062,11 @@ void NPC::Say(const std::string& message)
 
 void NPC::FormulaVars(std::unordered_map<std::string, double> &vars, std::string prefix)
 {
-	const ENF_Data& data = this->ENF();
+	const ENF_Data &data = this->ENF();
 	vv(1, "npc") v(hp) vv(data.hp, "maxhp")
-	vd(mindam) vd(maxdam)
-	vd(accuracy) vd(evade) vd(armor)
-	v(x) v(y) v(direction) vv(map->id, "mapid")
+		vd(mindam) vd(maxdam)
+			vd(accuracy) vd(evade) vd(armor)
+				v(x) v(y) v(direction) vv(map->id, "mapid")
 }
 
 #undef vd
@@ -1091,7 +1088,6 @@ NPC::~NPC()
 	{
 		opponent->attacker->unregister_npc.erase(
 			std::remove(UTIL_RANGE(opponent->attacker->unregister_npc), this),
-			opponent->attacker->unregister_npc.end()
-		);
+			opponent->attacker->unregister_npc.end());
 	}
 }

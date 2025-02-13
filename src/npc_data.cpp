@@ -17,15 +17,13 @@
 #include <string>
 #include <vector>
 
-NPC_Data::NPC_Data(World* world, short id)
-	: id(id)
-	, drops_chance_total(0.0)
-	, world(world)
+NPC_Data::NPC_Data(World *world, short id)
+	: id(id), drops_chance_total(0.0), world(world)
 {
 	this->LoadShopDrop();
 }
 
-const ENF_Data& NPC_Data::ENF() const
+const ENF_Data &NPC_Data::ENF() const
 {
 	return this->world->enf->Get(this->id);
 }
@@ -68,14 +66,14 @@ void NPC_Data::LoadShopDrop()
 				std::unique_ptr<NPC_Drop> drop(new NPC_Drop);
 
 				drop->id = util::to_int(parts[i]);
-				drop->min = util::to_int(parts[i+1]);
-				drop->max = util::to_int(parts[i+2]);
-				drop->chance = util::to_float(parts[i+3]);
+				drop->min = util::to_int(parts[i + 1]);
+				drop->max = util::to_int(parts[i + 2]);
+				drop->chance = util::to_float(parts[i + 3]);
 				drop->chance_offset = chance_offset;
 
 				chance_offset += drop->chance;
 
-				this->drops[i/4] = std::move(drop);
+				this->drops[i / 4] = std::move(drop);
 			}
 
 			if (chance_offset > 100.001)
@@ -125,15 +123,15 @@ void NPC_Data::LoadShopDrop()
 				{
 					std::unique_ptr<NPC_Shop_Trade_Item> item(new NPC_Shop_Trade_Item);
 					item->id = util::to_int(parts[i]);
-					item->buy = util::to_int(parts[i+1]);
-					item->sell = util::to_int(parts[i+2]);
+					item->buy = util::to_int(parts[i + 1]);
+					item->sell = util::to_int(parts[i + 2]);
 
 					if (item->buy != 0 && item->sell != 0 && item->sell > item->buy)
 					{
 						Console::Wrn("item #%i (vendor #%i) has a higher sell price than buy price.", item->id, shop_vend_id);
 					}
 
-					this->shop_trade[i/3] = std::move(item);
+					this->shop_trade[i / 3] = std::move(item);
 				}
 			}
 		}
@@ -164,14 +162,14 @@ void NPC_Data::LoadShopDrop()
 					for (int ii = 0; ii < 4; ++ii)
 					{
 						NPC_Shop_Craft_Ingredient ingredient;
-						ingredient.id = util::to_int(parts[i+1+ii*2]);
-						ingredient.amount = util::to_int(parts[i+2+ii*2]);
+						ingredient.id = util::to_int(parts[i + 1 + ii * 2]);
+						ingredient.amount = util::to_int(parts[i + 2 + ii * 2]);
 						ingredients[ii] = ingredient;
 					}
 
 					item->ingredients = ingredients;
 
-					this->shop_craft[i/9] = std::move(item);
+					this->shop_craft[i / 9] = std::move(item);
 				}
 			}
 		}
@@ -211,23 +209,23 @@ void NPC_Data::LoadShopDrop()
 					std::unique_ptr<NPC_Learn_Skill> skill(new NPC_Learn_Skill);
 
 					skill->id = util::to_int(parts[i]);
-					skill->cost = util::to_int(parts[i+1]);
-					skill->levelreq = util::to_int(parts[i+2]);
-					skill->classreq = util::to_int(parts[i+3]);
+					skill->cost = util::to_int(parts[i + 1]);
+					skill->levelreq = util::to_int(parts[i + 2]);
+					skill->classreq = util::to_int(parts[i + 3]);
 
-					skill->skillreq[0] = util::to_int(parts[i+4]);
-					skill->skillreq[1] = util::to_int(parts[i+5]);
-					skill->skillreq[2] = util::to_int(parts[i+6]);
-					skill->skillreq[3] = util::to_int(parts[i+7]);
+					skill->skillreq[0] = util::to_int(parts[i + 4]);
+					skill->skillreq[1] = util::to_int(parts[i + 5]);
+					skill->skillreq[2] = util::to_int(parts[i + 6]);
+					skill->skillreq[3] = util::to_int(parts[i + 7]);
 
-					skill->strreq = util::to_int(parts[i+8]);
-					skill->intreq = util::to_int(parts[i+9]);
-					skill->wisreq = util::to_int(parts[i+10]);
-					skill->agireq = util::to_int(parts[i+11]);
-					skill->conreq = util::to_int(parts[i+12]);
-					skill->chareq = util::to_int(parts[i+13]);
+					skill->strreq = util::to_int(parts[i + 8]);
+					skill->intreq = util::to_int(parts[i + 9]);
+					skill->wisreq = util::to_int(parts[i + 10]);
+					skill->agireq = util::to_int(parts[i + 11]);
+					skill->conreq = util::to_int(parts[i + 12]);
+					skill->chareq = util::to_int(parts[i + 13]);
 
-					this->skill_learn[i/14] = std::move(skill);
+					this->skill_learn[i / 14] = std::move(skill);
 				}
 			}
 		}
@@ -246,7 +244,7 @@ void NPC_Data::LoadShopDrop()
 
 	if (this->ENF().type == ENF::Type::Inn && home_vend_id > 0)
 	{
-		restart_loop:
+	restart_loop:
 		UTIL_FOREACH(this->world->home_config, hc)
 		{
 			std::vector<std::string> parts = util::explode('.', hc.first);
@@ -260,7 +258,7 @@ void NPC_Data::LoadShopDrop()
 			{
 				this->citizenship.reset(new NPC_Citizenship);
 				this->citizenship->home = parts[0];
-				Home* home = this->world->GetHome(this->citizenship->home);
+				Home *home = this->world->GetHome(this->citizenship->home);
 
 				if (home)
 					home->innkeeper_vend = this->ENF().vendor_id;
@@ -298,5 +296,4 @@ void NPC_Data::LoadShopDrop()
 
 NPC_Data::~NPC_Data()
 {
-
 }

@@ -14,7 +14,7 @@
 #include <stdexcept>
 #include <string>
 
-bool Config::Read(const std::string& filename, bool nowarn)
+bool Config::Read(const std::string &filename, bool nowarn)
 {
 	std::FILE *fh;
 	char buf[Config::MaxLineLength];
@@ -63,9 +63,9 @@ bool Config::Read(const std::string& filename, bool nowarn)
 
 		key = util::rtrim(line.substr(0, eqloc));
 
-		if (line.length() > eqloc+1)
+		if (line.length() > eqloc + 1)
 		{
-			val = util::ltrim(line.substr(eqloc+1));
+			val = util::ltrim(line.substr(eqloc + 1));
 		}
 		else
 		{
@@ -104,7 +104,7 @@ bool Config::Read(const std::string& filename, bool nowarn)
 					val.replace(loc, 2, "\\");
 				}
 
-				loc = val.find('\\', loc+1);
+				loc = val.find('\\', loc + 1);
 			}
 
 			this->operator[](key) = static_cast<util::variant>(val);

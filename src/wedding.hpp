@@ -1,5 +1,4 @@
-
-/* $Id$
+/* wedding.hpp
  * EOSERV is released under the zlib license.
  * See LICENSE.txt for more info.
  */
@@ -18,45 +17,45 @@
 
 class Wedding
 {
-	private:
-		unsigned char priest_idx;
+private:
+	unsigned char priest_idx;
 
-		NPC* GetPriest();
-		Character* GetPartner1();
-		Character* GetPartner2();
+	NPC *GetPriest();
+	Character *GetPartner1();
+	Character *GetPartner2();
 
-		void PriestSay(const std::string& message);
+	void PriestSay(const std::string &message);
 
-		void StartTimer();
-		void StopTimer();
+	void StartTimer();
+	void StopTimer();
 
-		void NextState();
+	void NextState();
 
-		bool Check();
+	bool Check();
 
-		void Reset();
-		void ErrorOut();
+	void Reset();
+	void ErrorOut();
 
-	public:
-		int state;
-		int tick;
+public:
+	int state;
+	int tick;
 
-		std::string partner1;
-		std::string partner2;
+	std::string partner1;
+	std::string partner2;
 
-		TimeEvent *tick_timer;
-		Map *map;
+	TimeEvent *tick_timer;
+	Map *map;
 
-		Wedding(Map *map, unsigned char priest_idx);
+	Wedding(Map *map, unsigned char priest_idx);
 
-		void Tick();
-		bool StartWedding(const std::string& player1, const std::string& player2);
+	void Tick();
+	bool StartWedding(const std::string &player1, const std::string &player2);
 
-		bool Busy();
+	bool Busy();
 
-		void IDo(Character* character);
+	void IDo(Character *character);
 
-		~Wedding();
+	~Wedding();
 };
 
 #endif // WEDDING_HPP_INCLUDED

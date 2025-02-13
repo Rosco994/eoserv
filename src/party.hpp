@@ -20,24 +20,24 @@
  */
 class Party
 {
-	public:
-		World *world;
+public:
+	World *world;
 
-		Character *leader;
-		std::vector<Character *> members;
+	Character *leader;
+	std::vector<Character *> members;
 
-		int temp_expsum;
+	int temp_expsum;
 
-		Party(World *world, Character *leader, Character *other);
+	Party(World *world, Character *leader, Character *other);
 
-		void Msg(Character *from, std::string message, bool echo = true);
-		void Join(Character *);
-		void Leave(Character *);
-		void RefreshMembers(Character *, bool create = false);
-		void UpdateHP(Character *);
-		void ShareEXP(int exp, int sharemode, Map *map);
+	void Msg(Character *from, std::string message, bool echo = true);
+	void Join(Character *);
+	void Leave(Character *);
+	void RefreshMembers(Character *, bool create = false);
+	void UpdateHP(Character *);
+	void ShareEXP(int exp, int sharemode, Map *map);
 
-		~Party();
+	~Party();
 };
 
 #endif // PARTY_HPP_INCLUDED

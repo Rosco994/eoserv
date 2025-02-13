@@ -12,17 +12,17 @@
 namespace Handlers
 {
 
-// User opening a door
-void Door_Open(Character *character, PacketReader &reader)
-{
-	int x = reader.GetChar();
-	int y = reader.GetChar();
+	// User opening a door
+	void Door_Open(Character *character, PacketReader &reader)
+	{
+		int x = reader.GetChar();
+		int y = reader.GetChar();
 
-	character->map->OpenDoor(character, x, y);
-}
+		character->map->OpenDoor(character, x, y);
+	}
 
-PACKET_HANDLER_REGISTER(PACKET_DOOR)
+	PACKET_HANDLER_REGISTER(PACKET_DOOR)
 	Register(PACKET_OPEN, Door_Open, Playing);
-PACKET_HANDLER_REGISTER_END(PACKET_DOOR)
+	PACKET_HANDLER_REGISTER_END(PACKET_DOOR)
 
 }

@@ -39,24 +39,37 @@ namespace EOPlus
 	{
 		switch (a)
 		{
-			case '(': case ')': case '+': return b == '\0';
-			case '&': return b == '\0' || b == '&';
-			case '|': return b == '\0' || b == '|';
-			case '-': return b == '\0' || b == UOP_ALT;
-			case '*': case '/': case '%': return b == '\0';
-			case '<': case '>': case '!': return b == '\0' || b == '=';
-			case '=': return b == '=';
-			default: return false;
+		case '(':
+		case ')':
+		case '+':
+			return b == '\0';
+		case '&':
+			return b == '\0' || b == '&';
+		case '|':
+			return b == '\0' || b == '|';
+		case '-':
+			return b == '\0' || b == UOP_ALT;
+		case '*':
+		case '/':
+		case '%':
+			return b == '\0';
+		case '<':
+		case '>':
+		case '!':
+			return b == '\0' || b == '=';
+		case '=':
+			return b == '=';
+		default:
+			return false;
 		}
 	}
 
-	Lexer::Lexer(std::istream& is)
-		: row(1)
-		, col(0)
-		, is(is)
-	{ }
+	Lexer::Lexer(std::istream &is)
+		: row(1), col(0), is(is)
+	{
+	}
 
-	bool Lexer::PeekChar(char& c)
+	bool Lexer::PeekChar(char &c)
 	{
 		int cc = is.peek();
 
@@ -67,7 +80,7 @@ namespace EOPlus
 		return true;
 	}
 
-	bool Lexer::GetChar(char& c)
+	bool Lexer::GetChar(char &c)
 	{
 		if (!is.get(c))
 			return false;
@@ -84,7 +97,7 @@ namespace EOPlus
 		return true;
 	}
 
-	bool Lexer::GetCharIf(char& c, std::function<bool(char)> f)
+	bool Lexer::GetCharIf(char &c, std::function<bool(char)> f)
 	{
 		char cc = '\0';
 
@@ -121,7 +134,8 @@ namespace EOPlus
 		std::string s;
 		bool escape = false;
 
-		if (!this->GetCharIf(c, [](char c) { return c == '"'; }))
+		if (!this->GetCharIf(c, [](char c)
+							 { return c == '"'; }))
 			return Token();
 
 		while (this->GetChar(c))
@@ -130,8 +144,10 @@ namespace EOPlus
 			{
 				switch (c)
 				{
-					// No real need for any explicit escape codes...
-					default: s += c; break;
+				// No real need for any explicit escape codes...
+				default:
+					s += c;
+					break;
 				};
 
 				escape = false;
@@ -221,7 +237,8 @@ namespace EOPlus
 
 		char c = '\0';
 
-		while (this->GetCharIf(c, ctype_whitespace)) ; // no loop body
+		while (this->GetCharIf(c, ctype_whitespace))
+			; // no loop body
 
 		if (!this->token_buffer.empty())
 		{

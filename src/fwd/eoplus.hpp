@@ -17,40 +17,40 @@ namespace EOPlus
 
 	enum OperatorAssoc
 	{
-		ASSOC_NONE,  // For unary and meta-operators (parentheses)
+		ASSOC_NONE,	 // For unary and meta-operators (parentheses)
 		ASSOC_RIGHT, // x+y+z is (x+y)+z
-		ASSOC_LEFT,  // x=y=z is x=(y=z)
+		ASSOC_LEFT,	 // x=y=z is x=(y=z)
 	};
 
 	enum OperatorArgs
 	{
-		OP_UNARY  = 1, // Operator is prefixed to an argument (e.g. -x, !foo)
+		OP_UNARY = 1, // Operator is prefixed to an argument (e.g. -x, !foo)
 		OP_BINARY = 2 // Operator sits between 2 arguments (e.g. x-y, foo=bar)
 	};
 
 	enum class Operator : unsigned char
-    {
-		LeftParens       = UOP1('('),
-		RightParens      = UOP1(')'),
-		BitAnd           = UOP1('&'),
-		LogicalAnd       = UOP2('&', '&'),
-		BitOr            = UOP1('|'),
-		LogicalOr        = UOP2('|', '|'),
-		Assign           = UOP1('='),
-		Equality         = UOP2('=', '='),
-		Inequality       = UOP2('!', '='),
-		LessThan         = UOP1('<'),
-		LessThanEqual    = UOP2('<', '='),
-		GreaterThan      = UOP1('>'),
+	{
+		LeftParens = UOP1('('),
+		RightParens = UOP1(')'),
+		BitAnd = UOP1('&'),
+		LogicalAnd = UOP2('&', '&'),
+		BitOr = UOP1('|'),
+		LogicalOr = UOP2('|', '|'),
+		Assign = UOP1('='),
+		Equality = UOP2('=', '='),
+		Inequality = UOP2('!', '='),
+		LessThan = UOP1('<'),
+		LessThanEqual = UOP2('<', '='),
+		GreaterThan = UOP1('>'),
 		GreaterThanEqual = UOP2('>', '='),
-		Add              = UOP1('+'),
-		Subtract         = UOP1('-'),
-		Multiply         = UOP1('*'),
-		Divide           = UOP1('/'),
-		Modulo           = UOP1('%'),
-		BitNot           = UOP1('~'),
-		LogicalNot       = UOP1('!'),
-		Negate           = UOP2('-', UOP_ALT)
+		Add = UOP1('+'),
+		Subtract = UOP1('-'),
+		Multiply = UOP1('*'),
+		Divide = UOP1('/'),
+		Modulo = UOP1('%'),
+		BitNot = UOP1('~'),
+		LogicalNot = UOP1('!'),
+		Negate = UOP2('-', UOP_ALT)
 	};
 
 	struct OperatorInfo;

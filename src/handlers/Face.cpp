@@ -12,24 +12,24 @@
 namespace Handlers
 {
 
-// Player changing direction
-void Face_Player(Character *character, PacketReader &reader)
-{
-	Direction direction = static_cast<Direction>(reader.GetChar());
-
-	if (character->sitting != SIT_STAND)
+	// Player changing direction
+	void Face_Player(Character *character, PacketReader &reader)
 	{
-		return;
+		Direction direction = static_cast<Direction>(reader.GetChar());
+
+		if (character->sitting != SIT_STAND)
+		{
+			return;
+		}
+
+		if (direction <= 3)
+		{
+			character->map->Face(character, direction);
+		}
 	}
 
-	if (direction <= 3)
-	{
-		character->map->Face(character, direction);
-	}
-}
-
-PACKET_HANDLER_REGISTER(PACKET_FACE)
+	PACKET_HANDLER_REGISTER(PACKET_FACE)
 	Register(PACKET_PLAYER, Face_Player, Playing, 0.12);
-PACKET_HANDLER_REGISTER_END(PACKET_FACE)
+	PACKET_HANDLER_REGISTER_END(PACKET_FACE)
 
 }

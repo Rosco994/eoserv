@@ -24,7 +24,8 @@
 #define SHA256_H_INCLUDED
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif /* __cplusplus */
 
 #include <stdint.h>
@@ -32,16 +33,16 @@ extern "C" {
 #define SHA256_BLOCK_SIZE 64
 #define SHA256_HASH_SIZE 8
 
-typedef struct sha256_context
-{
-	uint32_t h[SHA256_HASH_SIZE];
-	char buf[SHA256_BLOCK_SIZE];
-	uint64_t length;
-} sha256_context;
+	typedef struct sha256_context
+	{
+		uint32_t h[SHA256_HASH_SIZE];
+		char buf[SHA256_BLOCK_SIZE];
+		uint64_t length;
+	} sha256_context;
 
-void sha256_start(sha256_context *ctx);
-void sha256_update(sha256_context *ctx, const char *input, uint64_t length);
-void sha256_finish(sha256_context *ctx, char digest[SHA256_HASH_SIZE * 4]);
+	void sha256_start(sha256_context *ctx);
+	void sha256_update(sha256_context *ctx, const char *input, uint64_t length);
+	void sha256_finish(sha256_context *ctx, char digest[SHA256_HASH_SIZE * 4]);
 
 #ifdef __cplusplus
 }

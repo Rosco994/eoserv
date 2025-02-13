@@ -36,143 +36,154 @@ static void limit_message(std::string &message, std::size_t chatlength)
 namespace Handlers
 {
 
-// Guild chat message
-void Talk_Request(Character *character, PacketReader &reader)
-{
-	if (!character->guild) return;
-	if (character->muted_until > time(0)) return;
-
-	std::string message = reader.GetEndString(); // message
-	limit_message(message, static_cast<int>(character->world->config["ChatLength"]));
-
-	character->guild->Msg(character, message, false);
-}
-
-// Party chat messagea
-void Talk_Open(Character *character, PacketReader &reader)
-{
-	if (!character->party) return;
-	if (character->muted_until > time(0)) return;
-
-	std::string message = reader.GetEndString(); // message
-	limit_message(message, static_cast<int>(character->world->config["ChatLength"]));
-
-	character->party->Msg(character, message, false);
-}
-
-// Global chat message
-void Talk_Msg(Character *character, PacketReader &reader)
-{
-	if (character->muted_until > time(0)) return;
-
-	if (character->mapid == static_cast<int>(character->world->config["JailMap"]))
+	// Guild chat message
+	void Talk_Request(Character *character, PacketReader &reader)
 	{
-		return;
+		if (!character->guild)
+			return;
+		if (character->muted_until > time(0))
+			return;
+
+		std::string message = reader.GetEndString(); // message
+		limit_message(message, static_cast<int>(character->world->config["ChatLength"]));
+
+		character->guild->Msg(character, message, false);
 	}
 
-	std::string message = reader.GetEndString();
-	limit_message(message, static_cast<int>(character->world->config["ChatLength"]));
-
-	character->world->Msg(character, message, false);
-}
-
-// Private chat message
-void Talk_Tell(Character *character, PacketReader &reader)
-{
-	if (character->muted_until > time(0)) return;
-
-	std::string name = reader.GetBreakString();
-	std::string message = reader.GetEndString();
-	limit_message(message, static_cast<int>(character->world->config["ChatLength"]));
-	Character *to = character->world->GetCharacter(name);
-
-	if (to && !to->IsHideOnline())
+	// Party chat messagea
+	void Talk_Open(Character *character, PacketReader &reader)
 	{
-		if (to->whispers)
+		if (!character->party)
+			return;
+		if (character->muted_until > time(0))
+			return;
+
+		std::string message = reader.GetEndString(); // message
+		limit_message(message, static_cast<int>(character->world->config["ChatLength"]));
+
+		character->party->Msg(character, message, false);
+	}
+
+	// Global chat message
+	void Talk_Msg(Character *character, PacketReader &reader)
+	{
+		if (character->muted_until > time(0))
+			return;
+
+		if (character->mapid == static_cast<int>(character->world->config["JailMap"]))
 		{
-			to->Msg(character, message);
+			return;
+		}
+
+		std::string message = reader.GetEndString();
+		limit_message(message, static_cast<int>(character->world->config["ChatLength"]));
+
+		character->world->Msg(character, message, false);
+	}
+
+	// Private chat message
+	void Talk_Tell(Character *character, PacketReader &reader)
+	{
+		if (character->muted_until > time(0))
+			return;
+
+		std::string name = reader.GetBreakString();
+		std::string message = reader.GetEndString();
+		limit_message(message, static_cast<int>(character->world->config["ChatLength"]));
+		Character *to = character->world->GetCharacter(name);
+
+		if (to && !to->IsHideOnline())
+		{
+			if (to->whispers)
+			{
+				to->Msg(character, message);
+			}
+			else
+			{
+				character->Msg(to, character->world->i18n.Format("whisper_blocked", to->SourceName()));
+			}
 		}
 		else
 		{
-			character->Msg(to, character->world->i18n.Format("whisper_blocked", to->SourceName()));
+			PacketBuilder reply(PACKET_TALK, PACKET_REPLY, 2 + name.length());
+			reply.AddShort(TALK_NOTFOUND);
+			reply.AddString(name);
+			character->Send(reply);
 		}
 	}
-	else
+
+	// Public chat message
+	void Talk_Report(Character *character, PacketReader &reader)
 	{
-		PacketBuilder reply(PACKET_TALK, PACKET_REPLY, 2 + name.length());
-		reply.AddShort(TALK_NOTFOUND);
-		reply.AddString(name);
-		character->Send(reply);
-	}
-}
+		if (character->muted_until > time(0))
+			return;
 
-// Public chat message
-void Talk_Report(Character *character, PacketReader &reader)
-{
-	if (character->muted_until > time(0)) return;
+		std::string message = reader.GetEndString();
+		limit_message(message, static_cast<int>(character->world->config["ChatLength"]));
 
-	std::string message = reader.GetEndString();
-	limit_message(message, static_cast<int>(character->world->config["ChatLength"]));
-
-	if (message.empty())
-	{
-		return;
-	}
-
-	if (character->SourceAccess() && message[0] == '$')
-	{
-		if (character->world->config["LogCommands"])
+		if (message.empty())
 		{
-			Console::Out("%s: %s", character->real_name.c_str(), message.c_str());
+			return;
 		}
 
-		std::string command;
-		std::vector<std::string> arguments = util::explode(' ', message);
-		command = arguments.front().substr(1);
-		arguments.erase(arguments.begin());
+		if (character->SourceAccess() && message[0] == '$')
+		{
+			if (character->world->config["LogCommands"])
+			{
+				Console::Out("%s: %s", character->real_name.c_str(), message.c_str());
+			}
 
-		character->world->Command(command, arguments, character);
+			std::string command;
+			std::vector<std::string> arguments = util::explode(' ', message);
+			command = arguments.front().substr(1);
+			arguments.erase(arguments.begin());
+
+			character->world->Command(command, arguments, character);
+		}
+		else if (message[0] == '#')
+		{
+			std::string command;
+			std::vector<std::string> arguments = util::explode(' ', message);
+			command = arguments.front().substr(1);
+			arguments.erase(arguments.begin());
+
+			character->world->PlayerCommand(command, arguments, character);
+		}
+		else
+		{
+			character->map->Msg(character, message, false);
+		}
 	}
-	else if (message[0] == '#')
+
+	// Admin chat message
+	void Talk_Admin(Character *character, PacketReader &reader)
 	{
-		std::string command;
-		std::vector<std::string> arguments = util::explode(' ', message);
-		command = arguments.front().substr(1);
-		arguments.erase(arguments.begin());
+		if (character->SourceAccess() < ADMIN_GUARDIAN)
+			return;
+		if (character->muted_until > time(0))
+			return;
 
-		character->world->PlayerCommand(command, arguments, character);
+		std::string message = reader.GetEndString(); // message
+		limit_message(message, static_cast<int>(character->world->config["ChatLength"]));
+
+		character->world->AdminMsg(character, message, ADMIN_GUARDIAN, false);
 	}
-	else
+
+	// Announcement message
+	void Talk_Announce(Character *character, PacketReader &reader)
 	{
-		character->map->Msg(character, message, false);
+		if (character->SourceAccess() < ADMIN_GUARDIAN)
+			return;
+		if (character->muted_until > time(0))
+			return;
+
+		std::string message = reader.GetEndString(); // message
+		limit_message(message, static_cast<int>(character->world->config["ChatLength"]));
+
+		character->world->AnnounceMsg(character, message, false);
 	}
-}
 
-// Admin chat message
-void Talk_Admin(Character *character, PacketReader &reader)
-{
-	if (character->SourceAccess() < ADMIN_GUARDIAN) return;
-	if (character->muted_until > time(0)) return;
-
-	std::string message = reader.GetEndString(); // message
-	limit_message(message, static_cast<int>(character->world->config["ChatLength"]));
-
-	character->world->AdminMsg(character, message, ADMIN_GUARDIAN, false);
-}
-
-// Announcement message
-void Talk_Announce(Character *character, PacketReader &reader)
-{
-	if (character->SourceAccess() < ADMIN_GUARDIAN) return;
-	if (character->muted_until > time(0)) return;
-
-	std::string message = reader.GetEndString(); // message
-	limit_message(message, static_cast<int>(character->world->config["ChatLength"]));
-
-	character->world->AnnounceMsg(character, message, false);
-}
-
-PACKET_HANDLER_REGISTER(PACKET_TALK)
+	PACKET_HANDLER_REGISTER(PACKET_TALK)
 	Register(PACKET_REQUEST, Talk_Request, Playing);
 	Register(PACKET_OPEN, Talk_Open, Playing);
 	Register(PACKET_MSG, Talk_Msg, Playing);
@@ -180,6 +191,6 @@ PACKET_HANDLER_REGISTER(PACKET_TALK)
 	Register(PACKET_REPORT, Talk_Report, Playing);
 	Register(PACKET_ADMIN, Talk_Admin, Playing);
 	Register(PACKET_ANNOUNCE, Talk_Announce, Playing);
-PACKET_HANDLER_REGISTER_END(PACKET_TALK)
+	PACKET_HANDLER_REGISTER_END(PACKET_TALK)
 
 }

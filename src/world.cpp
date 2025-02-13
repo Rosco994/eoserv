@@ -56,8 +56,7 @@ void world_spawn_npcs(void *world_void)
 	{
 		UTIL_FOREACH(map->npcs, npc)
 		{
-			if ((!npc->alive && npc->dead_since + (double(npc->spawn_time) * spawnrate) < current_time)
-			 && (!npc->ENF().child || (npc->parent && npc->parent->alive && world->config["RespawnBossChildren"])))
+			if ((!npc->alive && npc->dead_since + (double(npc->spawn_time) * spawnrate) < current_time) && (!npc->ENF().child || (npc->parent && npc->parent->alive && world->config["RespawnBossChildren"])))
 			{
 #ifdef DEBUG
 				Console::Dbg("Spawning NPC %i on map %i", npc->id, map->id);
@@ -95,8 +94,10 @@ void world_recover(void *world_void)
 
 		if (character->hp != character->maxhp)
 		{
-			if (character->sitting != SIT_STAND) character->hp += character->maxhp * double(world->config["SitHPRecoverRate"]);
-			else                                 character->hp += character->maxhp * double(world->config["HPRecoverRate"]);
+			if (character->sitting != SIT_STAND)
+				character->hp += character->maxhp * double(world->config["SitHPRecoverRate"]);
+			else
+				character->hp += character->maxhp * double(world->config["HPRecoverRate"]);
 
 			character->hp = std::min(character->hp, character->maxhp);
 			updated = true;
@@ -109,8 +110,10 @@ void world_recover(void *world_void)
 
 		if (character->tp != character->maxtp)
 		{
-			if (character->sitting != SIT_STAND) character->tp += character->maxtp * double(world->config["SitTPRecoverRate"]);
-			else                                 character->tp += character->maxtp * double(world->config["TPRecoverRate"]);
+			if (character->sitting != SIT_STAND)
+				character->tp += character->maxtp * double(world->config["SitTPRecoverRate"]);
+			else
+				character->tp += character->maxtp * double(world->config["TPRecoverRate"]);
 
 			character->tp = std::min(character->tp, character->maxtp);
 			updated = true;
@@ -155,11 +158,9 @@ void world_warp_suck(void *world_void)
 		unsigned char y;
 
 		Warp_Suck_Action(Character *character, short map, unsigned char x, unsigned char y)
-			: character(character)
-			, map(map)
-			, x(x)
-			, y(y)
-		{ }
+			: character(character), map(map), x(x), y(y)
+		{
+		}
 	};
 
 	std::vector<Warp_Suck_Action> actions;
@@ -181,7 +182,7 @@ void world_warp_suck(void *world_void)
 				if (!test || !map->InBounds(x, y))
 					return;
 
-				const Map_Warp& warp = map->GetWarp(x, y);
+				const Map_Warp &warp = map->GetWarp(x, y);
 
 				if (!warp || warp.levelreq > character->level || (warp.spec != Map_Warp::Door && warp.spec != Map_Warp::NoDoor))
 					return;
@@ -191,11 +192,11 @@ void world_warp_suck(void *world_void)
 
 			character->last_walk = now;
 
-			check_warp(true,                       character->x,     character->y);
-			check_warp(character->x > 0,           character->x - 1, character->y);
-			check_warp(character->x < map->width,  character->x + 1, character->y);
-			check_warp(character->y > 0,           character->x,     character->y - 1);
-			check_warp(character->y < map->height, character->x,     character->y + 1);
+			check_warp(true, character->x, character->y);
+			check_warp(character->x > 0, character->x - 1, character->y);
+			check_warp(character->x < map->width, character->x + 1, character->y);
+			check_warp(character->y > 0, character->x, character->y - 1);
+			check_warp(character->y < map->height, character->x, character->y + 1);
 		}
 	}
 
@@ -219,7 +220,7 @@ void world_despawn_items(void *world_void)
 
 	UTIL_FOREACH(world->maps, map)
 	{
-		restart_loop:
+	restart_loop:
 		UTIL_FOREACH(map->items, item)
 		{
 			if (item->unprotecttime < (Timer::GetTime() - static_cast<double>(world->config["ItemDespawnRate"])))
@@ -249,7 +250,7 @@ void world_timed_save(void *world_void)
 	{
 		world->CommitDB();
 	}
-	catch (Database_Exception& e)
+	catch (Database_Exception &e)
 	{
 		Console::Wrn("Database commit failed - no data was saved!");
 		world->db.Rollback();
@@ -261,8 +262,8 @@ void world_timed_save(void *world_void)
 void world_spikes(void *world_void)
 {
 	World *world = static_cast<World *>(world_void);
-	
-	for (Map* map : world->maps)
+
+	for (Map *map : world->maps)
 	{
 		if (map->exists)
 			map->TimedSpikes();
@@ -272,8 +273,8 @@ void world_spikes(void *world_void)
 void world_drains(void *world_void)
 {
 	World *world = static_cast<World *>(world_void);
-	
-	for (Map* map : world->maps)
+
+	for (Map *map : world->maps)
 	{
 		if (map->exists)
 			map->TimedDrains();
@@ -283,8 +284,8 @@ void world_drains(void *world_void)
 void world_quakes(void *world_void)
 {
 	World *world = static_cast<World *>(world_void);
-	
-	for (Map* map : world->maps)
+
+	for (Map *map : world->maps)
 	{
 		if (map->exists)
 			map->TimedQuakes();
@@ -294,7 +295,6 @@ void world_quakes(void *world_void)
 void World::UpdateConfig()
 {
 	this->timer.SetMaxDelta(this->config["ClockMaxDelta"]);
-
 
 	double rate_face = this->config["PacketRateFace"];
 	double rate_walk = this->config["PacketRateWalk"];
@@ -307,7 +307,6 @@ void World::UpdateConfig()
 	Handlers::SetDelay(PACKET_WALK, PACKET_SPEC, rate_walk);
 
 	Handlers::SetDelay(PACKET_ATTACK, PACKET_USE, rate_attack);
-
 
 	std::array<double, 7> npc_speed_table;
 
@@ -323,9 +322,7 @@ void World::UpdateConfig()
 
 	NPC::SetSpeedTable(npc_speed_table);
 
-
 	this->i18n.SetLangFile(this->config["ServerLanguage"]);
-
 
 	this->instrument_ids.clear();
 
@@ -337,14 +334,13 @@ void World::UpdateConfig()
 		this->instrument_ids.push_back(int(util::tdparse(instrument_list[i])));
 	}
 
-
 	if (this->db.Pending() && !this->config["TimedSave"])
 	{
 		try
 		{
 			this->CommitDB();
 		}
-		catch (Database_Exception& e)
+		catch (Database_Exception &e)
 		{
 			Console::Wrn("Database commit failed - no data was saved!");
 			this->db.Rollback();
@@ -353,8 +349,7 @@ void World::UpdateConfig()
 }
 
 World::World(std::array<std::string, 6> dbinfo, const Config &eoserv_config, const Config &admin_config)
-	: i18n(eoserv_config.find("ServerLanguage")->second)
-	, admin_count(0)
+	: i18n(eoserv_config.find("ServerLanguage")->second), admin_count(0)
 {
 	if (int(this->timer.resolution * 1000.0) > 1)
 	{
@@ -375,15 +370,12 @@ World::World(std::array<std::string, 6> dbinfo, const Config &eoserv_config, con
 	if (util::lowercase(dbinfo[0]).compare("sqlite") == 0)
 	{
 		engine = Database::SQLite;
-		dbdesc = std::string("SQLite: ")
-		       + dbinfo[1];
+		dbdesc = std::string("SQLite: ") + dbinfo[1];
 	}
 	else
 	{
 		engine = Database::MySQL;
-		dbdesc = std::string("MySQL: ")
-		       + dbinfo[2] + "@"
-		       + dbinfo[1];
+		dbdesc = std::string("MySQL: ") + dbinfo[2] + "@" + dbinfo[1];
 
 		if (dbinfo[5] != "0" && dbinfo[5] != "3306")
 			dbdesc += ":" + dbinfo[5];
@@ -416,7 +408,7 @@ World::World(std::array<std::string, 6> dbinfo, const Config &eoserv_config, con
 	this->npc_data.resize(num_npcs);
 	for (std::size_t i = 0; i < num_npcs; ++i)
 	{
-		auto& npc = this->npc_data[i];
+		auto &npc = this->npc_data[i];
 		npc.reset(new NPC_Data(this, i));
 		if (npc->id != 0)
 			npc->LoadShopDrop();
@@ -449,7 +441,6 @@ World::World(std::array<std::string, 6> dbinfo, const Config &eoserv_config, con
 		}
 		catch (...)
 		{
-
 		}
 	}
 	Console::Out("%i/%i quests loaded.", static_cast<int>(this->quests.size()), max_quest);
@@ -547,7 +538,7 @@ void World::UpdateAdminCount(int admin_count)
 	}
 }
 
-void World::Command(std::string command, const std::vector<std::string>& arguments, Command_Source* from)
+void World::Command(std::string command, const std::vector<std::string> &arguments, Command_Source *from)
 {
 	std::unique_ptr<System_Command_Source> system_source;
 
@@ -560,7 +551,7 @@ void World::Command(std::string command, const std::vector<std::string>& argumen
 	Commands::Handle(util::lowercase(command), arguments, from);
 }
 
-void World::PlayerCommand(std::string command, const std::vector<std::string>& arguments, Command_Source* from)
+void World::PlayerCommand(std::string command, const std::vector<std::string> &arguments, Command_Source *from)
 {
 	std::unique_ptr<System_Command_Source> system_source;
 
@@ -651,7 +642,7 @@ int World::GenerateCharacterID()
 int World::GeneratePlayerID()
 {
 	unsigned int lowest_free_id = 1;
-	restart_loop:
+restart_loop:
 	UTIL_FOREACH(this->server->clients, client)
 	{
 		EOClient *eoclient = static_cast<EOClient *>(client);
@@ -675,7 +666,7 @@ void World::Login(Character *character)
 		character->y = this->GetMap(character->mapid)->relog_y;
 	}
 
-	Map* map = this->GetMap(character->mapid);
+	Map *map = this->GetMap(character->mapid);
 
 	if (character->sitting == SIT_CHAIR)
 	{
@@ -710,8 +701,7 @@ void World::Logout(Character *character)
 
 	this->characters.erase(
 		std::remove(UTIL_RANGE(this->characters), character),
-		this->characters.end()
-	);
+		this->characters.end());
 }
 
 void World::Msg(Command_Source *from, std::string message, bool echo)
@@ -842,14 +832,13 @@ void World::AdminReport(Character *from, std::string reportee, std::string messa
 			try
 			{
 				this->db.Query("INSERT INTO `reports` (`reporter`, `reported`, `reason`, `time`, `chat_log`) VALUES ('$', '$', '$', #, '$')",
-					from->SourceName().c_str(),
-					reportee.c_str(),
-					message.c_str(),
-					int(std::time(0)),
-					chat_log_dump.c_str()
-				);
+							   from->SourceName().c_str(),
+							   reportee.c_str(),
+							   message.c_str(),
+							   int(std::time(0)),
+							   chat_log_dump.c_str());
 			}
-			catch (Database_Exception& e)
+			catch (Database_Exception &e)
 			{
 				Console::Err("Could not save report to database.");
 				Console::Err("%s", e.error());
@@ -949,8 +938,7 @@ void World::ReloadPub(bool quiet)
 	this->esf->Read(this->config["ESF"], auto_split);
 	this->ecf->Read(this->config["ECF"], auto_split);
 
-	if (eif_id != this->eif->rid || enf_id != this->enf->rid
-	 || esf_id != this->esf->rid || ecf_id != this->ecf->rid)
+	if (eif_id != this->eif->rid || enf_id != this->enf->rid || esf_id != this->esf->rid || ecf_id != this->ecf->rid)
 	{
 		if (!quiet)
 		{
@@ -1051,7 +1039,7 @@ void World::ReloadQuests()
 			}
 
 			// WARNING: holds a non-tracked reference to shared_ptr
-			Quest* quest = quest_it->second.get();
+			Quest *quest = quest_it->second.get();
 			auto quest_context(std::make_shared<Quest_Context>(c, quest));
 
 			try
@@ -1059,7 +1047,7 @@ void World::ReloadQuests()
 				quest_context->SetState(state.quest_state, false);
 				quest_context->UnserializeProgress(UTIL_CRANGE(state.quest_progress));
 			}
-			catch (EOPlus::Runtime_Error& ex)
+			catch (EOPlus::Runtime_Error &ex)
 			{
 				Console::Wrn(ex.what());
 				Console::Wrn("Could not resume quest: %i. Marking as inactive.", state.quest_id);
@@ -1165,7 +1153,7 @@ Map *World::GetMap(short id)
 	}
 }
 
-const NPC_Data* World::GetNpcData(short id) const
+const NPC_Data *World::GetNpcData(short id) const
 {
 	if (id >= 0 && id < npc_data.size())
 		return npc_data[id].get();
@@ -1238,9 +1226,9 @@ Character *World::CreateCharacter(Player *player, std::string name, Gender gende
 	}
 
 	this->db.Query("INSERT INTO `characters` (`name`, `account`, `gender`, `hairstyle`, `haircolor`, `race`, `inventory`, `bank`, `paperdoll`, `spells`, `quest`, `vars`@) VALUES ('$','$',#,#,#,#,'$','','$','$','',''@)",
-		startmapinfo.c_str(), name.c_str(), player->username.c_str(), gender, hairstyle, haircolor, race,
-		static_cast<std::string>(this->config["StartItems"]).c_str(), static_cast<std::string>(gender?this->config["StartEquipMale"]:this->config["StartEquipFemale"]).c_str(),
-		static_cast<std::string>(this->config["StartSpells"]).c_str(), startmapval.c_str());
+				   startmapinfo.c_str(), name.c_str(), player->username.c_str(), gender, hairstyle, haircolor, race,
+				   static_cast<std::string>(this->config["StartItems"]).c_str(), static_cast<std::string>(gender ? this->config["StartEquipMale"] : this->config["StartEquipFemale"]).c_str(),
+				   static_cast<std::string>(this->config["StartSpells"]).c_str(), startmapval.c_str());
 
 	return new Character(name, this);
 }
@@ -1250,7 +1238,7 @@ void World::DeleteCharacter(std::string name)
 	this->db.Query("DELETE FROM `characters` WHERE name = '$'", name.c_str());
 }
 
-Player *World::Login(const std::string& username, util::secure_string&& password)
+Player *World::Login(const std::string &username, util::secure_string &&password)
 {
 	if (LoginCheck(username, std::move(password)) == LOGIN_WRONG_USERPASS)
 		return 0;
@@ -1263,7 +1251,7 @@ Player *World::Login(std::string username)
 	return new Player(username, this);
 }
 
-LoginReply World::LoginCheck(const std::string& username, util::secure_string&& password)
+LoginReply World::LoginCheck(const std::string &username, util::secure_string &&password)
 {
 	{
 		util::secure_string password_buffer(std::move(std::string(this->config["PasswordSalt"]) + username + password.str()));
@@ -1286,9 +1274,9 @@ LoginReply World::LoginCheck(const std::string& username, util::secure_string&& 
 	}
 }
 
-bool World::CreatePlayer(const std::string& username, util::secure_string&& password,
-	const std::string& fullname, const std::string& location, const std::string& email,
-	const std::string& computer, const std::string& hdid, const std::string& ip)
+bool World::CreatePlayer(const std::string &username, util::secure_string &&password,
+						 const std::string &fullname, const std::string &location, const std::string &email,
+						 const std::string &computer, const std::string &hdid, const std::string &ip)
 {
 	{
 		util::secure_string password_buffer(std::move(std::string(this->config["PasswordSalt"]) + username + password.str()));
@@ -1296,7 +1284,7 @@ bool World::CreatePlayer(const std::string& username, util::secure_string&& pass
 	}
 
 	Database_Result result = this->db.Query("INSERT INTO `accounts` (`username`, `password`, `fullname`, `location`, `email`, `computer`, `hdid`, `regip`, `created`) VALUES ('$','$','$','$','$','$','$','$',#)",
-		username.c_str(), password.str().c_str(), fullname.c_str(), location.c_str(), email.c_str(), computer.c_str(), hdid.c_str(), ip.c_str(), int(std::time(0)));
+											username.c_str(), password.str().c_str(), fullname.c_str(), location.c_str(), email.c_str(), computer.c_str(), hdid.c_str(), ip.c_str(), int(std::time(0)));
 
 	return !result.Error();
 }
@@ -1345,7 +1333,7 @@ void World::Jail(Command_Source *from, Character *victim, bool announce)
 
 	bool bubbles = this->config["WarpBubbles"] && !victim->IsHideWarp();
 
-	Character* charfrom = dynamic_cast<Character*>(from);
+	Character *charfrom = dynamic_cast<Character *>(from);
 
 	if (charfrom && charfrom->IsHideWarp())
 		bubbles = false;
@@ -1357,7 +1345,7 @@ void World::Unjail(Command_Source *from, Character *victim)
 {
 	bool bubbles = this->config["WarpBubbles"] && !victim->IsHideWarp();
 
-	Character* charfrom = dynamic_cast<Character*>(from);
+	Character *charfrom = dynamic_cast<Character *>(from);
 
 	if (charfrom && charfrom->IsHideWarp())
 		bubbles = false;
@@ -1396,7 +1384,7 @@ void World::Ban(Command_Source *from, Character *victim, int duration, bool anno
 	{
 		this->db.Query(query.c_str());
 	}
-	catch (Database_Exception& e)
+	catch (Database_Exception &e)
 	{
 		Console::Err("Could not save ban to database.");
 		Console::Err("%s", e.error());
@@ -1443,7 +1431,7 @@ int World::CheckBan(const std::string *username, const IPAddress *address, const
 		query += " OR ";
 	}
 
-	Database_Result res = db.Query((query.substr(0, query.length()-4) + ") AND (expires > # OR expires = 0)").c_str(), int(std::time(0)));
+	Database_Result res = db.Query((query.substr(0, query.length() - 4) + ") AND (expires > # OR expires = 0)").c_str(), int(std::time(0)));
 
 	return static_cast<int>(res[0]["expires"]);
 }
@@ -1454,14 +1442,14 @@ static std::list<int> PKExceptUnserialize(std::string serialized)
 	std::size_t p = 0;
 	std::size_t lastp = std::numeric_limits<std::size_t>::max();
 
-	if (!serialized.empty() && *(serialized.end()-1) != ',')
+	if (!serialized.empty() && *(serialized.end() - 1) != ',')
 	{
 		serialized.push_back(',');
 	}
 
-	while ((p = serialized.find_first_of(',', p+1)) != std::string::npos)
+	while ((p = serialized.find_first_of(',', p + 1)) != std::string::npos)
 	{
-		list.push_back(util::to_int(serialized.substr(lastp+1, p-lastp-1)));
+		list.push_back(util::to_int(serialized.substr(lastp + 1, p - lastp - 1)));
 		lastp = p;
 	}
 
@@ -1495,14 +1483,14 @@ bool World::IsInstrument(int graphic_id)
 	return std::find(UTIL_RANGE(this->instrument_ids), graphic_id) != this->instrument_ids.end();
 }
 
-double World::EvalFormula(const std::string& name, const std::unordered_map<std::string, double>& vars)
+double World::EvalFormula(const std::string &name, const std::unordered_map<std::string, double> &vars)
 {
 	auto cache_it = this->formulas_cache.find(name);
 
 	if (cache_it != this->formulas_cache.end())
 		return util::rpn_eval(cache_it->second, vars);
 
-	std::stack<std::string>(*parser)(std::string expr) = util::rpn_parse_v2;
+	std::stack<std::string> (*parser)(std::string expr) = util::rpn_parse_v2;
 
 	if (int(this->formulas_config["Version"]) < 2)
 		parser = util::rpn_parse;

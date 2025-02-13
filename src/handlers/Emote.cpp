@@ -11,20 +11,20 @@
 namespace Handlers
 {
 
-// Player sending an emote
-void Emote_Report(Character *character, PacketReader &reader)
-{
-	Emote emote = static_cast<Emote>(reader.GetChar());
-
-	// TODO: Restrict drunk emote
-	if ((emote >= 1 && emote <= 10) || emote == EMOTE_DRUNK || emote == EMOTE_PLAYFUL)
+	// Player sending an emote
+	void Emote_Report(Character *character, PacketReader &reader)
 	{
-		character->Emote(emote, false);
-	}
-}
+		Emote emote = static_cast<Emote>(reader.GetChar());
 
-PACKET_HANDLER_REGISTER(PACKET_EMOTE)
+		// TODO: Restrict drunk emote
+		if ((emote >= 1 && emote <= 10) || emote == EMOTE_DRUNK || emote == EMOTE_PLAYFUL)
+		{
+			character->Emote(emote, false);
+		}
+	}
+
+	PACKET_HANDLER_REGISTER(PACKET_EMOTE)
 	Register(PACKET_REPORT, Emote_Report, Playing);
-PACKET_HANDLER_REGISTER_END(PACKET_EMOTE)
+	PACKET_HANDLER_REGISTER_END(PACKET_EMOTE)
 
 }

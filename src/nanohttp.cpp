@@ -12,7 +12,7 @@
 #include <stdexcept>
 #include <string>
 
-HTTP::HTTP(std::string host, unsigned short port, std::string path, const IPAddress & outgoing)
+HTTP::HTTP(std::string host, unsigned short port, std::string path, const IPAddress &outgoing)
 {
 	std::string request;
 
@@ -20,12 +20,13 @@ HTTP::HTTP(std::string host, unsigned short port, std::string path, const IPAddr
 	this->done = false;
 
 	request = "GET " + path + " HTTP/1.1\r\n"
-	"Host: " + host + "\r\n"
-	"User-Agent: EOSERV\r\n"
-	"Accept: */*\r\n"
-	"Accept-Encoding: \r\n"
-	"Connection: close\r\n"
-	"\r\n";
+							  "Host: " +
+			  host + "\r\n"
+					 "User-Agent: EOSERV\r\n"
+					 "Accept: */*\r\n"
+					 "Accept-Encoding: \r\n"
+					 "Connection: close\r\n"
+					 "\r\n";
 
 	client = new Client;
 
@@ -69,25 +70,25 @@ HTTP *HTTP::RequestURL(std::string url, const IPAddress &outgoing)
 	}
 
 	bool hasport = true;
-	loc2 = url.find_first_of(':', loc+2);
+	loc2 = url.find_first_of(':', loc + 2);
 	if (loc2 == std::string::npos)
 	{
 		hasport = false;
-		loc2 = url.find_first_of('/', loc+2);
+		loc2 = url.find_first_of('/', loc + 2);
 		if (loc2 == std::string::npos)
 		{
-			loc2 = url.length()-1;
+			loc2 = url.length() - 1;
 		}
 	}
 
-	std::string host = url.substr(loc+2, loc2-loc-2);
+	std::string host = url.substr(loc + 2, loc2 - loc - 2);
 
 	std::string sport;
 	if (hasport)
 	{
 		loc = loc2;
 		loc2 = url.find_first_of('/', loc);
-		sport = url.substr(loc+1, loc2-loc-1);
+		sport = url.substr(loc + 1, loc2 - loc - 1);
 	}
 	else
 	{
@@ -112,7 +113,7 @@ void HTTP::Tick(double timeout)
 	{
 		if (this->response.length() > 12)
 		{
-			this->status = util::to_int(this->response.substr(9,3));
+			this->status = util::to_int(this->response.substr(9, 3));
 		}
 
 		std::size_t startcontent = this->response.find("\r\n\r\n");
@@ -123,7 +124,7 @@ void HTTP::Tick(double timeout)
 		}
 		else
 		{
-			this->response = this->response.substr(startcontent+4);
+			this->response = this->response.substr(startcontent + 4);
 		}
 
 		this->done = true;

@@ -32,22 +32,38 @@ namespace util
 	{
 		switch (a)
 		{
-			case '(': case ')': case '+': return b == '\0';
-			case '&': return b == '\0' || b == '&';
-			case '|': return b == '\0' || b == '|';
-			case '-': case '~': return b == '\0';
-			case '*': case '/': case '%': return b == '\0';
-			case '<': case '>': case '!': return b == '\0' || b == '=';
-			case '=': return b == '\0' || b == '=';
-			default: return false;
+		case '(':
+		case ')':
+		case '+':
+			return b == '\0';
+		case '&':
+			return b == '\0' || b == '&';
+		case '|':
+			return b == '\0' || b == '|';
+		case '-':
+		case '~':
+			return b == '\0';
+		case '*':
+		case '/':
+		case '%':
+			return b == '\0';
+		case '<':
+		case '>':
+		case '!':
+			return b == '\0' || b == '=';
+		case '=':
+			return b == '\0' || b == '=';
+		default:
+			return false;
 		}
 	}
 
-	Lexer::Lexer(std::istream& is)
+	Lexer::Lexer(std::istream &is)
 		: is(is)
-	{ }
+	{
+	}
 
-	bool Lexer::PeekChar(char& c)
+	bool Lexer::PeekChar(char &c)
 	{
 		int cc = is.peek();
 
@@ -58,7 +74,7 @@ namespace util
 		return true;
 	}
 
-	bool Lexer::GetChar(char& c)
+	bool Lexer::GetChar(char &c)
 	{
 		if (!is.get(c))
 			return false;
@@ -66,7 +82,7 @@ namespace util
 		return true;
 	}
 
-	bool Lexer::GetCharIf(char& c, std::function<bool(char)> f)
+	bool Lexer::GetCharIf(char &c, std::function<bool(char)> f)
 	{
 		char cc = '\0';
 
@@ -111,7 +127,8 @@ namespace util
 	{
 		char c;
 
-		while (this->GetCharIf(c, ctype_whitespace)) ; // no loop body
+		while (this->GetCharIf(c, ctype_whitespace))
+			; // no loop body
 
 		if (!this->token_buffer.empty())
 		{

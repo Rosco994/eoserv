@@ -184,20 +184,20 @@ void Party::ShareEXP(int exp, int sharemode, Map *map)
 		}
 		switch (sharemode)
 		{
-			case 1:
-				reward = int(std::ceil(double(exp) / members));
-				break;
+		case 1:
+			reward = int(std::ceil(double(exp) / members));
+			break;
 
-			case 2:
-				reward = int(std::ceil(double(exp) * double((member->level == 0) ? 1 : member->level) / sumlevel));
-				break;
+		case 2:
+			reward = int(std::ceil(double(exp) * double((member->level == 0) ? 1 : member->level) / sumlevel));
+			break;
 		}
 
 		// TODO: Levelling up in this way doesn't work well, find alternative.
 
 		member->exp += reward;
 
-		bool level_up = (member->level < static_cast<int>(this->world->config["MaxLevel"]) && member->exp >= this->world->exp_table[member->level+1]);
+		bool level_up = (member->level < static_cast<int>(this->world->config["MaxLevel"]) && member->exp >= this->world->exp_table[member->level + 1]);
 
 		PacketBuilder builder(PACKET_PARTY, PACKET_TARGET_GROUP, 7);
 		builder.AddShort(member->PlayerID());
@@ -222,8 +222,7 @@ Party::~Party()
 	{
 		this->world->parties.erase(
 			std::remove(this->world->parties.begin(), this->world->parties.end(), this),
-			this->world->parties.end()
-		);
+			this->world->parties.end());
 	}
 
 	PacketBuilder builder(PACKET_PARTY, PACKET_CLOSE, 1);

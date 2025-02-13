@@ -11,34 +11,34 @@
 namespace Handlers
 {
 
-void Sit_Request(Character *character, PacketReader &reader)
-{
-	SitAction action = SitAction(reader.GetChar());
-
-	if (action == SIT_ACT_SIT && character->sitting == SIT_STAND)
+	void Sit_Request(Character *character, PacketReader &reader)
 	{
-		PacketBuilder reply(PACKET_SIT, PACKET_PLAYER, 6);
-		reply.AddShort(character->PlayerID());
-		reply.AddChar(character->x);
-		reply.AddChar(character->y);
-		reply.AddChar(character->direction);
-		reply.AddChar(0); // ?
-		character->Send(reply);
-		character->Sit(SIT_FLOOR);
-	}
-	else if (character->sitting == SIT_FLOOR)
-	{
-		PacketBuilder reply(PACKET_SIT, PACKET_CLOSE, 4);
-		reply.AddShort(character->PlayerID());
-		reply.AddChar(character->x);
-		reply.AddChar(character->y);
-		character->Send(reply);
-		character->Stand();
-	}
-}
+		SitAction action = SitAction(reader.GetChar());
 
-PACKET_HANDLER_REGISTER(PACKET_SIT)
+		if (action == SIT_ACT_SIT && character->sitting == SIT_STAND)
+		{
+			PacketBuilder reply(PACKET_SIT, PACKET_PLAYER, 6);
+			reply.AddShort(character->PlayerID());
+			reply.AddChar(character->x);
+			reply.AddChar(character->y);
+			reply.AddChar(character->direction);
+			reply.AddChar(0); // ?
+			character->Send(reply);
+			character->Sit(SIT_FLOOR);
+		}
+		else if (character->sitting == SIT_FLOOR)
+		{
+			PacketBuilder reply(PACKET_SIT, PACKET_CLOSE, 4);
+			reply.AddShort(character->PlayerID());
+			reply.AddChar(character->x);
+			reply.AddChar(character->y);
+			character->Send(reply);
+			character->Stand();
+		}
+	}
+
+	PACKET_HANDLER_REGISTER(PACKET_SIT)
 	Register(PACKET_REQUEST, Sit_Request, Playing);
-PACKET_HANDLER_REGISTER_END(PACKET_SIT)
+	PACKET_HANDLER_REGISTER_END(PACKET_SIT)
 
 }

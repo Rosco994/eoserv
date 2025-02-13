@@ -19,24 +19,25 @@
 
 class I18N
 {
-	protected:
-		std::unique_ptr<Config> lang_config;
+protected:
+	std::unique_ptr<Config> lang_config;
 
-	public:
-		I18N();
-		I18N(const std::string& lang_file);
+public:
+	I18N();
+	I18N(const std::string &lang_file);
 
-		void SetLangFile(const std::string& lang_file);
+	void SetLangFile(const std::string &lang_file);
 
-		std::string FormatV(const std::string& id, std::vector<util::variant> &&v) const;
+	std::string FormatV(const std::string &id, std::vector<util::variant> &&v) const;
 
-		template <class... Args> std::string Format(const std::string& id, Args&&... args) const
-		{
-			std::vector<util::variant> v{args...};
-			return FormatV(id, std::move(v));
-		}
+	template <class... Args>
+	std::string Format(const std::string &id, Args &&...args) const
+	{
+		std::vector<util::variant> v{args...};
+		return FormatV(id, std::move(v));
+	}
 
-		~I18N();
+	~I18N();
 };
 
 #endif // I18N_HPP_INCLUDED

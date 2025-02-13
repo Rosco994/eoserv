@@ -34,16 +34,16 @@ static unsigned int clock_ticks()
 #ifdef WIN32
 #ifdef TIMER_GETTICKCOUNT
 	unsigned int ticks = GetTickCount();
-#else // TIMER_GETTICKCOUNT
+#else  // TIMER_GETTICKCOUNT
 	unsigned int ticks = timeGetTime();
 #endif // TIMER_GETTICKCOUNT
-#else // WIN32
+#else  // WIN32
 #ifdef CLOCK_MONOTONIC
 	struct timespec gettime;
 	clock_gettime(CLOCK_MONOTONIC, &gettime);
 	std::time_t sec = gettime.tv_sec;
 	long msec = gettime.tv_nsec / 1000000;
-#else // CLOCK_MONOTONIC
+#else  // CLOCK_MONOTONIC
 	struct timeval gettime;
 	gettimeofday(&gettime, 0);
 	std::time_t sec = gettime.tv_sec;
@@ -56,9 +56,7 @@ static unsigned int clock_ticks()
 }
 
 Clock::Clock(int max_delta)
-	: offset(0.0)
-	, last(clock_ticks())
-	, max_delta(1000)
+	: offset(0.0), last(clock_ticks()), max_delta(1000)
 {
 	SetMaxDelta(max_delta);
 }
@@ -108,7 +106,8 @@ std::unique_ptr<Clock> Timer::clock;
 struct Timer::impl_t
 {
 	impl_t()
-	{ }
+	{
+	}
 };
 
 Timer::Timer()
@@ -131,7 +130,7 @@ Timer::Timer()
 	double last = first;
 	double sum = 0.0;
 
-	for (int i = 0; i < 100; )
+	for (int i = 0; i < 100;)
 	{
 		cur = Timer::GetTime();
 
@@ -200,27 +199,27 @@ void Timer::Tick()
 				timer->callback(timer->param);
 #ifndef DEBUG_EXCEPTIONS
 			}
-			catch (Socket_Exception& e)
+			catch (Socket_Exception &e)
 			{
 				Console::Err("Timer callback caused an exception");
 				Console::Err("%s: %s", e.what(), e.error());
 			}
-			catch (Database_Exception& e)
+			catch (Database_Exception &e)
 			{
 				Console::Err("Timer callback caused an exception");
 				Console::Err("%s: %s", e.what(), e.error());
 			}
-			catch (std::runtime_error& e)
+			catch (std::runtime_error &e)
 			{
 				Console::Err("Timer callback caused an exception");
 				Console::Err("Runtime Error: %s", e.what());
 			}
-			catch (std::logic_error& e)
+			catch (std::logic_error &e)
 			{
 				Console::Err("Timer callback caused an exception");
 				Console::Err("Logic Error: %s", e.what());
 			}
-			catch (std::exception& e)
+			catch (std::exception &e)
 			{
 				Console::Err("Timer callback caused an exception");
 				Console::Err("Uncaught Exception: %s", e.what());

@@ -15,31 +15,32 @@ namespace util
 {
 	class Lexer
 	{
-		private:
-			std::basic_istream<char>& is;
-			std::queue<std::string> token_buffer;
+	private:
+		std::basic_istream<char> &is;
+		std::queue<std::string> token_buffer;
 
-			bool PeekChar(char& c);
-			bool GetChar(char& c);
-			bool GetCharIf(char& c, std::function<bool(char)> f);
+		bool PeekChar(char &c);
+		bool GetChar(char &c);
+		bool GetCharIf(char &c, std::function<bool(char)> f);
 
-			std::string ReadValue();
-			std::string ReadOperator();
+		std::string ReadValue();
+		std::string ReadOperator();
 
-		public:
-			Lexer(std::basic_istream<char>& is);
+	public:
+		Lexer(std::basic_istream<char> &is);
 
-			std::string ReadToken();
+		std::string ReadToken();
 
-			template <class IT> IT Lex(IT it)
-			{
-				std::string t;
+		template <class IT>
+		IT Lex(IT it)
+		{
+			std::string t;
 
-				for (t = ReadToken(); !t.empty(); t = ReadToken())
-					*it++ = t;
+			for (t = ReadToken(); !t.empty(); t = ReadToken())
+				*it++ = t;
 
-				return it;
-			}
+			return it;
+		}
 	};
 }
 

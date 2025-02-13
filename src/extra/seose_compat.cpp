@@ -27,7 +27,7 @@ std::string seose_to_base62(std::uint16_t input)
 
 std::uint16_t seose_hash(const char *input, std::size_t length, std::uint16_t method)
 {
-	int pow[] = { 1, 2, 4, 8, 16, 32, 64, 128 };
+	int pow[] = {1, 2, 4, 8, 16, 32, 64, 128};
 
 	std::uint16_t result = 0;
 
@@ -46,7 +46,7 @@ std::uint16_t seose_hash(const char *input, std::size_t length, std::uint16_t me
 	return result;
 }
 
-std::string seose_str_hash(const std::string& input, const std::string& key)
+std::string seose_str_hash(const std::string &input, const std::string &key)
 {
 	std::string result;
 

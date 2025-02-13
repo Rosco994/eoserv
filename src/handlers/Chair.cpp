@@ -14,33 +14,33 @@
 namespace Handlers
 {
 
-// Player sitting on a chair
-void Chair_Request(Character *character, PacketReader &reader)
-{
-	int action = reader.GetChar();
-
-	if (action == SIT_ACT_SIT && character->sitting == SIT_STAND)
+	// Player sitting on a chair
+	void Chair_Request(Character *character, PacketReader &reader)
 	{
-		int x = reader.GetChar();
-		int y = reader.GetChar();
+		int action = reader.GetChar();
 
-		if ((x + y - character->x - character->y) > 1)
+		if (action == SIT_ACT_SIT && character->sitting == SIT_STAND)
 		{
-			return;
-		}
+			int x = reader.GetChar();
+			int y = reader.GetChar();
 
-		UTIL_FOREACH(character->map->characters, c)
-		{
-			if (c->x == x && c->y == y)
+			if ((x + y - character->x - character->y) > 1)
 			{
 				return;
 			}
-		}
 
-		switch (character->map->GetSpec(x, y))
-		{
+			UTIL_FOREACH(character->map->characters, c)
+			{
+				if (c->x == x && c->y == y)
+				{
+					return;
+				}
+			}
+
+			switch (character->map->GetSpec(x, y))
+			{
 			case Map_Tile::ChairDown:
-				if (character->y == y+1 && character->x == x)
+				if (character->y == y + 1 && character->x == x)
 				{
 					character->direction = DIRECTION_DOWN;
 				}
@@ -51,7 +51,7 @@ void Chair_Request(Character *character, PacketReader &reader)
 				break;
 
 			case Map_Tile::ChairUp:
-				if (character->y == y-1 && character->x == x)
+				if (character->y == y - 1 && character->x == x)
 				{
 					character->direction = DIRECTION_UP;
 				}
@@ -62,7 +62,7 @@ void Chair_Request(Character *character, PacketReader &reader)
 				break;
 
 			case Map_Tile::ChairLeft:
-				if (character->y == y && character->x == x-1)
+				if (character->y == y && character->x == x - 1)
 				{
 					character->direction = DIRECTION_LEFT;
 				}
@@ -73,7 +73,7 @@ void Chair_Request(Character *character, PacketReader &reader)
 				break;
 
 			case Map_Tile::ChairRight:
-				if (character->y == y && character->x == x+1)
+				if (character->y == y && character->x == x + 1)
 				{
 					character->direction = DIRECTION_RIGHT;
 				}
@@ -84,11 +84,11 @@ void Chair_Request(Character *character, PacketReader &reader)
 				break;
 
 			case Map_Tile::ChairDownRight:
-				if (character->y == y && character->x == x+1)
+				if (character->y == y && character->x == x + 1)
 				{
 					character->direction = DIRECTION_RIGHT;
 				}
-				else if (character->y == y+1 && character->x == x)
+				else if (character->y == y + 1 && character->x == x)
 				{
 					character->direction = DIRECTION_DOWN;
 				}
@@ -99,11 +99,11 @@ void Chair_Request(Character *character, PacketReader &reader)
 				break;
 
 			case Map_Tile::ChairUpLeft:
-				if (character->y == y && character->x == x-1)
+				if (character->y == y && character->x == x - 1)
 				{
 					character->direction = DIRECTION_LEFT;
 				}
-				else if (character->y == y-1 && character->x == x)
+				else if (character->y == y - 1 && character->x == x)
 				{
 					character->direction = DIRECTION_UP;
 				}
@@ -114,19 +114,19 @@ void Chair_Request(Character *character, PacketReader &reader)
 				break;
 
 			case Map_Tile::ChairAll:
-				if (character->y == y && character->x == x+1)
+				if (character->y == y && character->x == x + 1)
 				{
 					character->direction = DIRECTION_RIGHT;
 				}
-				else if (character->y == y && character->x == x-1)
+				else if (character->y == y && character->x == x - 1)
 				{
 					character->direction = DIRECTION_LEFT;
 				}
-				else if (character->y == y-1 && character->x == x)
+				else if (character->y == y - 1 && character->x == x)
 				{
 					character->direction = DIRECTION_UP;
 				}
-				else if (character->y == y+1 && character->x == x)
+				else if (character->y == y + 1 && character->x == x)
 				{
 					character->direction = DIRECTION_DOWN;
 				}
@@ -138,24 +138,24 @@ void Chair_Request(Character *character, PacketReader &reader)
 
 			default:
 				return;
+			}
+
+			character->x = x;
+			character->y = y;
+
+			PacketBuilder reply(PACKET_CHAIR, PACKET_PLAYER, 6);
+			reply.AddShort(character->PlayerID());
+			reply.AddChar(character->x);
+			reply.AddChar(character->y);
+			reply.AddChar(character->direction);
+			reply.AddChar(0); // ?
+			character->Send(reply);
+			character->Sit(SIT_CHAIR);
 		}
-
-		character->x = x;
-		character->y = y;
-
-		PacketBuilder reply(PACKET_CHAIR, PACKET_PLAYER, 6);
-		reply.AddShort(character->PlayerID());
-		reply.AddChar(character->x);
-		reply.AddChar(character->y);
-		reply.AddChar(character->direction);
-		reply.AddChar(0); // ?
-		character->Send(reply);
-		character->Sit(SIT_CHAIR);
-	}
-	else if (character->sitting == SIT_CHAIR)
-	{
-		switch (character->direction)
+		else if (character->sitting == SIT_CHAIR)
 		{
+			switch (character->direction)
+			{
 			case DIRECTION_UP:
 				--character->y;
 				break;
@@ -168,19 +168,19 @@ void Chair_Request(Character *character, PacketReader &reader)
 			case DIRECTION_LEFT:
 				--character->x;
 				break;
+			}
+
+			PacketBuilder reply(PACKET_CHAIR, PACKET_CLOSE, 4);
+			reply.AddShort(character->PlayerID());
+			reply.AddChar(character->x);
+			reply.AddChar(character->y);
+			character->Send(reply);
+			character->Stand();
 		}
-
-		PacketBuilder reply(PACKET_CHAIR, PACKET_CLOSE, 4);
-		reply.AddShort(character->PlayerID());
-		reply.AddChar(character->x);
-		reply.AddChar(character->y);
-		character->Send(reply);
-		character->Stand();
 	}
-}
 
-PACKET_HANDLER_REGISTER(PACKET_CHAIR)
+	PACKET_HANDLER_REGISTER(PACKET_CHAIR)
 	Register(PACKET_REQUEST, Chair_Request, Playing);
-PACKET_HANDLER_REGISTER_END(PACKET_CHAIR)
+	PACKET_HANDLER_REGISTER_END(PACKET_CHAIR)
 
 }

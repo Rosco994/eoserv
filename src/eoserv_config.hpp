@@ -8,7 +8,7 @@
 
 #include "fwd/config.hpp"
 
-void eoserv_config_validate_config(Config&);
-void eoserv_config_validate_admin(Config&);
+void eoserv_config_validate_config(Config &);
+void eoserv_config_validate_admin(Config &);
 
 #endif // EOSERV_CONFIG_HPP_INCLUDED

@@ -46,14 +46,14 @@ std::array<std::string, 9> RankUnserialize(std::string serialized)
 	std::size_t lastp = std::numeric_limits<std::size_t>::max();
 	int i = 0;
 
-	if (!serialized.empty() && *(serialized.end()-1) != ',')
+	if (!serialized.empty() && *(serialized.end() - 1) != ',')
 	{
 		serialized.push_back(',');
 	}
 
-	while (i < 9 && (p = serialized.find_first_of(',', lastp+1)) != std::string::npos)
+	while (i < 9 && (p = serialized.find_first_of(',', lastp + 1)) != std::string::npos)
 	{
-		list[i++] = serialized.substr(lastp+1, p-lastp-1);
+		list[i++] = serialized.substr(lastp + 1, p - lastp - 1);
 		lastp = p;
 	}
 
@@ -328,8 +328,7 @@ bool GuildManager::ValidDescription(std::string description)
 	{
 		char c = description[i];
 
-		if ((c < 'a' || c > 'z') && (c < '0' || c > '9')
-		 && c != ' ' && c != '@' && c != '_' && c != '-' && c != '.')
+		if ((c < 'a' || c > 'z') && (c < '0' || c > '9') && c != ' ' && c != '@' && c != '_' && c != '-' && c != '.')
 		{
 			return false;
 		}
@@ -396,7 +395,7 @@ void Guild::DelMember(std::string kicked, Character *kicker, bool alert)
 		}
 	}
 
-	World* world = this->manager->world;
+	World *world = this->manager->world;
 
 	UTIL_FOREACH(world->server->clients, client)
 	{
@@ -436,7 +435,7 @@ void Guild::SetMemberRank(std::string name, int rank)
 		member->rank = rank;
 		member->rank_string = rank_str;
 
-		World* world = this->manager->world;
+		World *world = this->manager->world;
 
 		UTIL_FOREACH(world->server->clients, client)
 		{
@@ -450,7 +449,7 @@ void Guild::SetMemberRank(std::string name, int rank)
 					{
 						character->guild_rank = rank;
 						character->guild_rank_string = rank_str;
-						
+
 						if (character->online)
 							return;
 						else
@@ -461,7 +460,7 @@ void Guild::SetMemberRank(std::string name, int rank)
 		}
 
 		world->db.Query("UPDATE `characters` SET `guild_rank` = #, `guild_rank_string` = '$' WHERE `name` = '$'",
-			rank, rank_str.c_str(), name.c_str());
+						rank, rank_str.c_str(), name.c_str());
 	}
 }
 
@@ -484,7 +483,7 @@ void Guild::DelBank(int gold)
 	}
 }
 
-void Guild::Disband(Character* disbander)
+void Guild::Disband(Character *disbander)
 {
 	std::vector<std::shared_ptr<Guild_Member>> disband_members = this->members;
 

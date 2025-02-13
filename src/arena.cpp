@@ -75,11 +75,9 @@ void Arena::Spawn(bool force)
 		unsigned char y;
 
 		Arena_Spawn_Action(Character *character, short map, unsigned char x, unsigned char y)
-			: character(character)
-			, map(map)
-			, x(x)
-			, y(y)
-		{ }
+			: character(character), map(map), x(x), y(y)
+		{
+		}
 	};
 
 	std::vector<Arena_Spawn_Action> actions;
@@ -121,21 +119,21 @@ void Arena::Attack(Character *from, Direction direction)
 
 	switch (from->direction)
 	{
-		case DIRECTION_UP:
-			target_y -= 1;
-			break;
+	case DIRECTION_UP:
+		target_y -= 1;
+		break;
 
-		case DIRECTION_RIGHT:
-			target_x += 1;
-			break;
+	case DIRECTION_RIGHT:
+		target_x += 1;
+		break;
 
-		case DIRECTION_DOWN:
-			target_y += 1;
-			break;
+	case DIRECTION_DOWN:
+		target_y += 1;
+		break;
 
-		case DIRECTION_LEFT:
-			target_x -= 1;
-			break;
+	case DIRECTION_LEFT:
+		target_x -= 1;
+		break;
 	}
 
 	struct Arena_Spawn_Action
@@ -146,11 +144,9 @@ void Arena::Attack(Character *from, Direction direction)
 		unsigned char y;
 
 		Arena_Spawn_Action(Character *character, short map, unsigned char x, unsigned char y)
-			: character(character)
-			, map(map)
-			, x(x)
-			, y(y)
-		{ }
+			: character(character), map(map), x(x), y(y)
+		{
+		}
 	};
 
 	std::vector<Arena_Spawn_Action> actions;

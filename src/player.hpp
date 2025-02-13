@@ -23,34 +23,33 @@
  */
 class Player
 {
-	public:
-		int login_time;
-		bool online;
-		unsigned int id;
-		std::string username;
+public:
+	int login_time;
+	bool online;
+	unsigned int id;
+	std::string username;
 
-		std::string dutylast;
+	std::string dutylast;
 
-		Player(std::string username, World *);
+	Player(std::string username, World *);
 
-		std::vector<Character *> characters;
-		Character *character;
+	std::vector<Character *> characters;
+	Character *character;
 
-		static bool ValidName(std::string username);
-		bool AddCharacter(std::string name, Gender gender, int hairstyle, int haircolor, Skin race);
-		void ChangePass(util::secure_string&& password);
+	static bool ValidName(std::string username);
+	bool AddCharacter(std::string name, Gender gender, int hairstyle, int haircolor, Skin race);
+	void ChangePass(util::secure_string &&password);
 
-		AdminLevel Admin() const;
+	AdminLevel Admin() const;
 
-		void Send(const PacketBuilder &);
+	void Send(const PacketBuilder &);
 
-		void Logout();
+	void Logout();
 
-		World *world;
-		EOClient *client;
+	World *world;
+	EOClient *client;
 
-		~Player();
+	~Player();
 };
-
 
 #endif // PLAYER_HPP_INCLUDED

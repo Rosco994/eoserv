@@ -64,11 +64,11 @@ void service_handler(int code)
 
 	switch (code)
 	{
-		case SERVICE_CONTROL_SHUTDOWN:
-		case SERVICE_CONTROL_STOP:
-			service_update_status(SERVICE_STOPPED, NO_ERROR, 0, 0, 0);
-			eoserv_running = false;
-			return;
+	case SERVICE_CONTROL_SHUTDOWN:
+	case SERVICE_CONTROL_STOP:
+		service_update_status(SERVICE_STOPPED, NO_ERROR, 0, 0, 0);
+		eoserv_running = false;
+		return;
 	}
 
 	service_update_status(service_state, NO_ERROR, 0, 0, 0);
@@ -100,8 +100,7 @@ void service_init(const char *name)
 
 	SERVICE_TABLE_ENTRY service_table[] = {
 		{const_cast<char *>(name), reinterpret_cast<LPSERVICE_MAIN_FUNCTION>(service_main)},
-		{0, 0}
-	};
+		{0, 0}};
 
 	StartServiceCtrlDispatcher(service_table);
 }
