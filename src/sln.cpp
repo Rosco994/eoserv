@@ -120,9 +120,6 @@ void SLN::Request()
     request->host = std::string(this->server->world->config["Host"]);
     request->period = int(this->server->world->config["SLNPeriod"]);
 
-    // Debug output to verify the constructed URL
-    Console::Out("SLN Check-In URL: %s", request->url.c_str());
-
     static pthread_t thread;
 
     if (pthread_create(&thread, 0, SLN::RequestThread, request) != 0)
