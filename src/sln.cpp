@@ -121,7 +121,7 @@ void SLN::Request()
     request->period = int(this->server->world->config["SLNPeriod"]);
 
     // Debug output to verify the constructed URL
-    Console::Log("SLN Check-In URL: %s", request->url.c_str());
+    Console::Out("SLN Check-In URL: %s", request->url.c_str());
 
     static pthread_t thread;
 
