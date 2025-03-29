@@ -355,7 +355,17 @@ static T GetRow(std::unordered_map<std::string, util::variant> &row, const char 
 }
 
 Character::Character(std::string name, World *world)
-	: muted_until(0), bot(false), cosmetic_paperdoll{{}}, world(world), display_str(this->world->config["UseAdjustedStats"] ? adj_str : str), display_intl(this->world->config["UseAdjustedStats"] ? adj_intl : intl), display_wis(this->world->config["UseAdjustedStats"] ? adj_wis : wis), display_agi(this->world->config["UseAdjustedStats"] ? adj_agi : agi), display_con(this->world->config["UseAdjustedStats"] ? adj_con : con), display_cha(this->world->config["UseAdjustedStats"] ? adj_cha : cha)
+	: muted_until(0),
+	  bot(false),
+	  cosmetic_paperdoll{{}},
+	  world(world),
+	  display_str(this->world->config["UseAdjustedStats"] ? adj_str : str),
+	  display_intl(this->world->config["UseAdjustedStats"] ? adj_intl : intl),
+	  display_wis(this->world->config["UseAdjustedStats"] ? adj_wis : wis),
+	  display_agi(this->world->config["UseAdjustedStats"] ? adj_agi : agi),
+	  display_con(this->world->config["UseAdjustedStats"] ? adj_con : con),
+	  display_cha(this->world->config["UseAdjustedStats"] ? adj_cha : cha),
+	  autoloot_enabled(false) // Initialize autoloot_enabled to false
 {
 	{
 		std::vector<std::string> bot_characters = BotListUnserialize(this->world->config["BotCharacters"]);

@@ -636,7 +636,44 @@ void NPC::Killed(Character *from, int amount, int spell_id)
 abort_drop:
 
 	if (drop_winner)
-		this->map->items.back()->owner = drop_winner->PlayerID();
+	{
+		if (drop_winner->autoloot_enabled)
+		{
+			// Autoloot is enabled; attempt to pick up the item
+			int taken = drop_winner->CanHoldItem(dropid, dropamount);
+
+			if (taken > 0)
+			{
+				drop_winner->AddItem(dropid, taken);
+				PacketBuilder reply(PACKET_ITEM, PACKET_GET, 9);
+				reply.AddShort(0); // UID
+				reply.AddShort(dropid);
+				reply.AddThree(taken);
+				reply.AddChar(drop_winner->weight);
+				reply.AddChar(drop_winner->maxweight);
+				drop_winner->Send(reply);
+
+				EIF_Data &data = drop_winner->world->eif->Get(dropid);
+				for (Character *other : drop_winner->map->characters)
+				{
+					if (other != drop_winner && drop_winner->InRange(other))
+					{
+						other->StatusMsg(drop_winner->real_name + " picked up x" + util::to_string(taken) + " " + data.name);
+					}
+				}
+
+				dropuid = 0;
+				dropid = 0;
+				dropamount = 0;
+				this->map->items.pop_back(); // Remove the item from the map
+			}
+		}
+		else
+		{
+			// Autoloot is disabled; set the item's owner to the drop winner
+			this->map->items.back()->owner = drop_winner->PlayerID();
+		}
+	}
 
 	UTIL_FOREACH(this->map->characters, character)
 	{

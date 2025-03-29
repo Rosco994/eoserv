@@ -281,6 +281,8 @@ public:
 	std::set<Character_QuestState> quests_inactive;
 	std::string quest_string;
 
+	bool autoloot_enabled; // Add this line to track autoloot status
+
 	Character(std::string name, World *);
 
 	bool IsHideInvisible() const { return hidden & HideInvisible; }
