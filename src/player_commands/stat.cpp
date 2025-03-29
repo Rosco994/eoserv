@@ -125,9 +125,9 @@ namespace PlayerCommands
 		from->ServerMsg("Your stats have been reset");
 	}
 
-	PLAYER_COMMAND_HANDLER_REGISTER(info)
+	PLAYER_COMMAND_HANDLER_REGISTER(stat)
 	RegisterCharacter({"add", {"stat", "amount"}, {}, 6}, Add);
 	RegisterCharacter({"reset", {}, {}, 6}, Reset);
-	PLAYER_COMMAND_HANDLER_REGISTER_END(info)
+	PLAYER_COMMAND_HANDLER_REGISTER_END(stat)
 
 }
