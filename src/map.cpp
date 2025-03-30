@@ -1423,21 +1423,24 @@ Map::WalkResult Map::Walk(NPC *from, Direction direction)
 	return WalkOK;
 }
 
-// Refactored Map::Attack function
 void Map::Attack(Character *from, Direction direction)
 {
 	const EIF_Data &wepdata = this->world->eif->Get(from->paperdoll[Character::Weapon]);
 	const EIF_Data &shielddata = this->world->eif->Get(from->paperdoll[Character::Shield]);
 
-	// Check for ranged weapon with arrows
 	if (wepdata.subtype == EIF::Ranged && shielddata.subtype != EIF::Arrows)
 	{
-		if (wepdata.id != 365 || wepdata.name != "Gun") // Ranged gun hack
+		// Ranged gun hack
+		if (wepdata.id != 365 || wepdata.name != "Gun")
+		{
 			return;
+		}
+		// / Ranged gun hack
 	}
 
 	from->direction = direction;
 	from->attacks += 1;
+
 	from->CancelSpell();
 
 	if (from->arena)
@@ -1451,7 +1454,9 @@ void Map::Attack(Character *from, Direction direction)
 	if (!is_instrument && (this->pk || (this->world->config["GlobalPK"] && !this->world->PKExcept(this->id))))
 	{
 		if (this->AttackPK(from, direction))
+		{
 			return;
+		}
 	}
 
 	PacketBuilder builder(PACKET_ATTACK, PACKET_PLAYER, 3);
@@ -1460,21 +1465,112 @@ void Map::Attack(Character *from, Direction direction)
 
 	UTIL_FOREACH(this->characters, character)
 	{
-		if (character != from && from->InRange(character))
+		if (character == from || !from->InRange(character))
 		{
-			character->Send(builder);
+			continue;
 		}
+
+		character->Send(builder);
 	}
 
-	if (is_instrument || !from->CanInteractCombat())
+	if (is_instrument)
+		return;
+
+	if (!from->CanInteractCombat())
 		return;
 
 	int target_x = from->x;
 	int target_y = from->y;
 
-	int range = (wepdata.subtype == EIF::Ranged) ? static_cast<int>(this->world->config["RangedDistance"]) : 1;
+	int range = 1;
 
-	// Simplified AoE logic
+	if (static_cast<std::string>(from->world->config["EnableAoE"]) == "yes")
+	{
+		int weapon_id = from->paperdoll[Character::Weapon];
+		std::string weapon_key = util::to_string(weapon_id);
+
+		if (static_cast<std::string>(from->world->config[weapon_key + ".WepEffEnable"]) == "yes" &&
+			from->tp >= static_cast<int>(from->world->config[weapon_key + ".TP"]))
+		{
+			int effect_id = static_cast<int>(from->world->config[weapon_key + ".WepEff"]);
+			int effect_range = static_cast<int>(from->world->config[weapon_key + ".WepEffDist"]);
+			int tp_cost = static_cast<int>(from->world->config[weapon_key + ".TP"]);
+
+			std::vector<NPC *> affected_npcs;
+			std::vector<Character *> affected_characters;
+
+			// Find NPCs within AoE range
+			UTIL_FOREACH(this->npcs, npc)
+			{
+				// Added eligibility check for NPCs
+				if ((npc->ENF().type == ENF::Passive || npc->ENF().type == ENF::Aggressive ||
+					 from->SourceDutyAccess() >= static_cast<int>(this->world->admin_config["killnpc"])) &&
+					npc->hp > 0 && npc->alive &&
+					util::path_length(from->x, from->y, npc->x, npc->y) <= effect_range)
+				{
+					affected_npcs.push_back(npc);
+				}
+			}
+
+			// Find characters within AoE range (if PK is enabled)
+			if (this->pk || (static_cast<bool>(this->world->config["GlobalPK"]) && !this->world->PKExcept(this->id)))
+			{
+				UTIL_FOREACH(this->characters, character)
+				{
+					if (character != from && util::path_length(from->x, from->y, character->x, character->y) <= effect_range)
+					{
+						affected_characters.push_back(character);
+					}
+				}
+			}
+
+			// Apply AoE effect to NPCs
+			UTIL_FOREACH(affected_npcs, npc)
+			{
+				int damage = util::rand(from->mindam, from->maxdam);
+				npc->Damage(from, damage, effect_id);
+			}
+
+			// Apply AoE effect to characters
+			UTIL_FOREACH(affected_characters, character)
+			{
+				int damage = util::rand(from->mindam, from->maxdam);
+				character->hp = std::max(character->hp - damage, 0);
+
+				PacketBuilder builder(PACKET_AVATAR, PACKET_REPLY, 10);
+				builder.AddShort(from->PlayerID());
+				builder.AddShort(character->PlayerID());
+				builder.AddThree(damage);
+				builder.AddChar(from->direction);
+				builder.AddChar(util::clamp<int>(double(character->hp) / double(character->maxhp) * 100.0, 0, 100));
+				builder.AddChar(character->hp == 0);
+
+				character->Send(builder);
+
+				if (character->hp == 0)
+				{
+					character->DeathRespawn();
+				}
+			}
+
+			// Deduct TP cost
+			from->tp -= tp_cost;
+
+			PacketBuilder tp_builder(PACKET_RECOVER, PACKET_PLAYER, 6);
+			tp_builder.AddShort(from->hp);
+			tp_builder.AddShort(from->tp);
+			tp_builder.AddShort(0); // ?
+			from->Send(tp_builder);
+
+			return; // AoE attack handled, exit early
+		}
+	}
+
+	if (wepdata.subtype == EIF::Ranged)
+	{
+		range = static_cast<int>(this->world->config["RangedDistance"]);
+	}
+
 	for (int i = 0; i < range; ++i)
 	{
 		switch (from->direction)
@@ -1482,59 +1578,71 @@ void Map::Attack(Character *from, Direction direction)
 		case DIRECTION_UP:
 			target_y -= 1;
 			break;
+
 		case DIRECTION_RIGHT:
 			target_x += 1;
 			break;
+
 		case DIRECTION_DOWN:
 			target_y += 1;
 			break;
+
 		case DIRECTION_LEFT:
 			target_x -= 1;
 			break;
 		}
 
-		// Apply damage to NPCs in range
 		UTIL_FOREACH(this->npcs, npc)
 		{
-			// Ensure the same condition is applied for AoE attacks
-			if ((npc->ENF().type == ENF::Passive || npc->ENF().type == ENF::Aggressive || from->SourceDutyAccess() >= static_cast<int>(this->world->admin_config["killnpc"])) && npc->hp > 0 && npc->alive && (npc->x == target_x && npc->y == target_y || util::path_length(from->x, from->y, npc->x, npc->y) <= range))
+			// Updated condition for attacking NPCs
+			if ((npc->ENF().type == ENF::Passive || npc->ENF().type == ENF::Aggressive ||
+				 from->SourceDutyAccess() >= static_cast<int>(this->world->admin_config["killnpc"])) &&
+				npc->hp > 0 && npc->alive &&
+				(npc->x == target_x && npc->y == target_y || util::path_length(from->x, from->y, npc->x, npc->y) <= range))
 			{
 				int amount = util::rand(from->mindam, from->maxdam);
+				double rand = util::rand(0.0, 1.0);
+				bool critical = std::abs(int(npc->direction) - from->direction) != 2 || rand < static_cast<double>(this->world->config["CriticalRate"]);
+
+				if (this->world->config["CriticalFirstHit"] && npc->hp == npc->ENF().hp)
+					critical = true;
+
+				std::unordered_map<std::string, double> formula_vars;
+
+				from->FormulaVars(formula_vars);
+				npc->FormulaVars(formula_vars, "target_");
+				formula_vars["modifier"] = this->world->config["MobRate"];
+				formula_vars["damage"] = amount;
+				formula_vars["critical"] = critical;
+
+				amount = this->world->EvalFormula("damage", formula_vars);
+				double hit_rate = this->world->EvalFormula("hit_rate", formula_vars);
+
+				if (rand > hit_rate)
+				{
+					amount = 0;
+				}
+
+				amount = std::max(amount, 0);
+
+				int limitamount = std::min(amount, int(npc->hp));
+
+				if (this->world->config["LimitDamage"])
+				{
+					amount = limitamount;
+				}
+
 				npc->Damage(from, amount);
+				// *npc may not be valid here
+
+				return;
 			}
 		}
 
 		if (!this->Walkable(target_x, target_y, true))
-			return;
-	}
-
-	// Check for weapon effects
-	std::string weapon_key = util::to_string(from->paperdoll[Character::Weapon]);
-	if (this->world->config[weapon_key + ".WepEffEnable"] && from->tp >= static_cast<int>(this->world->config[weapon_key + ".TP"]))
-	{
-		int effect_id = static_cast<int>(this->world->config[weapon_key + ".WepEff"]);
-		int effect_range = static_cast<int>(this->world->config[weapon_key + ".WepEffDist"]);
-
-		// Deduct TP cost
-		from->tp -= static_cast<int>(this->world->config[weapon_key + ".TP"]);
-
-		// Apply AoE damage with weapon-specific effect
-		UTIL_FOREACH(this->npcs, npc)
 		{
-			// Ensure the same condition is applied for AoE weapon effects
-			if ((npc->ENF().type == ENF::Passive || npc->ENF().type == ENF::Aggressive || from->SourceDutyAccess() >= static_cast<int>(this->world->admin_config["killnpc"])) && npc->hp > 0 && npc->alive && util::path_length(npc->x, npc->y, from->x, from->y) <= effect_range)
-			{
-				int amount = util::rand(from->mindam, from->maxdam);
-				npc->Damage(from, amount, effect_id);
-			}
+			return;
 		}
-
-		// Send TP update packet
-		PacketBuilder tp_builder(PACKET_RECOVER, PACKET_PLAYER, 6);
-		tp_builder.AddShort(from->hp);
-		tp_builder.AddShort(from->tp);
-		tp_builder.AddShort(0); // ?
-		from->Send(tp_builder);
 	}
 }
 
