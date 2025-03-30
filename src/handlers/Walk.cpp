@@ -73,6 +73,7 @@ namespace Handlers
 		{
 			character->Refresh();
 		}
+		character->AutoPotion();
 	}
 
 	// Player walking (admin)

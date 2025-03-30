@@ -281,6 +281,11 @@ public:
 	std::set<Character_QuestState> quests_inactive;
 	std::string quest_string;
 
+	double last_pot;				  // Time of the last potion used
+	bool auto_potion_enabled;		  // For auto-potion setting
+	void AutoPotion();				  // Declaration for the auto-potion method
+	void SetAutoPotion(bool enabled); // Method to set auto-potion
+
 	bool autoloot_enabled; // Add this line to track autoloot status
 
 	Character(std::string name, World *);

@@ -49,6 +49,7 @@ namespace Handlers
 		}
 
 		character->Attack(direction);
+		character->AutoPotion();
 	}
 
 	PACKET_HANDLER_REGISTER(PACKET_ATTACK)

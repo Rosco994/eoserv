@@ -51,10 +51,42 @@ namespace PlayerCommands
 		}
 	}
 
+	void AutoPotion(const std::vector<std::string> &arguments, Character *from)
+	{
+		if (arguments.size())
+		{
+			// Enable or disable autopotion
+			std::string command = util::lowercase(arguments[0]);
+
+			if (command == "on")
+			{
+				from->auto_potion_enabled = true; // Enable auto-potion for this player
+				from->ServerMsg("Auto-potion enabled.");
+			}
+			else if (command == "off")
+			{
+				from->auto_potion_enabled = false; // Disable auto-potion for this player
+				from->ServerMsg("Auto-potion disabled.");
+			}
+			else
+			{
+				from->ServerMsg("Invalid command. Use 'on' or 'off'.");
+			}
+		}
+		else
+		{
+			// Show current auto-potion status
+			std::string status = from->auto_potion_enabled ? "enabled" : "disabled";
+			from->ServerMsg("Auto-potion is currently " + status + ".");
+		}
+	}
+
 	PLAYER_COMMAND_HANDLER_REGISTER(char_mod)
 	RegisterCharacter({"autoloot", {}, {}}, AutoLoot);
+	RegisterCharacter({"autopotion", {}, {}}, AutoPotion);
 
 	RegisterAlias("loot", "autoloot");
+	RegisterAlias("ap", "autopotion");
 	PLAYER_COMMAND_HANDLER_REGISTER_END(char_mod)
 
 }
