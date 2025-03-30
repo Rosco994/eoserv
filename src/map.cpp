@@ -1502,9 +1502,9 @@ void Map::Attack(Character *from, Direction direction)
 			// Find NPCs within AoE range
 			UTIL_FOREACH(this->npcs, npc)
 			{
-				// Added eligibility check for NPCs
-				if ((npc->ENF().type == ENF::Passive || npc->ENF().type == ENF::Aggressive ||
-					 from->SourceDutyAccess() >= static_cast<int>(this->world->admin_config["killnpc"])) &&
+				// Admins can kill any NPC; others can only kill Passive or Aggressive NPCs
+				if ((from->SourceDutyAccess() >= static_cast<int>(this->world->admin_config["killnpc"]) ||
+					 npc->ENF().type == ENF::Passive || npc->ENF().type == ENF::Aggressive) &&
 					npc->hp > 0 && npc->alive &&
 					util::path_length(from->x, from->y, npc->x, npc->y) <= effect_range)
 				{
@@ -1594,14 +1594,11 @@ void Map::Attack(Character *from, Direction direction)
 
 		UTIL_FOREACH(this->npcs, npc)
 		{
-			// Updated condition for attacking NPCs
-			if ((npc->ENF().type == ENF::Passive || npc->ENF().type == ENF::Aggressive ||
-				 from->SourceDutyAccess() >= static_cast<int>(this->world->admin_config["killnpc"])) &&
-				npc->hp > 0 && npc->alive &&
-				(npc->x == target_x && npc->y == target_y || util::path_length(from->x, from->y, npc->x, npc->y) <= range))
+			if ((npc->ENF().type == ENF::Passive || npc->ENF().type == ENF::Aggressive || from->SourceDutyAccess() >= static_cast<int>(this->world->admin_config["killnpc"])) && npc->alive && (npc->x == target_x && npc->y == target_y))
 			{
 				int amount = util::rand(from->mindam, from->maxdam);
 				double rand = util::rand(0.0, 1.0);
+				// Checks if target is facing you
 				bool critical = std::abs(int(npc->direction) - from->direction) != 2 || rand < static_cast<double>(this->world->config["CriticalRate"]);
 
 				if (this->world->config["CriticalFirstHit"] && npc->hp == npc->ENF().hp)
