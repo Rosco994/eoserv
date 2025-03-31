@@ -4,6 +4,7 @@
  */
 
 #include "handlers.hpp"
+#include "../npc.hpp"
 
 #include "../character.hpp"
 #include "../config.hpp"
@@ -12,6 +13,7 @@
 #include "../party.hpp"
 #include "../quest.hpp"
 #include "../world.hpp"
+#include "../console.hpp"
 
 #include "../util.hpp"
 
@@ -47,6 +49,47 @@ namespace Handlers
 					q.second->UsedItem(id);
 				}
 			};
+
+			// Check if the item matches any pet configuration
+			for (int i = 1; character->world->config.find("Pet" + util::to_string(i) + ".EggID") != character->world->config.end(); ++i)
+			{
+				int egg_id = static_cast<int>(character->world->config["Pet" + util::to_string(i) + ".EggID"]);
+				if (egg_id == id)
+				{
+					int pet_npc_id = static_cast<int>(character->world->config["Pet" + util::to_string(i) + ".NpcID"]);
+					Console::Out("Pet item detected: EggID = %d, PetNpcID = %d", egg_id, pet_npc_id);
+
+					if (character->has_pet)
+					{
+						// Despawn the current pet
+						Console::Out("Despawning current pet: NPC ID = %d", character->pet->id);
+						character->PetDespawn();
+						character->has_pet = false;
+						character->StatusMsg("Your pet has been dismissed.");
+					}
+					else
+					{
+						// Spawn a new pet
+						Console::Out("Spawning new pet: NPC ID = %d", pet_npc_id);
+						character->SpawnPet(pet_npc_id);
+						character->has_pet = true;
+						character->StatusMsg("You have summoned a pet!");
+					}
+
+					// Do not Remove the item from inventory
+					// character->DelItem(id, 1);
+					// Console::Out("Pet item removed from inventory: Item ID = %d", id);
+
+					// Send updated inventory to the client
+					// reply.ReserveMore(6);
+					// reply.AddInt(character->HasItem(id));
+					// reply.AddChar(character->weight);
+					// reply.AddChar(character->maxweight);
+					// character->Send(reply);
+
+					return;
+				}
+			}
 
 			switch (item.type)
 			{
@@ -337,9 +380,6 @@ namespace Handlers
 				QuestUsedItems(character, id);
 			}
 			break;
-
-			default:
-				return;
 			}
 		}
 	}

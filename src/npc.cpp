@@ -43,8 +43,15 @@ void NPC::SetSpeedTable(std::array<double, 7> speeds)
 	}
 }
 
-NPC::NPC(Map *map, short id, unsigned char x, unsigned char y, unsigned char spawn_type, short spawn_time, unsigned char index, bool temporary)
+NPC::NPC(Map *map, short id, unsigned char x, unsigned char y, unsigned char spawn_type, short spawn_time, unsigned char index, bool temporary, Character *owner)
+	: map(map), id(id), x(x), y(y), spawn_type(spawn_type), spawn_time(spawn_time), index(index), temporary(temporary), owner(owner)
 {
+	// Pet System (start)
+	this->following = false;
+	this->guarding = false;
+	this->attacking = false;
+	// Pet System (end)
+
 	this->id = id;
 	this->map = map;
 	this->temporary = temporary;
@@ -54,6 +61,8 @@ NPC::NPC(Map *map, short id, unsigned char x, unsigned char y, unsigned char spa
 	this->alive = false;
 	this->attack = false;
 	this->totaldamage = 0;
+	this->owner = owner;
+	this->target = nullptr; // Initialize the target to null
 
 	if (spawn_type > 7)
 	{
@@ -204,6 +213,103 @@ void NPC::Act()
 	Character *attacker = 0;
 	unsigned char attacker_distance = static_cast<int>(this->map->world->config["NPCChaseDistance"]);
 	unsigned short attacker_damage = 0;
+
+	if (this->ENF().type == ENF::Pet) // Ensure pets use their specific behavior
+	{
+		if (!this->owner)
+		{
+			this->Die();
+			return;
+		}
+
+		// Check if the pet is too far from the owner and warp if necessary
+		int distance = std::abs(this->x - this->owner->x) + std::abs(this->y - this->owner->y); // Manhattan distance
+		int SeeDistance = static_cast<int>(this->map->world->config["SeeDistance"]);
+
+		if (distance > SeeDistance)
+		{
+			this->PetWarp(this->owner->map->id, this->owner->x, this->owner->y);
+			return;
+		}
+
+		// Handle pet modes
+		if (this->following)
+		{
+			this->PetFollowOwner();
+		}
+		else if (this->guarding)
+		{
+			// Guard mode: Find and attack NPCs targeting the owner
+			NPC *new_target = nullptr;
+
+			UTIL_FOREACH(this->map->npcs, npc)
+			{
+				if (npc->alive && npc->target == this->owner)
+				{
+					new_target = npc;
+					break;
+				}
+			}
+
+			if (new_target)
+			{
+				this->pet_target = new_target;
+
+				// Move towards the target and attack if in range
+				int xdiff = this->x - this->pet_target->x;
+				int ydiff = this->y - this->pet_target->y;
+				if ((std::abs(xdiff) == 1 && ydiff == 0) || (xdiff == 0 && std::abs(ydiff) == 1))
+				{
+					this->Attack(this->pet_target);
+				}
+				else
+				{
+					Direction needed_direction = this->PetDirectionNeeded(this->pet_target->x, this->pet_target->y);
+					this->map->PetWalk(this, needed_direction);
+				}
+			}
+		}
+		else if (this->attacking)
+		{
+			// Attack mode: Attack the current target or find a new one
+			if (this->pet_target && this->pet_target->alive)
+			{
+				int xdiff = this->x - this->pet_target->x;
+				int ydiff = this->y - this->pet_target->y;
+				if ((std::abs(xdiff) == 1 && ydiff == 0) || (xdiff == 0 && std::abs(ydiff) == 1))
+				{
+					this->Attack(this->pet_target);
+				}
+				else
+				{
+					Direction needed_direction = this->PetDirectionNeeded(this->pet_target->x, this->pet_target->y);
+					this->map->PetWalk(this, needed_direction);
+				}
+			}
+			else
+			{
+				// Find a new target
+				NPC *new_target = nullptr;
+				int closest_distance = static_cast<int>(this->map->world->config["NPCChaseDistance"]);
+
+				UTIL_FOREACH(this->map->npcs, npc)
+				{
+					if (npc->alive && (npc->ENF().type == ENF::Aggressive || npc->ENF().type == ENF::Passive))
+					{
+						int distance = std::abs(this->x - npc->x) + std::abs(this->y - npc->y);
+						if (distance < closest_distance)
+						{
+							new_target = npc;
+							closest_distance = distance;
+						}
+					}
+				}
+
+				this->pet_target = new_target;
+			}
+		}
+		return;
+	}
 
 	if (this->ENF().type == ENF::Passive || this->ENF().type == ENF::Aggressive)
 	{
@@ -370,6 +476,53 @@ void NPC::Act()
 			this->walk_idle_for = util::rand(1, 4);
 		}
 	}
+
+	if (this->owner && this->owner->has_pet && this == this->owner->pet)
+	{
+		// Ensure the pet follows its owner
+		int distance = util::path_length(this->x, this->y, this->owner->x, this->owner->y);
+
+		if (distance > 2) // If the pet is too far from the owner
+		{
+			int xdiff = this->owner->x - this->x;
+			int ydiff = this->owner->y - this->y;
+
+			Direction direction;
+			if (std::abs(xdiff) > std::abs(ydiff))
+			{
+				direction = (xdiff > 0) ? DIRECTION_RIGHT : DIRECTION_LEFT;
+			}
+			else
+			{
+				direction = (ydiff > 0) ? DIRECTION_DOWN : DIRECTION_UP;
+			}
+
+			this->map->PetWalk(this, direction);
+		}
+		else
+		{
+			// Pet stays near the owner
+			this->direction = this->owner->direction;
+		}
+		return;
+	}
+
+	if (this->ENF().type == ENF::Aggressive || this->ENF().type == ENF::Passive)
+	{
+		// Update the target if the NPC is aggressive or passive
+		Character *new_target = nullptr;
+
+		UTIL_FOREACH(this->map->characters, character)
+		{
+			if (character->InRange(this) && !character->IsHideNpc() && character->CanInteractCombat())
+			{
+				new_target = character;
+				break;
+			}
+		}
+
+		this->target = new_target; // Update the target
+	}
 }
 
 bool NPC::Walk(Direction direction)
@@ -454,6 +607,12 @@ void NPC::Damage(Character *from, int amount, int spell_id)
 	{
 		this->Killed(from, amount, spell_id);
 		// *this may not be valid here
+		return;
+	}
+	if (this->owner && this->owner->has_pet && this == this->owner->pet)
+	{
+		// Prevent pet death
+		Console::Out("Pet with NPC ID: %d is immune to death.", this->id);
 		return;
 	}
 }
@@ -1092,6 +1251,53 @@ void NPC::Attack(Character *target)
 	target->Send(builder);
 }
 
+void NPC::Attack(NPC *target)
+{
+	if (!target || !target->alive || !this->owner)
+		return;
+
+	// Calculate damage based on the owner's stats
+	int min_damage = this->owner->mindam; // Use owner's minimum damage
+	int max_damage = this->owner->maxdam; // Use owner's maximum damage
+	int damage = util::rand(min_damage, max_damage);
+
+	// Apply owner's accuracy and target's evade
+	double hit_chance = this->owner->accuracy / double(this->owner->accuracy + target->ENF().evade);
+	if (util::rand(0.0, 1.0) > hit_chance)
+	{
+		damage = 0; // Missed attack
+	}
+
+	// Clamp damage to the target's remaining HP
+	damage = std::min(damage, target->hp);
+
+	// Reduce target's HP
+	target->hp = std::max(0, target->hp - damage);
+
+	// Send attack packet to nearby characters
+	PacketBuilder builder(PACKET_NPC, PACKET_PLAYER, 10);
+	builder.AddChar(this->index);
+	builder.AddChar(target->index);
+	builder.AddThree(damage);
+	builder.AddChar(this->direction);
+	builder.AddChar(util::clamp<int>(double(target->hp) / double(target->ENF().hp) * 100.0, 0, 100));
+	builder.AddChar(target->hp == 0);
+
+	UTIL_FOREACH(this->map->characters, character)
+	{
+		if (character->InRange(this))
+		{
+			character->Send(builder);
+		}
+	}
+
+	// Handle target death
+	if (target->hp == 0)
+	{
+		target->Die();
+	}
+}
+
 void NPC::Say(const std::string &message)
 {
 	PacketBuilder builder(PACKET_NPC, PACKET_PLAYER, 5 + message.length());
@@ -1129,6 +1335,255 @@ void NPC::FormulaVars(std::unordered_map<std::string, double> &vars, std::string
 #undef vd
 #undef vv
 #undef v
+
+void NPC::PetSetOwner(Character *owner)
+{
+	Console::Out("Setting owner for NPC ID: %d, Owner: %s", this->id, owner ? owner->SourceName().c_str() : "None");
+	this->owner = owner;
+}
+
+Direction NPC::PetDirectionNeeded(int x, int y)
+{
+	int xdiff = this->x - x;
+	int ydiff = this->y - y;
+	int absxdiff = std::abs(xdiff);
+	int absydiff = std::abs(ydiff);
+
+	if (absxdiff > absydiff)
+	{
+		return (xdiff < 0) ? DIRECTION_RIGHT : DIRECTION_LEFT;
+	}
+	else
+	{
+		return (ydiff < 0) ? DIRECTION_DOWN : DIRECTION_UP;
+	}
+}
+
+void NPC::PetDamage(NPC *from, int amount, int spell_id)
+{
+	int limitamount = std::min(this->hp, amount);
+
+	if (this->map->world->config["LimitDamage"])
+	{
+		amount = limitamount;
+	}
+
+	if (this->ENF().type == ENF::Passive || this->ENF().type == ENF::Aggressive) // Use ENF().type
+	{
+		this->hp -= amount;
+	}
+	else
+	{
+		this->hp = 0;
+		amount = 0;
+	}
+
+	if (this->totaldamage + limitamount > this->totaldamage)
+		this->totaldamage += limitamount;
+
+	auto opponent = std::make_unique<NPC_Opponent>(); // Use std::make_unique
+	bool found = false;
+
+	// Use a manual range-based for loop to iterate over references
+	for (const auto &checkopp : this->damagelist)
+	{
+		if (checkopp->attacker == from->owner)
+		{
+			found = true;
+
+			if (checkopp->damage + limitamount > checkopp->damage)
+				checkopp->damage += limitamount;
+
+			checkopp->last_hit = Timer::GetTime();
+		}
+	}
+
+	if (!found)
+	{
+		auto opponent = std::make_unique<NPC_Opponent>();
+		opponent->attacker = from->owner;
+		opponent->damage = limitamount;
+		opponent->last_hit = Timer::GetTime();
+		this->damagelist.push_back(std::move(opponent));
+		from->owner->unregister_npc.push_back(this);
+	}
+
+	if (this->hp > 0)
+	{
+		PacketBuilder builder(spell_id == -1 ? PACKET_NPC : PACKET_CAST, PACKET_REPLY, 14);
+
+		if (spell_id != -1)
+			builder.AddShort(spell_id);
+
+		builder.AddShort(from->index);
+		builder.AddChar(from->direction);
+		builder.AddShort(this->index);
+		builder.AddThree(amount);
+		builder.AddShort(util::clamp<int>(double(this->hp) / double(this->ENF().hp) * 100.0, 0, 100)); // Use ENF().hp
+
+		if (spell_id != -1)
+			builder.AddShort(from->owner->tp);
+		else
+			builder.AddChar(1);
+
+		UTIL_FOREACH(this->map->characters, character)
+		{
+			if (character->InRange(this))
+			{
+				character->Send(builder);
+			}
+		}
+	}
+	else
+	{
+		if (this == from->pet_target)
+		{
+			from->pet_target = 0;
+		}
+		this->Killed(from->owner, amount, spell_id);
+	}
+}
+
+void NPC::PetFollowOwner()
+{
+	if (!this->owner)
+	{
+		Console::Wrn("Pet has no owner to follow: NPC ID = %d", this->id);
+		return;
+	}
+
+	// Check if the pet needs to transfer to the owner's map
+	if (this->map != this->owner->map)
+	{
+		this->map->npcs.erase(
+			std::remove(this->map->npcs.begin(), this->map->npcs.end(), this),
+			this->map->npcs.end());
+
+		this->map = this->owner->map;
+		this->x = this->owner->x;
+		this->y = this->owner->y;
+
+		this->map->npcs.push_back(this);
+		Console::Out("Pet transferred to owner's map: NPC ID = %d", this->id);
+		return;
+	}
+
+	// Calculate the distance to the owner
+	int xdiff = this->owner->x - this->x;
+	int ydiff = this->owner->y - this->y;
+	int absxdiff = std::abs(xdiff);
+	int absydiff = std::abs(ydiff);
+
+	// Move the pet towards the owner if not adjacent
+	if (absxdiff > 1 || absydiff > 1)
+	{
+		Direction needed_direction = this->PetDirectionNeeded(this->owner->x, this->owner->y);
+		this->map->PetWalk(this, needed_direction);
+	}
+	else
+	{
+		// Pet stays near the owner
+		this->direction = this->owner->direction;
+	}
+}
+
+void NPC::PetWarp(short mapid, unsigned char x, unsigned char y)
+{
+	if (!this->owner)
+		return;
+
+	this->map->npcs.erase(
+		std::remove(this->map->npcs.begin(), this->map->npcs.end(), this),
+		this->map->npcs.end());
+
+	this->map = this->owner->world->GetMap(mapid);
+	this->x = x;
+	this->y = y;
+
+	this->map->npcs.push_back(this);
+	Console::Out("Pet warped to map %d at position (%d, %d)", mapid, x, y);
+}
+
+void NPC::PetFollow(Character *owner)
+{
+	// Ensure the pet is in follow mode
+	this->owner = owner;
+	this->following = true;
+	this->guarding = false;
+	this->attacking = false;
+	Console::Out("Pet is now following its owner.");
+}
+
+void NPC::PetGuard()
+{
+	// Ensure the pet is in guard mode
+	this->following = false;
+	this->guarding = true;
+	this->attacking = false;
+	Console::Out("Pet is now guarding its owner.");
+}
+
+void NPC::PetAttack()
+{
+	// Ensure the pet is in attack mode
+	this->following = false;
+	this->guarding = false;
+	this->attacking = true;
+	Console::Out("Pet is now in attack mode.");
+}
+
+Direction NPC::CalculateDirection(int x, int y)
+{
+	int xdiff = this->x - x;
+	int ydiff = this->y - y;
+	if (std::abs(xdiff) > std::abs(ydiff))
+	{
+		return (xdiff < 0) ? DIRECTION_RIGHT : DIRECTION_LEFT;
+	}
+	else
+	{
+		return (ydiff < 0) ? DIRECTION_DOWN : DIRECTION_UP;
+	}
+}
+
+void NPC::PetWalkXY(int x, int y)
+{
+	Direction dir = this->CalculateDirection(x, y);
+	if (this->map->Walkable(this->x + (dir == DIRECTION_RIGHT ? 1 : dir == DIRECTION_LEFT ? -1
+																						  : 0),
+							this->y + (dir == DIRECTION_DOWN ? 1 : dir == DIRECTION_UP ? -1
+																					   : 0),
+							true) &&
+		!this->map->Occupied(this->x + (dir == DIRECTION_RIGHT ? 1 : dir == DIRECTION_LEFT ? -1
+																						   : 0),
+							 this->y + (dir == DIRECTION_DOWN ? 1 : dir == DIRECTION_UP ? -1
+																						: 0),
+							 Map::NPCOnly))
+	{
+		this->Walk(dir);
+	}
+	else
+	{
+		Direction random_dir = static_cast<Direction>(util::rand(0, 3));
+		if (this->map->Walkable(this->x + (random_dir == DIRECTION_RIGHT ? 1 : random_dir == DIRECTION_LEFT ? -1
+																											: 0),
+								this->y + (random_dir == DIRECTION_DOWN ? 1 : random_dir == DIRECTION_UP ? -1
+																										 : 0),
+								true) &&
+			!this->map->Occupied(this->x + (random_dir == DIRECTION_RIGHT ? 1 : random_dir == DIRECTION_LEFT ? -1
+																											 : 0),
+								 this->y + (random_dir == DIRECTION_DOWN ? 1 : random_dir == DIRECTION_UP ? -1
+																										  : 0),
+								 Map::NPCOnly))
+		{
+			this->Walk(random_dir);
+		}
+		else
+		{
+			Console::Wrn("Pet with NPC ID: %d is stuck at (%d, %d)", this->id, this->x, this->y);
+		}
+	}
+}
 
 NPC::~NPC()
 {

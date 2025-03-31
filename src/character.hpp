@@ -288,6 +288,8 @@ public:
 
 	bool autoloot_enabled; // Add this line to track autoloot status
 
+	NPC *pet; // Pointer to the pet item
+
 	Character(std::string name, World *);
 
 	bool IsHideInvisible() const { return hidden & HideInvisible; }
@@ -339,6 +341,7 @@ public:
 	bool InRange(const Character *) const;
 	bool InRange(const NPC *) const;
 	bool InRange(const Map_Item &) const;
+	bool InRange(const NPC &npc) const;
 	void Warp(short map, unsigned char x, unsigned char y, WarpAnimation animation = WARP_ANIMATION_NONE);
 	void Refresh();
 	void ShowBoard(Board *board = 0);
@@ -398,6 +401,13 @@ public:
 	Map *map;
 
 	const int &display_str, &display_intl, &display_wis, &display_agi, &display_con, &display_cha;
+
+	// Pet System
+	bool has_pet;
+	bool pet_transfer;
+	void PetDespawn();
+	void SpawnPet(int npc_id);
+	void PetTransfer();
 };
 
 #endif // CHARACTER_HPP_INCLUDED

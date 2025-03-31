@@ -502,6 +502,10 @@ Character::Character(std::string name, World *world)
 	{
 		this->nointeract = static_cast<int>(world->config["NoInteractDefault"]);
 	}
+
+	this->pet = nullptr;
+	this->has_pet = false;
+	this->pet_transfer = false;
 }
 
 int Character::PlayerID() const
@@ -1882,6 +1886,12 @@ void Character::SpikeDamage(int amount)
 
 		watcher->Send(builder3);
 	}
+
+	if (this->has_pet)
+	{
+		// Ensure pets cannot die
+		Console::Out("Pets are immune to death.");
+	}
 }
 
 void Character::DeathRespawn()
@@ -2289,4 +2299,102 @@ void Character::AutoPotion()
 
 	// Update last potion use time
 	this->last_pot = current_time;
+}
+
+void Character::PetDespawn()
+{
+	if (this->has_pet)
+	{
+		Console::Out("Despawning pet with NPC ID: %d", this->pet->id);
+		UTIL_FOREACH(this->pet->map->characters, character)
+		{
+			if (character->InRange(this->pet))
+			{
+				this->pet->RemoveFromView(character);
+			}
+		}
+		this->has_pet = false;
+
+		this->pet->map->npcs.erase(
+			std::remove(this->pet->map->npcs.begin(), this->pet->map->npcs.end(), this->pet),
+			this->pet->map->npcs.end());
+	}
+}
+
+void Character::SpawnPet(int npc_id) // Ensure the parameter type matches the declaration
+{
+	Console::Out("Spawning pet with NPC ID: %d", npc_id);
+	if (this->has_pet)
+	{
+		this->StatusMsg("You already have a pet summoned.");
+		return;
+	}
+
+	if (!this->map)
+	{
+		this->StatusMsg("You must be on a map to summon a pet.");
+		return;
+	}
+
+	unsigned char index = this->map->GenerateNPCIndex();
+	if (index > 250)
+		return;
+
+	this->pet = new NPC(this->map, npc_id, this->x, this->y, 1, 1, index, true, this); // Pass `this` as the owner
+	this->pet->Spawn();
+	this->has_pet = true;
+
+	this->map->npcs.push_back(this->pet);
+	this->StatusMsg("Your pet has been summoned!");
+}
+
+void Character::PetTransfer()
+{
+	bool pettransfer = false;
+	bool following = this->pet->following;
+	bool guarding = this->pet->guarding;
+	bool attacking = this->pet->attacking;
+
+	if (this->has_pet && !this->pet_transfer)
+	{
+		UTIL_FOREACH(this->pet->map->characters, character)
+		{
+			if (character->InRange(this->pet))
+			{
+				this->pet->RemoveFromView(character);
+			}
+		}
+
+		this->pet->map->npcs.erase(
+			std::remove(this->pet->map->npcs.begin(), this->pet->map->npcs.end(), this->pet),
+			this->pet->map->npcs.end());
+		this->has_pet = false;
+		pettransfer = true;
+	}
+
+	if (!this->has_pet && pettransfer)
+	{
+		unsigned char index = this->map->GenerateNPCIndex();
+		if (index > 250)
+			return;
+
+		if (!this->map->Walkable(this->x, this->y))
+		{
+			this->StatusMsg("Your summon was despawned due to being off-map");
+			return;
+		}
+
+		this->pet = new NPC(this->map, this->pet->id, this->x, this->y, 1, 1, index, true, this); // Pass `this` as the owner
+		this->pet->PetSetOwner(this);
+		this->map->npcs.push_back(this->pet);
+		this->pet->Spawn();
+		this->has_pet = true;
+
+		if (following)
+			this->pet->following = true;
+		else if (attacking)
+			this->pet->attacking = true;
+		else if (guarding)
+			this->pet->guarding = true;
+	}
 }

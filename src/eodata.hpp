@@ -268,7 +268,8 @@ public:
 		Priest,
 		Law,
 		Skills,
-		Quest
+		Quest,
+		Pet // Add Pet to the ENF::Type enum
 	};
 
 	using data_t = ENF_Data;

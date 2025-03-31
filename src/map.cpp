@@ -802,6 +802,14 @@ void Map::Enter(Character *character, WarpAnimation animation)
 		checkcharacter->Send(builder);
 	}
 
+	if (character->has_pet && character->pet)
+	{
+		character->pet->map = this;
+		character->pet->x = character->x;
+		character->pet->y = character->y;
+		this->npcs.push_back(character->pet);
+	}
+
 	character->CheckQuestRules();
 }
 
@@ -831,6 +839,13 @@ void Map::Leave(Character *character, WarpAnimation animation, bool silent)
 	this->characters.erase(
 		std::remove(UTIL_RANGE(this->characters), character),
 		this->characters.end());
+
+	if (character->has_pet && character->pet)
+	{
+		this->npcs.erase(
+			std::remove(this->npcs.begin(), this->npcs.end(), character->pet),
+			this->npcs.end());
+	}
 
 	character->map = 0;
 }
@@ -1423,6 +1438,65 @@ Map::WalkResult Map::Walk(NPC *from, Direction direction)
 	return WalkOK;
 }
 
+Map::WalkResult Map::PetWalk(NPC *pet, Direction direction)
+{
+	unsigned char target_x = pet->x;
+	unsigned char target_y = pet->y;
+
+	switch (direction)
+	{
+	case DIRECTION_UP:
+		target_y -= 1;
+		break;
+	case DIRECTION_RIGHT:
+		target_x += 1;
+		break;
+	case DIRECTION_DOWN:
+		target_y += 1;
+		break;
+	case DIRECTION_LEFT:
+		target_x -= 1;
+		break;
+	}
+
+	// Ensure the target position is within bounds and walkable for pets
+	if (!this->InBounds(target_x, target_y) || !this->GetTile(target_x, target_y).Walkable(false))
+	{
+		return WalkFail;
+	}
+
+	// Pets ignore NPC walls and other NPCs
+	if (this->Occupied(target_x, target_y, Map::PlayerOnly))
+	{
+		return WalkFail;
+	}
+
+	// Update pet's position
+	pet->x = target_x;
+	pet->y = target_y;
+	pet->direction = direction;
+
+	// Notify nearby players of the pet's movement
+	PacketBuilder builder(PACKET_NPC, PACKET_PLAYER, 7);
+	builder.AddChar(pet->index);
+	builder.AddChar(pet->x);
+	builder.AddChar(pet->y);
+	builder.AddChar(pet->direction);
+	builder.AddByte(255);
+	builder.AddByte(255);
+	builder.AddByte(255);
+
+	UTIL_FOREACH(this->characters, character)
+	{
+		if (character->InRange(pet))
+		{
+			character->Send(builder);
+		}
+	}
+
+	return WalkOK;
+}
+
 void Map::Attack(Character *from, Direction direction)
 {
 	const EIF_Data &wepdata = this->world->eif->Get(from->paperdoll[Character::Weapon]);
@@ -1635,7 +1709,15 @@ void Map::Attack(Character *from, Direction direction)
 				}
 
 				npc->Damage(from, amount);
-				// *npc may not be valid here
+
+				if (from->has_pet)
+				{
+					if (!from->pet->attacking && !from->pet->pet_target)
+					{
+						from->pet->pet_target = npc;
+						from->pet->attacking = true;
+					}
+				}
 
 				return;
 			}

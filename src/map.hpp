@@ -282,6 +282,7 @@ public:
 	void SpellGroup(Character *from, unsigned short spell_id);
 
 	WalkResult Walk(NPC *from, Direction direction);
+	WalkResult PetWalk(NPC *pet, Direction direction); // Custom walk function for pets
 
 	std::shared_ptr<Map_Item> AddItem(short id, int amount, unsigned char x, unsigned char y, Character *from = 0);
 
@@ -326,9 +327,16 @@ public:
 	};
 	bool Occupied(unsigned char x, unsigned char y, Map::OccupiedTarget target, bool adminghost = false) const;
 
-	void ReloadNPCs(); // Declaration of ReloadNPCs
+	void ReloadNPCs();
 
 	~Map();
+
+	// Pet System
+	void UpdatePetPosition(Character *owner);
+	NPC *SpawnPetNPC(short npc_id, unsigned char x, unsigned char y, Character *owner = nullptr); // Spawn a pet NPC without affecting main NPC logic
+	void RemovePetNPC(NPC *npc);																  // Remove and delete a pet NPC
+	bool WalkPetNPC(NPC *npc, unsigned char x, unsigned char y);
+	void AddPetNPC(NPC *npc);
 };
 
 #endif // MAP_HPP_INCLUDED

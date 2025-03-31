@@ -58,9 +58,18 @@ public:
 
 	int id;
 
+	// Pet System (start)
+	Character *owner;
+	bool following = true;
+	bool guarding = false;
+	bool attacking = false;
+	NPC *pet_target;
+	Character *target;
+	// Pet System (end)
+
 	static void SetSpeedTable(std::array<double, 7> speeds);
 
-	NPC(Map *map, short id, unsigned char x, unsigned char y, unsigned char spawn_type, short spawn_time, unsigned char index, bool temporary = false);
+	NPC(Map *map, short id, unsigned char x, unsigned char y, unsigned char spawn_type, short spawn_time, unsigned char index, bool temporary = false, Character *owner = nullptr);
 
 	const NPC_Data &Data() const;
 	const ENF_Data &ENF() const;
@@ -75,12 +84,25 @@ public:
 	void Die(bool show = true);
 
 	void Attack(Character *target);
+	void Attack(NPC *target); // Overload for attacking NPC targets
 
 	void Say(const std::string &message);
 
 	void FormulaVars(std::unordered_map<std::string, double> &vars, std::string prefix = "");
 
 	~NPC();
+
+	// Pet System
+	void PetFollowOwner();
+	void PetWarp(short mapid, unsigned char x, unsigned char y);
+	void PetFollow(Character *owner);
+	void PetSetOwner(Character *owner);
+	Direction PetDirectionNeeded(int x, int y);
+	void PetDamage(NPC *from, int amount, int spell_id);
+	void PetGuard();
+	void PetAttack();
+	Direction CalculateDirection(int x, int y);
+	void PetWalkXY(int x, int y);
 };
 
 #endif // NPC_HPP_INCLUDED

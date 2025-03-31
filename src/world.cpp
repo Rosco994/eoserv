@@ -346,6 +346,54 @@ void World::UpdateConfig()
 			this->db.Rollback();
 		}
 	}
+
+	// Parse multiple pets and their associated items from the configuration
+	this->pet_npcs.clear();
+	this->pet_items.clear();
+
+	std::vector<std::string> pet_npc_list = util::explode(',', this->config["PetNPCs"]);
+	std::vector<std::string> pet_item_list = util::explode(',', this->config["PetItems"]);
+
+	if (pet_npc_list.size() != pet_item_list.size())
+	{
+		Console::Wrn("Mismatch between PetNPCs and PetItems configuration sizes.");
+	}
+
+	for (std::size_t i = 0; i < pet_npc_list.size(); ++i)
+	{
+		try
+		{
+			int pet_npc_id = util::to_int(pet_npc_list[i]);
+			int pet_item_id = util::to_int(pet_item_list[i]);
+
+			this->pet_npcs.push_back(pet_npc_id);
+			this->pet_items.push_back(pet_item_id);
+		}
+		catch (...)
+		{
+			Console::Wrn("Invalid PetNPC or PetItem configuration at index %zu.", i);
+		}
+	}
+
+	// Parse pet configurations dynamically
+	this->configs.clear();
+
+	for (const auto &entry : this->config)
+	{
+		if (entry.first.find("Pet") == 0 && entry.first.find(".EggID") != std::string::npos)
+		{
+			std::string base_key = entry.first.substr(0, entry.first.find(".EggID"));
+			int egg_id = util::to_int(entry.second);
+			int npc_id = util::to_int(this->config[base_key + ".NpcID"]);
+
+			this->configs.push_back({egg_id, npc_id});
+		}
+	}
+
+	if (this->configs.empty())
+	{
+		Console::Wrn("No valid pet configurations found.");
+	}
 }
 
 World::World(std::array<std::string, 6> dbinfo, const Config &eoserv_config, const Config &admin_config)

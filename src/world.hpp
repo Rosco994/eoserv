@@ -126,6 +126,11 @@ public:
 
 	int admin_count;
 
+	// Add members for pet configurations
+	std::vector<int> pet_npcs; // Stores NPC IDs for pets
+	std::vector<int> pet_items; // Stores item IDs for summoning pets
+	std::vector<std::pair<int, int>> configs; // Stores pairs of EggID and NpcID
+
 	World(std::array<std::string, 6> dbinfo, const Config &eoserv_config, const Config &admin_config);
 
 	void BeginDB();

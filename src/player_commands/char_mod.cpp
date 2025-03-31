@@ -4,6 +4,7 @@
  */
 
 #include "player_commands.hpp"
+#include "../npc.hpp"
 
 #include "../command_source.hpp"
 #include "../config.hpp"
@@ -81,9 +82,53 @@ namespace PlayerCommands
 		}
 	}
 
+	void Command_Pet(const std::vector<std::string> &arguments, Character *character)
+	{
+		if (!character->has_pet || !character->pet)
+		{
+			character->StatusMsg("You don't have a pet.");
+			return;
+		}
+
+		if (!character->pet->alive)
+		{
+			character->StatusMsg("Your pet is not alive.");
+			return;
+		}
+
+		if (arguments.empty())
+		{
+			character->StatusMsg("Usage: #pet <follow|guard|attack>");
+			return;
+		}
+
+		const std::string &action = util::lowercase(arguments[0]);
+
+		if (action == "follow")
+		{
+			character->pet->PetFollow(character);
+			character->StatusMsg("Your pet is now following you.");
+		}
+		else if (action == "guard")
+		{
+			character->pet->PetGuard();
+			character->StatusMsg("Your pet is now guarding you.");
+		}
+		else if (action == "attack")
+		{
+			character->pet->PetAttack();
+			character->StatusMsg("Your pet is now in attack mode.");
+		}
+		else
+		{
+			character->StatusMsg("Invalid action. Usage: #pet <follow|guard|attack>");
+		}
+	}
+
 	PLAYER_COMMAND_HANDLER_REGISTER(char_mod)
 	RegisterCharacter({"autoloot", {}, {}}, AutoLoot);
 	RegisterCharacter({"autopotion", {}, {}}, AutoPotion);
+	RegisterCharacter({"pet", {}, {}}, Command_Pet);
 
 	RegisterAlias("loot", "autoloot");
 	RegisterAlias("ap", "autopotion");
