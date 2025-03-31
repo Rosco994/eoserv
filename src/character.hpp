@@ -288,6 +288,17 @@ public:
 
 	bool autoloot_enabled; // Add this line to track autoloot status
 
+	NPC *PetNPC;				// Renamed from pet
+	bool HasPet;				// Renamed from has_pet
+	bool PetTransferInProgress; // Renamed from pet_transfer
+
+	void PetTransfer();						  // Renamed from PetTransfer
+	void PetKill();							  // Renamed from KillPet
+	void PetSpawn(int pet_id);				  // Renamed from SpawnPet
+	void PetSetMode(const std::string &mode); // Renamed from SetPetMode
+
+	std::list<std::unique_ptr<NPC_Opponent>> damagelist; // Tracks attackers and their damage
+
 	Character(std::string name, World *);
 
 	bool IsHideInvisible() const { return hidden & HideInvisible; }

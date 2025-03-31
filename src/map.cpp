@@ -1015,6 +1015,7 @@ Map::WalkResult Map::Walk(Character *from, Direction direction, bool admin)
 		for (int i = -seedistance; i <= seedistance; ++i)
 		{
 			newy = from->y + seedistance - std::abs(i);
+			;
 			newx = from->x + i;
 			oldy = from->y - seedistance - 1 + std::abs(i);
 			oldx = from->x + i;
@@ -1287,11 +1288,21 @@ Map::WalkResult Map::Walk(NPC *from, Direction direction)
 		break;
 	}
 
-	bool adminghost = (from->ENF().type == ENF::Aggressive || from->parent);
-
-	if (!this->Walkable(target_x, target_y, true) || this->Occupied(target_x, target_y, Map::PlayerAndNPC, adminghost))
+	if (from->ENF().type == ENF::Pet)
 	{
-		return WalkFail;
+		// Treat pet movement as player movement
+		return this->Walk(static_cast<Character *>(nullptr), direction, true); // Use admin-like movement
+	}
+	else
+	{
+		// Reintroduce adminghost logic
+		bool adminghost = (from->ENF().type == ENF::Aggressive || from->parent);
+
+		// Non-pet NPCs cannot bypass NPC walls unless adminghost is true
+		if (!this->Walkable(target_x, target_y, true) || this->Occupied(target_x, target_y, Map::PlayerAndNPC, adminghost))
+		{
+			return WalkFail;
+		}
 	}
 
 	from->x = target_x;
@@ -1418,6 +1429,89 @@ Map::WalkResult Map::Walk(NPC *from, Direction direction)
 	UTIL_FOREACH(oldchars, character)
 	{
 		from->RemoveFromView(character);
+	}
+
+	return WalkOK;
+}
+
+Map::WalkResult Map::PetWalk(NPC *from, Direction direction)
+{
+	unsigned char target_x = from->x;
+	unsigned char target_y = from->y;
+
+	switch (direction)
+	{
+	case DIRECTION_UP:
+		target_y -= 1;
+
+		if (target_y > from->y)
+		{
+			return WalkFail;
+		}
+
+		break;
+
+	case DIRECTION_RIGHT:
+		target_x += 1;
+
+		if (target_x < from->x)
+		{
+			return WalkFail;
+		}
+
+		break;
+
+	case DIRECTION_DOWN:
+		target_y += 1;
+
+		if (target_x < from->x)
+		{
+			return WalkFail;
+		}
+
+		break;
+
+	case DIRECTION_LEFT:
+		target_x -= 1;
+
+		if (target_x > from->x)
+		{
+			return WalkFail;
+		}
+
+		break;
+	}
+
+	if (!this->InBounds(target_x, target_y))
+		return WalkFail;
+
+	if (!this->Walkable(target_x, target_y, false)) // Treat pets as players for walkability
+		return WalkFail;
+
+	if (this->Occupied(target_x, target_y, PlayerOnly))
+		return WalkFail;
+
+	// Update pet's position
+	from->x = target_x;
+	from->y = target_y;
+	from->direction = direction;
+
+	// Notify nearby characters of the pet's movement
+	PacketBuilder builder(PACKET_NPC, PACKET_PLAYER, 7);
+	builder.AddChar(from->index);
+	builder.AddChar(from->x);
+	builder.AddChar(from->y);
+	builder.AddChar(from->direction);
+	builder.AddByte(255);
+	builder.AddByte(255);
+	builder.AddByte(255);
+
+	UTIL_FOREACH(this->characters, character)
+	{
+		if (character->InRange(from))
+		{
+			character->Send(builder);
+		}
 	}
 
 	return WalkOK;
@@ -2427,6 +2521,14 @@ bool Map::InBounds(unsigned char x, unsigned char y) const
 
 bool Map::Walkable(unsigned char x, unsigned char y, bool npc) const
 {
+	// Allow NPCs of type "pet" to move as players
+	if (npc)
+	{
+		NPC *npc_at_position = this->GetNPCIndexAt(x, y); // Ensure this helper exists
+		if (npc_at_position && npc_at_position->ENF().type == ENF::Pet)
+			return this->GetTile(x, y).Walkable(false); // Treat as player
+	}
+
 	if (!InBounds(x, y) || !this->GetTile(x, y).Walkable(npc))
 		return false;
 
@@ -2804,6 +2906,20 @@ NPC *Map::GetNPCIndex(unsigned char index)
 	}
 
 	return 0;
+}
+
+NPC *Map::GetNPCIndexAt(unsigned char x, unsigned char y) const
+{
+	// Iterate through the list of NPCs on the map
+	UTIL_FOREACH(this->npcs, npc)
+	{
+		// Check if the NPC's position matches the given coordinates
+		if (npc->x == x && npc->y == y)
+		{
+			return npc; // Return the NPC if found
+		}
+	}
+	return nullptr; // Return nullptr if no NPC is found at the given position
 }
 
 #undef SAFE_SEEK

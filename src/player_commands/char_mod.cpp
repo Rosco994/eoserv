@@ -9,6 +9,7 @@
 #include "../config.hpp"
 #include "../i18n.hpp"
 #include "../world.hpp"
+#include "../npc.hpp"
 
 #include "../console.hpp"
 #include "../util.hpp"
@@ -81,9 +82,54 @@ namespace PlayerCommands
 		}
 	}
 
+	void Command_Pet(const std::vector<std::string> &arguments, Character *character)
+	{
+		if (!character->PetNPC || !character->PetNPC->pet)
+		{
+			character->ServerMsg("You do not have a pet.");
+			return;
+		}
+
+		if (arguments.empty())
+		{
+			character->ServerMsg("Usage: #pet <mode>");
+			character->ServerMsg("Modes: attack, guard, follow");
+			return;
+		}
+
+		std::string mode = util::lowercase(arguments[0]);
+
+		if (mode == "attack")
+		{
+			character->PetNPC->PetAttacking = true;
+			character->PetNPC->PetGuarding = false;
+			character->PetNPC->PetFollowing = false;
+			character->ServerMsg("Your pet is now in attacking mode.");
+		}
+		else if (mode == "guard")
+		{
+			character->PetNPC->PetAttacking = false;
+			character->PetNPC->PetGuarding = true;
+			character->PetNPC->PetFollowing = false;
+			character->ServerMsg("Your pet is now in guarding mode.");
+		}
+		else if (mode == "follow")
+		{
+			character->PetNPC->PetAttacking = false;
+			character->PetNPC->PetGuarding = false;
+			character->PetNPC->PetFollowing = true;
+			character->ServerMsg("Your pet is now in following mode.");
+		}
+		else
+		{
+			character->ServerMsg("Invalid mode. Modes: attack, guard, follow");
+		}
+	}
+
 	PLAYER_COMMAND_HANDLER_REGISTER(char_mod)
 	RegisterCharacter({"autoloot", {}, {}}, AutoLoot);
 	RegisterCharacter({"autopotion", {}, {}}, AutoPotion);
+	RegisterCharacter({"pet", {}, {}}, Command_Pet);
 
 	RegisterAlias("loot", "autoloot");
 	RegisterAlias("ap", "autopotion");

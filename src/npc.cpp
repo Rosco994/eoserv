@@ -31,6 +31,9 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
+#include <random>
+#include <queue> // For A* pathfinding
+#include <unordered_set>
 
 static double speed_table[8] = {0.9, 0.6, 1.3, 1.9, 3.7, 7.5, 15.0, 0.0};
 
@@ -39,11 +42,14 @@ void NPC::SetSpeedTable(std::array<double, 7> speeds)
 	for (std::size_t i = 0; i < 7; ++i)
 	{
 		if (speeds[i] != 0.0)
+		{
 			speed_table[i] = speeds[i];
+		}
 	}
 }
 
-NPC::NPC(Map *map, short id, unsigned char x, unsigned char y, unsigned char spawn_type, short spawn_time, unsigned char index, bool temporary)
+NPC::NPC(Map *map, short id, unsigned char x, unsigned char y, unsigned char spawn_type, short spawn_time, unsigned char index, bool temporary, bool pet, Character *PetOwner)
+	: map(map), id(id), x(x), y(y), spawn_type(spawn_type), spawn_time(spawn_time), index(index), temporary(temporary), pet(pet), PetOwner(PetOwner)
 {
 	this->id = id;
 	this->map = map;
@@ -75,6 +81,12 @@ NPC::NPC(Map *map, short id, unsigned char x, unsigned char y, unsigned char spa
 	}
 
 	this->parent = 0;
+	this->PetMinDamage = this->ENF().mindam; // Initialize minimum damage
+	this->PetMaxDamage = this->ENF().maxdam; // Initialize maximum damage
+	this->PetFollowing = false;
+	this->PetAttacking = false;
+	this->PetGuarding = false;
+	this->PetTarget = nullptr;
 }
 
 const NPC_Data &NPC::Data() const
@@ -199,6 +211,210 @@ void NPC::Act()
 	if (this->spawn_type == 7)
 	{
 		return;
+	}
+
+	// Cache frequently accessed configuration values
+	const auto &config = this->map->world->config;
+	int max_pets = static_cast<int>(config.at("MaxPets"));
+	int respawn_time = static_cast<int>(config.at("PetRespawnTime"));
+	double damage_multiplier = static_cast<double>(config.at("PetDamageMultiplier"));
+	double pet_speed = static_cast<double>(config.at("PetSpeed"));
+	int chase_distance = static_cast<int>(config.at("PetChaseDistance"));
+	int guard_distance = static_cast<int>(config.at("PetGuardDistance"));
+
+	if (this->pet && this->PetOwner)
+	{
+		// Check if the owner is on a different map
+		if (this->PetOwner->map != this->map)
+		{
+			this->PetOwner->PetTransfer();
+			return;
+		}
+
+		// Handle pet following behavior
+		if (this->PetFollowing)
+		{
+			int distance_to_owner = util::path_length(this->x, this->y, this->PetOwner->x, this->PetOwner->y);
+
+			if (distance_to_owner > guard_distance)
+			{
+				this->PetWalkTo(this->PetOwner->x, this->PetOwner->y);
+				return;
+			}
+			else if (distance_to_owner > guard_distance)
+			{
+				this->PetOwner->PetTransfer();
+				return;
+			}
+			else
+			{
+				// Stand one space behind the owner and face the same direction
+				this->x = this->PetOwner->x - pet_dir_dx(this->PetOwner->direction);
+				this->y = this->PetOwner->y - pet_dir_dy(this->PetOwner->direction);
+				this->direction = this->PetOwner->direction;
+				return;
+			}
+		}
+
+		// Handle pet attacking behavior
+		if (this->PetAttacking)
+		{
+			int distance_to_owner = util::path_length(this->x, this->y, this->PetOwner->x, this->PetOwner->y);
+
+			// If the owner has moved, prioritize returning to the owner after the current kill
+			if (distance_to_owner > guard_distance)
+			{
+				if (this->PetTarget && this->PetTarget->alive)
+				{
+					// Finish attacking the current target
+					int distance_to_target = util::path_length(this->x, this->y, this->PetTarget->x, this->PetTarget->y);
+
+					if (distance_to_target > 1)
+					{
+						this->PetWalkTo(this->PetTarget->x, this->PetTarget->y);
+					}
+					else
+					{
+						this->PetDetermineDirection(this->PetTarget->x, this->PetTarget->y);
+
+						// Apply damage multiplier
+						int damage = util::rand(this->PetMinDamage, this->PetMaxDamage) * damage_multiplier;
+						this->PetTarget->Damage(this->PetOwner, damage, -1);
+
+						if (this->PetTarget->hp <= 0)
+						{
+							this->PetTarget = nullptr;
+						}
+					}
+					return;
+				}
+
+				// Return to the owner after finishing the current target
+				this->PetWalkTo(this->PetOwner->x, this->PetOwner->y);
+
+				// Check for NPCs in range after returning to the owner
+				if (distance_to_owner == 1)
+				{
+					this->PetTarget = nullptr; // Reset the target to find a new one
+				}
+				return;
+			}
+
+			// If no target or the target is dead, find a new target
+			if (!this->PetTarget || !this->PetTarget->alive)
+			{
+				NPC *closest_npc = nullptr;
+				int closest_distance = chase_distance + 1;
+
+				UTIL_FOREACH(this->map->npcs, npc)
+				{
+					if (npc->alive && npc != this &&
+						(npc->ENF().type == ENF::Aggressive || npc->ENF().type == ENF::Passive))
+					{
+						int distance = util::path_length(this->x, this->y, npc->x, npc->y);
+						if (distance <= chase_distance && distance < closest_distance)
+						{
+							closest_npc = npc;
+							closest_distance = distance;
+						}
+					}
+				}
+
+				this->PetTarget = closest_npc;
+			}
+
+			// Attack the target if one is found
+			if (this->PetTarget)
+			{
+				int distance_to_target = util::path_length(this->x, this->y, this->PetTarget->x, this->PetTarget->y);
+
+				if (distance_to_target > 1)
+				{
+					this->PetWalkTo(this->PetTarget->x, this->PetTarget->y);
+				}
+				else
+				{
+					this->PetDetermineDirection(this->PetTarget->x, this->PetTarget->y);
+
+					// Apply damage multiplier
+					int damage = util::rand(this->PetMinDamage, this->PetMaxDamage) * damage_multiplier;
+					this->PetTarget->Damage(this->PetOwner, damage, -1);
+
+					if (this->PetTarget->hp <= 0)
+					{
+						this->PetTarget = nullptr;
+					}
+				}
+				return;
+			}
+
+			// If no valid targets are in range, return to the owner
+			this->PetWalkTo(this->PetOwner->x, this->PetOwner->y);
+			return;
+		}
+
+		// Handle pet guarding behavior
+		if (this->PetGuarding)
+		{
+			int distance_to_owner = util::path_length(this->x, this->y, this->PetOwner->x, this->PetOwner->y);
+
+			// Ensure the pet stays within PetGuardDistance of the owner
+			if (distance_to_owner > guard_distance)
+			{
+				this->PetWalkTo(this->PetOwner->x, this->PetOwner->y);
+				return;
+			}
+
+			// Check for NPCs near the owner
+			NPC *nearby_npc = nullptr;
+
+			UTIL_FOREACH(this->map->npcs, npc)
+			{
+				if (npc->alive && npc != this &&
+					(npc->ENF().type == ENF::Aggressive || npc->ENF().type == ENF::Passive))
+				{
+					int distance_to_owner = util::path_length(this->PetOwner->x, this->PetOwner->y, npc->x, npc->y);
+
+					// If an NPC is within 1 tile of the owner, target it
+					if (distance_to_owner == 1)
+					{
+						nearby_npc = npc;
+						break;
+					}
+				}
+			}
+
+			// Attack the nearby NPC if found
+			if (nearby_npc)
+			{
+				this->PetTarget = nearby_npc;
+
+				int distance_to_target = util::path_length(this->x, this->y, this->PetTarget->x, this->PetTarget->y);
+
+				if (distance_to_target > 1)
+				{
+					this->PetWalkTo(this->PetTarget->x, this->PetTarget->y);
+				}
+				else
+				{
+					this->PetDetermineDirection(this->PetTarget->x, this->PetTarget->y);
+
+					// Apply damage multiplier
+					int damage = util::rand(this->PetMinDamage, this->PetMaxDamage) * damage_multiplier;
+					this->PetTarget->Damage(this->PetOwner, damage, -1);
+
+					if (this->PetTarget->hp <= 0)
+					{
+						this->PetTarget = nullptr;
+					}
+				}
+				return;
+			}
+
+			// If no NPC is nearby, stay close to the owner
+			this->PetWalkTo(this->PetOwner->x, this->PetOwner->y);
+			return;
+		}
 	}
 
 	Character *attacker = 0;
@@ -374,6 +590,12 @@ void NPC::Act()
 
 bool NPC::Walk(Direction direction)
 {
+	if (this->ENF().type == ENF::Pet)
+	{
+		// Treat pet movement as player movement
+		return this->map->Walkable(this->x, this->y, false) && this->map->Walk(this, direction);
+	}
+
 	return this->map->Walk(this, direction);
 }
 
@@ -399,29 +621,36 @@ void NPC::Damage(Character *from, int amount, int spell_id)
 	if (this->totaldamage + limitamount > this->totaldamage)
 		this->totaldamage += limitamount;
 
-	std::unique_ptr<NPC_Opponent> opponent(new NPC_Opponent);
+	// Check if the attacker already exists in the damagelist
 	bool found = false;
-
 	UTIL_FOREACH_CREF(this->damagelist, checkopp)
 	{
-		if (checkopp->attacker == from)
+		if (checkopp->attacker == from) // Match the attacker
 		{
 			found = true;
 
-			if (checkopp->damage + limitamount > checkopp->damage)
-				checkopp->damage += limitamount;
+			// Increment the damage dealt by the attacker
+			checkopp->damage += amount;
 
+			// Update the last hit timestamp
 			checkopp->last_hit = Timer::GetTime();
+			break;
 		}
 	}
 
+	// If the attacker is not found, add them to the damagelist
 	if (!found)
 	{
-		opponent->attacker = from;
-		opponent->damage = limitamount;
-		opponent->last_hit = Timer::GetTime();
-		opponent->attacker->unregister_npc.push_back(this);
+		auto opponent = std::make_unique<NPC_Opponent>();
+		opponent->attacker = from;			   // Set the attacker
+		opponent->damage = amount;			   // Set the damage dealt
+		opponent->last_hit = Timer::GetTime(); // Set the timestamp
+
+		// Add the new attacker to the damagelist
 		this->damagelist.emplace_back(std::move(opponent));
+
+		// Register the NPC in the attacker's unregister list
+		from->unregister_npc.push_back(this);
 	}
 
 	if (this->hp > 0)
@@ -1129,6 +1358,276 @@ void NPC::FormulaVars(std::unordered_map<std::string, double> &vars, std::string
 #undef vd
 #undef vv
 #undef v
+
+void NPC::PetSetOwner(Character *character)
+{
+	this->PetOwner = character;
+	this->pet = true;
+	this->PetFollowing = true;
+	this->PetGuarding = false;
+	this->PetAttacking = false;
+}
+
+void NPC::PetDamage(NPC *from, int amount, int spell_id)
+{
+	int limitamount = std::min(this->hp, amount);
+
+	if (this->map->world->config["LimitDamage"])
+	{
+		amount = limitamount;
+	}
+
+	if (this->ENF().type == ENF::Passive || this->ENF().type == ENF::Aggressive)
+	{
+		this->hp -= amount;
+	}
+	else
+	{
+		this->hp = 0;
+		amount = 0;
+	}
+
+	if (this->totaldamage + limitamount > this->totaldamage)
+		this->totaldamage += limitamount;
+
+	auto opponent = std::make_unique<NPC_Opponent>();
+	bool found = false;
+
+	// Use references to avoid copying unique_ptr
+	UTIL_FOREACH(this->damagelist, &checkopp)
+	{
+		if (checkopp->attacker == from->PetOwner)
+		{
+			found = true;
+
+			if (checkopp->damage + limitamount > checkopp->damage)
+				checkopp->damage += limitamount;
+
+			checkopp->last_hit = Timer::GetTime();
+		}
+	}
+
+	if (!found)
+	{
+		opponent->attacker = from->PetOwner;
+		opponent->damage = limitamount;
+		opponent->last_hit = Timer::GetTime();
+		this->damagelist.push_back(std::move(opponent));
+		from->PetOwner->unregister_npc.push_back(this);
+	}
+
+	if (this->hp > 0)
+	{
+		PacketBuilder builder(spell_id == -1 ? PACKET_NPC : PACKET_CAST, PACKET_REPLY, 14);
+
+		if (spell_id != -1)
+			builder.AddShort(spell_id);
+
+		builder.AddShort(from->index);
+		builder.AddChar(from->direction);
+		builder.AddShort(this->index);
+		builder.AddThree(amount);
+		builder.AddShort(util::clamp<int>(double(this->hp) / double(this->ENF().hp) * 100.0, 0, 100));
+
+		if (spell_id != -1)
+			builder.AddShort(from->PetOwner->tp);
+		else
+			builder.AddChar(1);
+
+		UTIL_FOREACH(this->map->characters, character)
+		{
+			if (character->InRange(this))
+			{
+				character->Send(builder);
+			}
+		}
+	}
+	else
+	{
+		if (this == from->PetTarget)
+		{
+			from->PetTarget = nullptr;
+		}
+		this->Killed(from->PetOwner, amount, spell_id);
+	}
+}
+
+void NPC::PetWalkTo(int x, int y)
+{
+	int xdiff = this->x - x;
+	int ydiff = this->y - y;
+	int absxdiff = std::abs(xdiff);
+	int absydiff = std::abs(ydiff);
+
+	if ((absxdiff == 1 && absydiff == 0) || (absxdiff == 0 && absydiff == 1) || (absxdiff == 0 && absydiff == 0))
+	{
+		return;
+	}
+	else if (absxdiff > absydiff)
+	{
+		this->direction = (xdiff < 0) ? DIRECTION_RIGHT : DIRECTION_LEFT;
+	}
+	else
+	{
+		this->direction = (ydiff < 0) ? DIRECTION_DOWN : DIRECTION_UP;
+	}
+
+	if (!this->Walk(this->direction))
+	{
+		this->Walk(static_cast<Direction>(util::rand(0, 3)));
+	}
+}
+
+void NPC::PetDetermineDirection(int x, int y)
+{
+	int xdiff = x - this->x;
+	int ydiff = y - this->y;
+
+	if (std::abs(xdiff) > std::abs(ydiff))
+	{
+		this->direction = (xdiff > 0) ? DIRECTION_RIGHT : DIRECTION_LEFT;
+	}
+	else
+	{
+		this->direction = (ydiff > 0) ? DIRECTION_DOWN : DIRECTION_UP;
+	}
+}
+
+void NPC::PetFindAltRoute(int target_x, int target_y)
+{
+	std::vector<Direction> path;
+	if (this->PetFindPath(target_x, target_y, path) && !path.empty())
+	{
+		this->Walk(path.front());
+	}
+	else
+	{
+		// Fall back to random movement if no path is found
+		this->Walk(static_cast<Direction>(util::rand(0, 3)));
+	}
+}
+
+NPC *NPC::PetFindNearbyEnemy()
+{
+	NPC *closest_enemy = nullptr;
+	unsigned char closest_distance = static_cast<unsigned char>(static_cast<int>(this->map->world->config["PetChaseDistance"]));
+
+	UTIL_FOREACH(this->map->npcs, npc)
+	{
+		// Skip dead NPCs or NPCs of the same owner
+		if (!npc->alive || npc == this || npc->PetOwner == this->PetOwner)
+			continue;
+
+		// Calculate distance to the NPC
+		unsigned char distance = util::path_length(this->x, this->y, npc->x, npc->y);
+
+		// Update the closest enemy if within range
+		if (distance < closest_distance)
+		{
+			closest_enemy = npc;
+			closest_distance = distance;
+		}
+	}
+
+	return closest_enemy;
+}
+
+bool NPC::PetFindPath(int target_x, int target_y, std::vector<Direction> &path)
+{
+	// Define the PetNode struct for A* pathfinding
+	struct PetNode
+	{
+		int x, y;
+		int g, h;
+		PetNode *parent;
+
+		PetNode(int x, int y, int g, int h, PetNode *parent = nullptr)
+			: x(x), y(y), g(g), h(h), parent(parent) {}
+
+		int f() const { return g + h; }
+
+		bool operator<(const PetNode &other) const { return f() > other.f(); }
+	};
+
+	std::priority_queue<PetNode> open_list;
+	std::unordered_set<int> closed_set;
+
+	auto hash = [this](int x, int y)
+	{
+		return y * this->map->width + x;
+	};
+
+	open_list.emplace(this->x, this->y, 0, util::path_length(this->x, this->y, target_x, target_y));
+
+	while (!open_list.empty())
+	{
+		PetNode current = open_list.top();
+		open_list.pop();
+
+		if (current.x == target_x && current.y == target_y)
+		{
+			// Reconstruct path
+			while (current.parent)
+			{
+				int dx = current.x - current.parent->x;
+				int dy = current.y - current.parent->y;
+
+				if (dx == 1)
+					path.push_back(DIRECTION_RIGHT);
+				else if (dx == -1)
+					path.push_back(DIRECTION_LEFT);
+				else if (dy == 1)
+					path.push_back(DIRECTION_DOWN);
+				else if (dy == -1)
+					path.push_back(DIRECTION_UP);
+
+				current = *current.parent;
+			}
+
+			std::reverse(path.begin(), path.end());
+			return true;
+		}
+
+		int current_hash = hash(current.x, current.y);
+		if (closed_set.count(current_hash))
+			continue;
+
+		closed_set.insert(current_hash);
+
+		Direction directions[] = {DIRECTION_UP, DIRECTION_DOWN, DIRECTION_LEFT, DIRECTION_RIGHT};
+		for (Direction dir : directions)
+		{
+			int nx = current.x, ny = current.y;
+			switch (dir)
+			{
+			case DIRECTION_UP:
+				--ny;
+				break;
+			case DIRECTION_DOWN:
+				++ny;
+				break;
+			case DIRECTION_LEFT:
+				--nx;
+				break;
+			case DIRECTION_RIGHT:
+				++nx;
+				break;
+			}
+
+			if (!this->map->Walkable(nx, ny, true) || closed_set.count(hash(nx, ny)))
+				continue;
+
+			int g = current.g + 1;
+			int h = util::path_length(nx, ny, target_x, target_y);
+			open_list.emplace(nx, ny, g, h, new PetNode(current));
+		}
+	}
+
+	// If no path is found, fallback to random movement
+	path.clear();
+	path.push_back(static_cast<Direction>(util::rand(0, 3)));
+	return false;
+}
 
 NPC::~NPC()
 {

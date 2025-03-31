@@ -283,6 +283,8 @@ public:
 
 	WalkResult Walk(NPC *from, Direction direction);
 
+	WalkResult PetWalk(NPC *from, Direction direction);
+
 	std::shared_ptr<Map_Item> AddItem(short id, int amount, unsigned char x, unsigned char y, Character *from = 0);
 
 	std::shared_ptr<Map_Item> GetItem(short uid);
@@ -326,7 +328,8 @@ public:
 	};
 	bool Occupied(unsigned char x, unsigned char y, Map::OccupiedTarget target, bool adminghost = false) const;
 
-	void ReloadNPCs(); // Declaration of ReloadNPCs
+	void ReloadNPCs();
+	NPC *GetNPCIndexAt(unsigned char x, unsigned char y) const;
 
 	~Map();
 };

@@ -365,9 +365,12 @@ Character::Character(std::string name, World *world)
 	  display_agi(this->world->config["UseAdjustedStats"] ? adj_agi : agi),
 	  display_con(this->world->config["UseAdjustedStats"] ? adj_con : con),
 	  display_cha(this->world->config["UseAdjustedStats"] ? adj_cha : cha),
-	  autoloot_enabled(false),	  // Initialize autoloot_enabled to false
-	  last_pot(Timer::GetTime()), // Initialize last_pot to the current time
-	  auto_potion_enabled(true)	  // Initialize auto_potion_enabled to true
+	  autoloot_enabled(false),	   // Initialize autoloot_enabled to false
+	  last_pot(Timer::GetTime()),  // Initialize last_pot to the current time
+	  auto_potion_enabled(true),   // Initialize auto_potion_enabled to true
+	  PetNPC(0),				   // Initialize PetNPC to 0
+	  HasPet(false),			   // Initialize HasPet to false
+	  PetTransferInProgress(false) // Initialize PetTransferInProgress to false
 {
 	{
 		std::vector<std::string> bot_characters = BotListUnserialize(this->world->config["BotCharacters"]);
@@ -502,6 +505,8 @@ Character::Character(std::string name, World *world)
 	{
 		this->nointeract = static_cast<int>(world->config["NoInteractDefault"]);
 	}
+
+	this->damagelist.clear(); // Initialize damagelist
 }
 
 int Character::PlayerID() const
@@ -1305,6 +1310,38 @@ void Character::Warp(short map, unsigned char x, unsigned char y, WarpAnimation 
 		this->arena = this->next_arena;
 		++this->arena->occupants;
 		this->next_arena = 0;
+	}
+
+	// Handle pet map transition
+	if (this->HasPet && this->PetNPC)
+	{
+		// Save the pet's current mode
+		bool was_following = this->PetNPC->PetFollowing;
+		bool was_guarding = this->PetNPC->PetGuarding;
+		bool was_attacking = this->PetNPC->PetAttacking;
+		NPC *previous_target = this->PetNPC->PetTarget;
+
+		// Remove the pet from the current map
+		if (this->PetNPC->map)
+		{
+			this->PetNPC->map->npcs.erase(
+				std::remove(this->PetNPC->map->npcs.begin(), this->PetNPC->map->npcs.end(), this->PetNPC),
+				this->PetNPC->map->npcs.end());
+		}
+
+		// Update the pet's map and position
+		this->PetNPC->map = this->world->GetMap(map);
+		this->PetNPC->x = x;
+		this->PetNPC->y = y;
+
+		// Add the pet to the new map
+		this->PetNPC->map->npcs.push_back(this->PetNPC);
+
+		// Restore the pet's mode
+		this->PetNPC->PetFollowing = was_following;
+		this->PetNPC->PetGuarding = was_guarding;
+		this->PetNPC->PetAttacking = was_attacking;
+		this->PetNPC->PetTarget = previous_target;
 	}
 }
 
@@ -2289,4 +2326,131 @@ void Character::AutoPotion()
 
 	// Update last potion use time
 	this->last_pot = current_time;
+}
+
+void Character::PetKill()
+{
+	if (!this->PetNPC)
+		return;
+
+	if (this->HasPet)
+	{
+		UTIL_FOREACH(this->PetNPC->map->characters, character)
+		{
+			if (character->InRange(this->PetNPC))
+			{
+				this->PetNPC->RemoveFromView(character);
+			}
+		}
+
+		this->PetNPC->map->npcs.erase(
+			std::remove(this->PetNPC->map->npcs.begin(), this->PetNPC->map->npcs.end(), this->PetNPC),
+			this->PetNPC->map->npcs.end());
+
+		this->HasPet = false;
+	}
+}
+
+void Character::PetSpawn(int pet_id)
+{
+	if (!this->map->GetTile(this->x, this->y).Walkable(false))
+	{
+		this->StatusMsg("You are unable to summon at this time.");
+		this->HasPet = false;
+		return;
+	}
+
+	unsigned char index = this->map->GenerateNPCIndex();
+	if (index > 250)
+		return;
+
+	this->PetNPC = new NPC(this->map, pet_id, this->x, this->y, 1, 1, index, true, true);
+	this->PetNPC->PetSetOwner(this);
+	this->map->npcs.push_back(this->PetNPC);
+	this->PetNPC->Spawn();
+	this->HasPet = true;
+}
+
+void Character::PetTransfer()
+{
+	if (!this->PetNPC)
+		return;
+
+	bool was_following = this->PetNPC->PetFollowing;
+	bool was_guarding = this->PetNPC->PetGuarding;
+	bool was_attacking = this->PetNPC->PetAttacking;
+	NPC *previous_target = this->PetNPC->PetTarget;
+
+	if (this->HasPet && !this->PetTransferInProgress)
+	{
+		UTIL_FOREACH(this->PetNPC->map->characters, character)
+		{
+			if (character->InRange(this->PetNPC))
+			{
+				this->PetNPC->RemoveFromView(character);
+			}
+		}
+
+		this->PetNPC->map->npcs.erase(
+			std::remove(this->PetNPC->map->npcs.begin(), this->PetNPC->map->npcs.end(), this->PetNPC),
+			this->PetNPC->map->npcs.end());
+
+		this->HasPet = false;
+		this->PetTransferInProgress = true;
+	}
+
+	if (!this->HasPet && this->PetTransferInProgress)
+	{
+		if (!this->map->Walkable(this->x, this->y))
+		{
+			this->StatusMsg("Your summon was despawned due to being off-map.");
+			this->PetTransferInProgress = false;
+			return;
+		}
+
+		unsigned char index = this->map->GenerateNPCIndex();
+		if (index > 250)
+			return;
+
+		this->PetNPC->map = this->map;
+		this->PetNPC->x = this->x;
+		this->PetNPC->y = this->y;
+		this->PetNPC->index = index;
+
+		this->map->npcs.push_back(this->PetNPC);
+		this->PetNPC->Spawn();
+
+		this->PetNPC->PetFollowing = was_following;
+		this->PetNPC->PetGuarding = was_guarding;
+		this->PetNPC->PetAttacking = was_attacking;
+		this->PetNPC->PetTarget = previous_target;
+
+		this->HasPet = true;
+		this->PetTransferInProgress = false;
+	}
+}
+
+void Character::PetSetMode(const std::string &mode)
+{
+	if (!this->PetNPC)
+		return;
+
+	if (mode == "attacking")
+	{
+		this->PetNPC->PetAttacking = true;
+		this->PetNPC->PetGuarding = false;
+		this->PetNPC->PetFollowing = false;
+	}
+	else if (mode == "guarding")
+	{
+		this->PetNPC->PetAttacking = false;
+		this->PetNPC->PetGuarding = true;
+		this->PetNPC->PetFollowing = false;
+	}
+	else if (mode == "following")
+	{
+		this->PetNPC->PetAttacking = false;
+		this->PetNPC->PetGuarding = false;
+		this->PetNPC->PetFollowing = true;
+	}
 }

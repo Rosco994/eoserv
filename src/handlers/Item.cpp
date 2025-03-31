@@ -12,6 +12,7 @@
 #include "../party.hpp"
 #include "../quest.hpp"
 #include "../world.hpp"
+#include "../npc.hpp" // Add this line to include the full definition of the NPC class
 
 #include "../util.hpp"
 
@@ -52,6 +53,24 @@ namespace Handlers
 			{
 			case EIF::Teleport:
 			{
+				if (item.scrollmap != 0 && item.scrollx == 252)
+				{
+					if (character->HasPet)
+					{
+						character->PetKill();
+						character->HasPet = false;
+						break;
+					}
+					character->PetSpawn(item.scrollmap);
+					character->HasPet = true;
+					character->PetNPC->PetGuarding = true;
+
+					if (item.scrolly == 1)
+					{
+						break;
+					}
+				}
+
 				if (!character->map->scroll)
 					break;
 

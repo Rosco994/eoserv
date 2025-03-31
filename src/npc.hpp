@@ -58,9 +58,18 @@ public:
 
 	int id;
 
+	bool pet;				   // Indicates if the NPC is a pet
+	Character *PetOwner;	   // Renamed from owner
+	bool PetFollowing = false; // Renamed from following
+	bool PetAttacking = false; // Renamed from attacking
+	bool PetGuarding = false;  // Renamed from guarding
+	NPC *PetTarget = nullptr;  // Renamed from pet_target
+	int PetMinDamage;		   // Renamed from mindam
+	int PetMaxDamage;		   // Renamed from maxdam
+
 	static void SetSpeedTable(std::array<double, 7> speeds);
 
-	NPC(Map *map, short id, unsigned char x, unsigned char y, unsigned char spawn_type, short spawn_time, unsigned char index, bool temporary = false);
+	NPC(Map *map, short id, unsigned char x, unsigned char y, unsigned char spawn_type, short spawn_time, unsigned char index, bool temporary = false, bool Pet = false, Character *PetOwner = 0);
 
 	const NPC_Data &Data() const;
 	const ENF_Data &ENF() const;
@@ -80,7 +89,42 @@ public:
 
 	void FormulaVars(std::unordered_map<std::string, double> &vars, std::string prefix = "");
 
+	void PetSetOwner(Character *character); // Renamed from SetOwner
+	void Pet(NPC *npc);
+	void PetDamage(NPC *from, int amount, int spell_id = -1); // Renamed from PetDamage
+	void PetWalkTo(int x, int y);							  // Renamed from WalkXY
+	void PetDetermineDirection(int x, int y);				  // Renamed from DirectionNeeded
+	void PetFindAltRoute(int target_x, int target_y);		  // Add this declaration
+	bool PetFindPath(int target_x, int target_y, std::vector<Direction> &path);
+	NPC *PetFindNearbyEnemy();
+
 	~NPC();
 };
+
+inline int pet_dir_dx(Direction direction)
+{
+	switch (direction)
+	{
+	case DIRECTION_LEFT:
+		return -1;
+	case DIRECTION_RIGHT:
+		return 1;
+	default:
+		return 0;
+	}
+}
+
+inline int pet_dir_dy(Direction direction)
+{
+	switch (direction)
+	{
+	case DIRECTION_UP:
+		return -1;
+	case DIRECTION_DOWN:
+		return 1;
+	default:
+		return 0;
+	}
+}
 
 #endif // NPC_HPP_INCLUDED

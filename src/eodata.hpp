@@ -268,7 +268,8 @@ public:
 		Priest,
 		Law,
 		Skills,
-		Quest
+		Quest,
+		Pet // Added for pet system
 	};
 
 	using data_t = ENF_Data;
