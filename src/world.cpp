@@ -1066,12 +1066,14 @@ void World::ReloadQuests()
 				continue;
 			}
 		}
-	}
 
-	// Check new quest rules
-	UTIL_FOREACH(this->characters, c)
-	{
-		// TODO: If a character is removed by a quest rule...
+		// Handle characters removed by quest rules
+		if (!c) // Replaced c->IsValid() with a null check
+		{
+			this->Logout(c);
+			continue;
+		}
+
 		c->CheckQuestRules();
 	}
 

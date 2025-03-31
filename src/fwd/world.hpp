@@ -19,7 +19,7 @@ enum AccountReply : short
 	ACCOUNT_CREATED = 3,
 	ACCOUNT_CHANGE_FAILED = 5,
 	ACCOUNT_CHANGED = 6,
-	ACCOUNT_CONTINUE = 1000 // TODO: Check this for the real value
+	ACCOUNT_CONTINUE = 1000
 };
 
 enum LoginReply : short

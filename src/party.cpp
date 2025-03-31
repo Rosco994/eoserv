@@ -193,9 +193,16 @@ void Party::ShareEXP(int exp, int sharemode, Map *map)
 			break;
 		}
 
-		// TODO: Levelling up in this way doesn't work well, find alternative.
-
 		member->exp += reward;
+
+		while (member->level < static_cast<int>(this->world->config["MaxLevel"]) && member->exp >= this->world->exp_table[member->level + 1])
+		{
+			member->exp -= this->world->exp_table[member->level + 1];
+			++member->level;
+			member->statpoints += static_cast<int>(this->world->config["StatPerLevel"]);
+			member->skillpoints += static_cast<int>(this->world->config["SkillPerLevel"]);
+			member->CalculateStats();
+		}
 
 		bool level_up = (member->level < static_cast<int>(this->world->config["MaxLevel"]) && member->exp >= this->world->exp_table[member->level + 1]);
 
@@ -203,14 +210,6 @@ void Party::ShareEXP(int exp, int sharemode, Map *map)
 		builder.AddShort(member->PlayerID());
 		builder.AddInt(reward);
 		builder.AddChar(level_up);
-
-		if (level_up)
-		{
-			++member->level;
-			member->statpoints += static_cast<int>(this->world->config["StatPerLevel"]);
-			member->skillpoints += static_cast<int>(this->world->config["SkillPerLevel"]);
-			member->CalculateStats();
-		}
 
 		member->Send(builder);
 	}

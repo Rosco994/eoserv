@@ -57,12 +57,12 @@ const int SOCKET_ERROR = -1;
 
 #endif // WIN32
 
-struct Socket
+struct SocketImpl // Renamed from 'Socket' to 'SocketImpl'
 {
 	SOCKET sock;
 	sockaddr_in sin;
 
-	Socket(const SOCKET &sock = INVALID_SOCKET, const sockaddr_in &sin = sockaddr_in())
+	SocketImpl(const SOCKET &sock = INVALID_SOCKET, const sockaddr_in &sin = sockaddr_in())
 		: sock(sock), sin(sin)
 	{
 	}

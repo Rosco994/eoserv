@@ -114,8 +114,6 @@ namespace Handlers
 		unsigned char y = reader.GetChar();
 		short item = reader.GetShort();
 
-		// TODO: Limit number of items withdrawn to under weight
-
 		if (util::path_length(character->x, character->y, x, y) <= 1)
 		{
 			if (character->map->GetSpec(x, y) == Map_Tile::BankVault)
@@ -125,6 +123,9 @@ namespace Handlers
 					if (it->id == item)
 					{
 						int amount = it->amount;
+						int max_amount_by_weight = (character->maxweight - character->weight) / character->world->eif->Get(item).weight;
+						amount = std::min(amount, max_amount_by_weight);
+
 						int taken = character->CanHoldItem(it->id, amount);
 
 						character->AddItem(item, taken);

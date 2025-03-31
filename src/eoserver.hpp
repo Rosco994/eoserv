@@ -43,7 +43,7 @@ private:
 	TimeEvent *ping_timer = nullptr;
 
 protected:
-	virtual Client *ClientFactory(const Socket &);
+	virtual Client *ClientFactory(const SocketImpl &sock) override; // Updated to use SocketImpl
 
 public:
 	World *world;

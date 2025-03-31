@@ -194,7 +194,7 @@ void EOServer::Initialize(std::array<std::string, 6> dbinfo, const Config &eoser
 	this->UpdateConfig();
 }
 
-Client *EOServer::ClientFactory(const Socket &sock)
+Client *EOServer::ClientFactory(const SocketImpl &sock) // Updated to use SocketImpl
 {
 	return new EOClient(sock, this);
 }

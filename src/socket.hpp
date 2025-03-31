@@ -7,6 +7,7 @@
 #define SOCKET_HPP_INCLUDED
 
 #include "fwd/socket.hpp"
+#include "socket_impl.hpp" // Include SocketImpl
 
 #include <cstdint>
 #include <cstdio>
@@ -206,10 +207,23 @@ namespace std
 	};
 }
 
-// Temporary
-// TODO: Merge Client and Server with Socket
+/**
+ * Represents a generic socket with basic operations.
+ */
+class Socket
+{
+protected:
+	int socket_fd;
 
-struct Socket;
+public:
+	Socket();
+	Socket(int fd);
+	virtual ~Socket();
+
+	void Close();
+	bool IsValid() const;
+	int GetFD() const;
+};
 
 /**
  * Generic TCP client class.
@@ -242,7 +256,7 @@ public:
 	Client();
 	Client(const IPAddress &addr, std::uint16_t port);
 	Client(Server *);
-	Client(const Socket &, Server *);
+	Client(const SocketImpl &, Server *); // Updated to use 'SocketImpl'
 
 	virtual bool NeedTick() { return false; }
 
@@ -276,7 +290,6 @@ public:
 
 	virtual ~Client();
 
-	// TODO: Separate Socket type
 	friend class Server;
 };
 
@@ -315,7 +328,10 @@ private:
 	impl_ *impl;
 
 protected:
-	virtual Client *ClientFactory(const Socket &sock) { return new Client(sock, this); }
+	virtual Client *ClientFactory(const SocketImpl &sock) // Updated to use 'SocketImpl'
+	{
+		return new Client(sock, this);
+	}
 
 	/**
 	 * The address the server will listen on.

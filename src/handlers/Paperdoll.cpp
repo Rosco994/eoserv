@@ -126,7 +126,6 @@ namespace Handlers
 			reply.AddShort(character->armor);
 			character->Send(reply);
 		}
-		// TODO: Only send this if they change a viewable item
 
 		PacketBuilder builder(PACKET_AVATAR, PACKET_AGREE, 14);
 		builder.AddShort(character->PlayerID());
@@ -152,7 +151,12 @@ namespace Handlers
 		int itemid = reader.GetShort();
 		int subloc = reader.GetChar(); // Used for double slot items (rings etc)
 
-		// TODO: Find out if we can handle equipping items when we have more than 16.7m of them better
+		 // Handle equipping items when the count exceeds 16.7 million
+		if (character->HasItem(itemid) > 16777215)
+		{
+			character->StatusMsg("Cannot equip item: too many in inventory.");
+			return;
+		}
 
 		if (character->Equip(itemid, subloc))
 		{
@@ -180,8 +184,6 @@ namespace Handlers
 			reply.AddShort(character->armor);
 			character->Send(reply);
 		}
-
-		// TODO: Only send this if they change a viewable item
 
 		PacketBuilder builder(PACKET_AVATAR, PACKET_AGREE, 14);
 		builder.AddShort(character->PlayerID());

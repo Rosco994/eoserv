@@ -158,12 +158,10 @@ void Arena::Attack(Character *from, Direction direction)
 			++from->arena_kills;
 			actions.push_back({character, this->map->id, this->map->relog_x, this->map->relog_y});
 
-			// TODO: The numbers here seem to be variable-sized
-
 			PacketBuilder builder(PACKET_ARENA, PACKET_SPEC, 12 + from->SourceName().length() + character->SourceName().length());
-			builder.AddShort(0); // ?
+			builder.AddShort(0);
 			builder.AddByte(255);
-			builder.AddChar(0); // ?
+			builder.AddChar(0);
 			builder.AddByte(255);
 			builder.AddInt(from->arena_kills);
 			builder.AddByte(255);
