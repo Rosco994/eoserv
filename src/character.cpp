@@ -2224,30 +2224,18 @@ void Character::SetAutoPotion(bool enabled)
 void Character::AutoPotion()
 {
 	if (!auto_potion_enabled)
-	{
-		// Console::Dbg("AutoPotion is disabled.");
 		return;
-	}
 
 	const int hp_threshold = static_cast<int>(this->maxhp * 0.80);
 	double current_time = Timer::GetTime();
 
-	// Console::Dbg("Max HP: %d, Current HP: %d, HP Threshold: %d", this->maxhp, this->hp, hp_threshold);
-	// Console::Dbg("Checking potion cooldown: Last potion time = %f, Current time = %f", this->last_pot, current_time);
-
 	// Don't use a potion if HP is above the threshold
 	if (this->hp >= hp_threshold)
-	{
-		// Console::Dbg("Current HP is above the threshold; no potion will be used.");
 		return;
-	}
 
 	// Check if potion is on cooldown
 	if (this->last_pot + 5.0 > current_time)
-	{
-		// Console::Dbg("Potion use is still on cooldown.");
 		return;
-	}
 
 	std::vector<Character_Item> potions;
 
@@ -2258,16 +2246,11 @@ void Character::AutoPotion()
 		if (eif.hp > 0 && eif.type == EIF::Type::Heal)
 		{
 			potions.push_back(item); // Add valid potions to the list
-
-			// Console::Dbg("Found potion: ID = %d, Healing = %d HP", item.id, eif.hp);
 		}
 	}
 
 	if (potions.empty())
-	{
-		// Console::Dbg("ERROR: No healing potions found in inventory.");
 		return;
-	}
 
 	// Sort potions by the amount of healing (lowest healing first)
 	std::sort(potions.begin(), potions.end(), [&](const Character_Item &a, const Character_Item &b)
@@ -2280,24 +2263,14 @@ void Character::AutoPotion()
 	// Select the potion with the lowest healing value
 	Character_Item selected_potion = potions[0];
 	const EIF_Data &potion_data = this->world->eif->Get(selected_potion.id);
-	int hpgain = potion_data.hp;
-
-	// Limit HP gain to max HP
-	if (this->hp + hpgain > this->maxhp)
-	{
-		hpgain = this->maxhp - this->hp;
-	}
+	int hpgain = std::min(static_cast<int>(potion_data.hp), this->maxhp - this->hp); // Fix type mismatch
 
 	// Apply the healing
 	this->hp += hpgain;
 
 	// Remove one potion from inventory
-	bool removed = this->DelItem(selected_potion.id, 1);
-	if (!removed)
-	{
-		// Console::Dbg("ERROR: Failed to remove potion ID: %d", selected_potion.id);
+	if (!this->DelItem(selected_potion.id, 1))
 		return;
-	}
 
 	// Send inventory update to the client
 	PacketBuilder inventory_update(PACKET_ITEM, PACKET_REPLY, 6);
@@ -2316,5 +2289,4 @@ void Character::AutoPotion()
 
 	// Update last potion use time
 	this->last_pot = current_time;
-	// Console::Dbg("Potion used. Last potion time updated to: %f", this->last_pot);
 }

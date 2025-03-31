@@ -1524,43 +1524,48 @@ void Map::Attack(Character *from, Direction direction)
 				}
 			}
 
-			// Apply AoE effect to NPCs
-			UTIL_FOREACH(affected_npcs, npc)
+			// Only proceed if there are valid targets
+			if (!affected_npcs.empty() || !affected_characters.empty())
 			{
-				int damage = util::rand(from->mindam, from->maxdam);
-				npc->Damage(from, damage, effect_id);
-			}
+				// Deduct TP cost
+				from->tp -= tp_cost;
 
-			// Apply AoE effect to characters
-			UTIL_FOREACH(affected_characters, character)
-			{
-				int damage = util::rand(from->mindam, from->maxdam);
-				character->hp = std::max(character->hp - damage, 0);
-
-				PacketBuilder builder(PACKET_AVATAR, PACKET_REPLY, 10);
-				builder.AddShort(from->PlayerID());
-				builder.AddShort(character->PlayerID());
-				builder.AddThree(damage);
-				builder.AddChar(from->direction);
-				builder.AddChar(util::clamp<int>(double(character->hp) / double(character->maxhp) * 100.0, 0, 100));
-				builder.AddChar(character->hp == 0);
-
-				character->Send(builder);
-
-				if (character->hp == 0)
+				// Apply AoE effect to NPCs
+				UTIL_FOREACH(affected_npcs, npc)
 				{
-					character->DeathRespawn();
+					int damage = util::rand(from->mindam, from->maxdam);
+					npc->Damage(from, damage, effect_id);
 				}
+
+				// Apply AoE effect to characters
+				UTIL_FOREACH(affected_characters, character)
+				{
+					int damage = util::rand(from->mindam, from->maxdam);
+					character->hp = std::max(character->hp - damage, 0);
+
+					PacketBuilder builder(PACKET_AVATAR, PACKET_REPLY, 10);
+					builder.AddShort(from->PlayerID());
+					builder.AddShort(character->PlayerID());
+					builder.AddThree(damage);
+					builder.AddChar(from->direction);
+					builder.AddChar(util::clamp<int>(double(character->hp) / double(character->maxhp) * 100.0, 0, 100));
+					builder.AddChar(character->hp == 0);
+
+					character->Send(builder);
+
+					if (character->hp == 0)
+					{
+						character->DeathRespawn();
+					}
+				}
+
+				// Send TP update to the player
+				PacketBuilder tp_builder(PACKET_RECOVER, PACKET_PLAYER, 6);
+				tp_builder.AddShort(from->hp);
+				tp_builder.AddShort(from->tp);
+				tp_builder.AddShort(0); // ?
+				from->Send(tp_builder);
 			}
-
-			// Deduct TP cost
-			from->tp -= tp_cost;
-
-			PacketBuilder tp_builder(PACKET_RECOVER, PACKET_PLAYER, 6);
-			tp_builder.AddShort(from->hp);
-			tp_builder.AddShort(from->tp);
-			tp_builder.AddShort(0); // ?
-			from->Send(tp_builder);
 
 			return; // AoE attack handled, exit early
 		}
@@ -2579,38 +2584,38 @@ bool Map::Reload()
 
 void Map::ReloadNPCs()
 {
-    // Clear existing NPCs
-    UTIL_FOREACH(this->npcs, npc)
-    {
-        delete npc;
-    }
-    this->npcs.clear();
+	// Clear existing NPCs
+	UTIL_FOREACH(this->npcs, npc)
+	{
+		delete npc;
+	}
+	this->npcs.clear();
 
-    // Reload NPCs from the map's tiles
-    int index = 0;
-    for (const Map_Tile &tile : this->tiles)
-    {
-        // Check if the tile has an NPC spawn (based on existing logic)
-        if (tile.tilespec == Map_Tile::NPCBoundary) // Adjust condition as needed
-        {
-            // Example NPC spawn logic (replace with actual spawn data if available)
-            short npc_id = 1; // Replace with actual NPC ID
-            unsigned char x = 0; // Replace with actual X coordinate
-            unsigned char y = 0; // Replace with actual Y coordinate
-            unsigned char spawntype = 0; // Replace with actual spawn type
-            short spawntime = 0; // Replace with actual spawn time
+	// Reload NPCs from the map's tiles
+	int index = 0;
+	for (const Map_Tile &tile : this->tiles)
+	{
+		// Check if the tile has an NPC spawn (based on existing logic)
+		if (tile.tilespec == Map_Tile::NPCBoundary) // Adjust condition as needed
+		{
+			// Example NPC spawn logic (replace with actual spawn data if available)
+			short npc_id = 1;			 // Replace with actual NPC ID
+			unsigned char x = 0;		 // Replace with actual X coordinate
+			unsigned char y = 0;		 // Replace with actual Y coordinate
+			unsigned char spawntype = 0; // Replace with actual spawn type
+			short spawntime = 0;		 // Replace with actual spawn time
 
-            if (!this->InBounds(x, y))
-            {
-                Console::Wrn("An NPC spawn on map %i is outside of map bounds (NPC ID: %i at %ix%i)", this->id, npc_id, x, y);
-                continue;
-            }
+			if (!this->InBounds(x, y))
+			{
+				Console::Wrn("An NPC spawn on map %i is outside of map bounds (NPC ID: %i at %ix%i)", this->id, npc_id, x, y);
+				continue;
+			}
 
-            NPC *newnpc = new NPC(this, npc_id, x, y, spawntype, spawntime, index++);
-            this->npcs.push_back(newnpc);
-            newnpc->Spawn();
-        }
-    }
+			NPC *newnpc = new NPC(this, npc_id, x, y, spawntype, spawntime, index++);
+			this->npcs.push_back(newnpc);
+			newnpc->Spawn();
+		}
+	}
 }
 
 void Map::TimedSpikes()
