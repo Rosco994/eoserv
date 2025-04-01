@@ -237,8 +237,11 @@ Client::Client(Server *server)
 {
 }
 
-Client::Client(const Socket &sock, Server *server)
-	: impl(new impl_(sock.sock, sock.sin)), server(server), connected(true), connect_time(std::time(0)), recv_buffer_gpos(0), recv_buffer_ppos(0), recv_buffer_used(0), send_buffer_gpos(0), send_buffer_ppos(0), send_buffer_used(0)
+Client::Client(const SocketImpl &sock, Server *server) // Updated to use 'SocketImpl'
+	: impl(new impl_(sock.sock, sock.sin)), server(server), connected(true),
+	  connect_time(std::time(0)), recv_buffer_gpos(0), recv_buffer_ppos(0),
+	  recv_buffer_used(0), send_buffer_gpos(0), send_buffer_ppos(0),
+	  send_buffer_used(0)
 {
 }
 
@@ -650,7 +653,7 @@ Client *Server::Poll()
 #endif // WIN32
 	if ((newsock = accept(this->impl->sock, reinterpret_cast<sockaddr *>(&sin), &addrsize)) == INVALID_SOCKET)
 	{
-		return 0;
+		return nullptr;
 	}
 #ifdef WIN32
 	nonblocking = 0;
@@ -708,7 +711,7 @@ Client *Server::Poll()
 	}
 #endif // !defined(SOCKET_POLL) && !defined(WIN32)
 
-	newclient = this->ClientFactory(Socket(newsock, sin));
+	newclient = this->ClientFactory(SocketImpl(newsock, sin)); // Updated to use 'SocketImpl'
 	newclient->SetRecvBuffer(this->recv_buffer_max);
 	newclient->SetSendBuffer(this->send_buffer_max);
 
@@ -942,4 +945,37 @@ Server::~Server()
 #endif // WIN32
 
 	delete this->impl;
+}
+
+Socket::Socket() : socket_fd(-1) {}
+
+Socket::Socket(int fd) : socket_fd(fd) {}
+
+Socket::~Socket()
+{
+	this->Close();
+}
+
+void Socket::Close()
+{
+	if (this->socket_fd != -1)
+	{
+		// Platform-specific socket close
+#ifdef _WIN32
+		closesocket(this->socket_fd);
+#else
+		close(this->socket_fd);
+#endif
+		this->socket_fd = -1;
+	}
+}
+
+bool Socket::IsValid() const
+{
+	return this->socket_fd != -1;
+}
+
+int Socket::GetFD() const
+{
+	return this->socket_fd;
 }

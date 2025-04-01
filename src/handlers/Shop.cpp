@@ -82,14 +82,22 @@ namespace Handlers
 		if (character->weight >= character->maxweight)
 			return;
 
-		// TODO: Limit number of items bought to under weight
-
 		if (character->npc_type == ENF::Shop)
 		{
 			UTIL_FOREACH_CREF(character->npc->Data().shop_trade, checkitem)
 			{
 				if (checkitem->id == item && checkitem->buy != 0)
 				{
+					// Calculate the maximum number of items the character can carry
+					int item_weight = character->world->eif->Get(item).weight;
+					int max_amount_by_weight = (character->maxweight - character->weight) / item_weight;
+
+					// Adjust the amount to the minimum of the requested amount and the weight limit
+					amount = std::min(amount, max_amount_by_weight);
+
+					if (amount <= 0)
+						break;
+
 					std::int_least64_t cost64 = std::int_least64_t(amount) * std::int_least64_t(checkitem->buy);
 
 					if (cost64 < 0 || cost64 > int(character->world->config["MaxItem"]))

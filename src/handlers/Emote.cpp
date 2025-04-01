@@ -16,8 +16,7 @@ namespace Handlers
 	{
 		Emote emote = static_cast<Emote>(reader.GetChar());
 
-		// TODO: Restrict drunk emote
-		if ((emote >= 1 && emote <= 10) || emote == EMOTE_DRUNK || emote == EMOTE_PLAYFUL)
+		if ((emote >= 1 && emote <= 10) || (emote == EMOTE_DRUNK && character->level >= 10) || emote == EMOTE_PLAYFUL)
 		{
 			character->Emote(emote, false);
 		}

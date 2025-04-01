@@ -326,6 +326,8 @@ public:
 	};
 	bool Occupied(unsigned char x, unsigned char y, Map::OccupiedTarget target, bool adminghost = false) const;
 
+	void ReloadNPCs(); // Declaration of ReloadNPCs
+
 	~Map();
 };
 

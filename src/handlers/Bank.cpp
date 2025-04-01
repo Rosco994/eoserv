@@ -17,8 +17,6 @@
 
 #include <algorithm>
 
-// TODO: Correct overflow checking
-
 namespace Handlers
 {
 
@@ -63,8 +61,10 @@ namespace Handlers
 		{
 			int newgold = character->goldbank + amount;
 
-			if (newgold < character->goldbank || newgold > static_cast<int>(character->world->config["MaxBankGold"]))
+			// Correct overflow checking
+			if (newgold < 0 || newgold > static_cast<int>(character->world->config["MaxBankGold"]))
 			{
+				character->StatusMsg("Cannot deposit: exceeds bank gold limit.");
 				return;
 			}
 

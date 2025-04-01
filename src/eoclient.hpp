@@ -15,6 +15,7 @@
 #include "packet.hpp"
 
 #include "socket.hpp"
+#include "socket_impl.hpp" // Include SocketImpl
 
 #include <cstddef>
 #include <cstdio>
@@ -124,7 +125,8 @@ public:
 		this->Initialize();
 	}
 
-	EOClient(const Socket &sock, EOServer *server_) : Client(sock, server_)
+	EOClient(const SocketImpl &sock, EOServer *server_) // Updated to use SocketImpl
+		: Client(sock, server_)
 	{
 		this->Initialize();
 	}

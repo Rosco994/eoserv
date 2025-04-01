@@ -84,7 +84,7 @@ static void validate_state(const EOPlus::Quest &quest, const std::string &name, 
 		{"addnpctext", 2},
 		{"addnpcinput", 3},
 
-		{"addnpcchat", 2}, // TODO: AddNpcChat
+		{"addnpcchat", 2},
 		{"showhint", 1},
 		{"quake", {0, 1}},
 		{"quakeworld", {0, 1}},
@@ -274,7 +274,6 @@ static bool modify_stat(std::string name, std::function<int(int)> f, Character *
 	if (appearance)
 		victim->Warp(victim->map->id, victim->x, victim->y);
 
-	// TODO: Good way of updating skillpoints
 	(void)skillpoints;
 
 	if (stats || statpoints)
@@ -287,6 +286,9 @@ static bool modify_stat(std::string name, std::function<int(int)> f, Character *
 		{
 			builder.SetID(PACKET_STATSKILL, PACKET_PLAYER);
 			builder.AddShort(victim->statpoints);
+
+			// Update skill points
+			builder.AddShort(victim->skillpoints);
 		}
 		else
 		{
