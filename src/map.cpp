@@ -1249,62 +1249,42 @@ Map::WalkResult Map::Walk(NPC *from, Direction direction)
 	{
 	case DIRECTION_UP:
 		target_y -= 1;
-
-		if (target_y > from->y)
-		{
+		if (target_y > from->y && !from->pet)
 			return WalkFail;
-		}
-
 		break;
 
 	case DIRECTION_RIGHT:
 		target_x += 1;
-
-		if (target_x < from->x)
-		{
+		if (target_x < from->x && !from->pet)
 			return WalkFail;
-		}
-
 		break;
 
 	case DIRECTION_DOWN:
 		target_y += 1;
-
-		if (target_x < from->x)
-		{
+		if (target_x < from->x && !from->pet)
 			return WalkFail;
-		}
-
 		break;
 
 	case DIRECTION_LEFT:
 		target_x -= 1;
-
-		if (target_x > from->x)
-		{
+		if (target_x > from->x && !from->pet)
 			return WalkFail;
-		}
-
 		break;
 	}
 
-	if (from->ENF().type == ENF::Pet)
+	// Allow pets to bypass Walkable and Occupied checks
+	if (!from->pet)
 	{
-		// Treat pet movement as player movement
-		return this->Walk(static_cast<Character *>(nullptr), direction, true); // Use admin-like movement
-	}
-	else
-	{
-		// Reintroduce adminghost logic
 		bool adminghost = (from->ENF().type == ENF::Aggressive || from->parent);
 
-		// Non-pet NPCs cannot bypass NPC walls unless adminghost is true
-		if (!this->Walkable(target_x, target_y, true) || this->Occupied(target_x, target_y, Map::PlayerAndNPC, adminghost))
+		if (!this->Walkable(target_x, target_y, true) ||
+			this->Occupied(target_x, target_y, Map::PlayerAndNPC, adminghost))
 		{
 			return WalkFail;
 		}
 	}
 
+	// Update NPC position
 	from->x = target_x;
 	from->y = target_y;
 
