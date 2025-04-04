@@ -365,7 +365,7 @@ Character::Character(std::string name, World *world)
 	  display_agi(this->world->config["UseAdjustedStats"] ? adj_agi : agi),
 	  display_con(this->world->config["UseAdjustedStats"] ? adj_con : con),
 	  display_cha(this->world->config["UseAdjustedStats"] ? adj_cha : cha),
-	  autoloot_enabled(false),	   // Initialize autoloot_enabled to false
+	  autoloot_enabled(true),	   // Initialize autoloot_enabled to true
 	  last_pot(Timer::GetTime()),  // Initialize last_pot to the current time
 	  auto_potion_enabled(true),   // Initialize auto_potion_enabled to true
 	  PetNPC(0),				   // Initialize PetNPC to 0
