@@ -1423,42 +1423,34 @@ Map::WalkResult Map::PetWalk(NPC *from, Direction direction)
 	{
 	case DIRECTION_UP:
 		target_y -= 1;
-
 		if (target_y > from->y)
 		{
 			return WalkFail;
 		}
-
 		break;
 
 	case DIRECTION_RIGHT:
 		target_x += 1;
-
 		if (target_x < from->x)
 		{
 			return WalkFail;
 		}
-
 		break;
 
 	case DIRECTION_DOWN:
 		target_y += 1;
-
 		if (target_x < from->x)
 		{
 			return WalkFail;
 		}
-
 		break;
 
 	case DIRECTION_LEFT:
 		target_x -= 1;
-
 		if (target_x > from->x)
 		{
 			return WalkFail;
 		}
-
 		break;
 	}
 
