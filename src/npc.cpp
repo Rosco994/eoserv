@@ -81,12 +81,13 @@ NPC::NPC(Map *map, short id, unsigned char x, unsigned char y, unsigned char spa
 	}
 
 	this->parent = 0;
-	this->PetMinDamage = this->ENF().mindam; // Initialize minimum damage
-	this->PetMaxDamage = this->ENF().maxdam; // Initialize maximum damage
-	this->PetFollowing = false;
+	this->PetMinDamage = this->ENF().mindam;
+	this->PetMaxDamage = this->ENF().maxdam;
+	this->PetFollowing = true;
 	this->PetAttacking = false;
 	this->PetGuarding = false;
 	this->PetTarget = nullptr;
+	this->direction_changed = false;
 }
 
 const NPC_Data &NPC::Data() const
@@ -230,18 +231,55 @@ void NPC::Act()
 			this->PetOwner->PetTransfer();
 			return;
 		}
+		// Handle pet positioning behind the player when the player changes direction while standing still
+		if (this->PetOwner->IsStandingStill() && this->PetOwner->HasChangedDirection())
+		{
+			// Move the pet to one tile behind the player based on the player's direction
+			this->x = this->PetOwner->x - pet_dir_dx(this->PetOwner->direction);
+			this->y = this->PetOwner->y - pet_dir_dy(this->PetOwner->direction);
+			this->direction = this->PetOwner->direction;
 
+			// Ensure the pet's new position is walkable
+			if (!this->map->Walkable(this->x, this->y, true))
+			{
+				// If not walkable, keep the pet at its current position
+				this->x = this->PetOwner->x;
+				this->y = this->PetOwner->y;
+			}
+
+			// Notify nearby characters of the pet's movement
+			PacketBuilder builder(PACKET_NPC, PACKET_PLAYER, 7);
+			builder.AddChar(this->index);
+			builder.AddChar(this->x);
+			builder.AddChar(this->y);
+			builder.AddChar(this->direction);
+			builder.AddByte(255);
+			builder.AddByte(255);
+			builder.AddByte(255);
+
+			UTIL_FOREACH(this->map->characters, character)
+			{
+				if (character->InRange(this))
+				{
+					character->Send(builder);
+				}
+			}
+
+			// Reset the owner's direction change flag
+			this->PetOwner->ResetDirectionChangeFlag();
+		}
 		// Handle pet following behavior
 		if (this->PetFollowing)
 		{
 			int distance_to_owner = util::path_length(this->x, this->y, this->PetOwner->x, this->PetOwner->y);
 
-			if (distance_to_owner > guard_distance)
+			// Smooth movement: move step-by-step toward the owner
+			if (distance_to_owner > 1)
 			{
 				this->PetWalkTo(this->PetOwner->x, this->PetOwner->y);
 				return;
 			}
-			else if (distance_to_owner > guard_distance)
+			else if (distance_to_owner > (guard_distance * 2))
 			{
 				this->PetOwner->PetTransfer();
 				return;
@@ -1627,6 +1665,16 @@ bool NPC::PetFindPath(int target_x, int target_y, std::vector<Direction> &path)
 	path.clear();
 	path.push_back(static_cast<Direction>(util::rand(0, 3)));
 	return false;
+}
+
+void NPC::ResetDirectionChangeFlag()
+{
+	this->direction_changed = false;
+}
+
+bool NPC::HasChangedDirection() const
+{
+	return this->direction_changed;
 }
 
 NPC::~NPC()

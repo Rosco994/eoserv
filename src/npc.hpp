@@ -31,6 +31,16 @@ struct NPC_Opponent
 };
 
 /**
+ * Enum representing different pet modes
+ */
+enum class PetMode
+{
+	Attacking,
+	Guarding,
+	Following
+};
+
+/**
  * An instance of an NPC created and managed by a Map
  */
 class NPC
@@ -58,14 +68,14 @@ public:
 
 	int id;
 
-	bool pet;				   // Indicates if the NPC is a pet
-	Character *PetOwner;	   // Renamed from owner
-	bool PetFollowing = false; // Renamed from following
-	bool PetAttacking = false; // Renamed from attacking
-	bool PetGuarding = false;  // Renamed from guarding
-	NPC *PetTarget = nullptr;  // Renamed from pet_target
-	int PetMinDamage;		   // Renamed from mindam
-	int PetMaxDamage;		   // Renamed from maxdam
+	bool pet;
+	Character *PetOwner;
+	bool PetFollowing = false;
+	bool PetAttacking = false;
+	bool PetGuarding = false;
+	NPC *PetTarget = nullptr;
+	int PetMinDamage;
+	int PetMaxDamage;
 
 	static void SetSpeedTable(std::array<double, 7> speeds);
 
@@ -89,16 +99,22 @@ public:
 
 	void FormulaVars(std::unordered_map<std::string, double> &vars, std::string prefix = "");
 
-	void PetSetOwner(Character *character); // Renamed from SetOwner
+	void PetSetOwner(Character *character);
 	void Pet(NPC *npc);
-	void PetDamage(NPC *from, int amount, int spell_id = -1); // Renamed from PetDamage
-	void PetWalkTo(int x, int y);							  // Renamed from WalkXY
-	void PetDetermineDirection(int x, int y);				  // Renamed from DirectionNeeded
-	void PetFindAltRoute(int target_x, int target_y);		  // Add this declaration
+	void PetDamage(NPC *from, int amount, int spell_id = -1);
+	void PetWalkTo(int x, int y);
+	void PetDetermineDirection(int x, int y);
+	void PetFindAltRoute(int target_x, int target_y);
 	bool PetFindPath(int target_x, int target_y, std::vector<Direction> &path);
 	NPC *PetFindNearbyEnemy();
 
+	void ResetDirectionChangeFlag();
+	bool HasChangedDirection() const;
+
 	~NPC();
+
+private:
+	bool direction_changed = false; // Track if the direction has changed
 };
 
 inline int pet_dir_dx(Direction direction)

@@ -1463,10 +1463,35 @@ Map::WalkResult Map::PetWalk(NPC *from, Direction direction)
 	if (this->Occupied(target_x, target_y, PlayerOnly))
 		return WalkFail;
 
-	// Update pet's position
-	from->x = target_x;
-	from->y = target_y;
-	from->direction = direction;
+	// Adjust pet's position dynamically to follow the player
+	if (from->PetOwner)
+	{
+		Character *petowner = from->PetOwner;
+
+		// Calculate the distance between the pet and the player
+		int distance_x = petowner->x - from->x;
+		int distance_y = petowner->y - from->y;
+
+		// If the pet is too far, warp it closer to the player
+		if (std::abs(distance_x) > 2 || std::abs(distance_y) > 2)
+		{
+			from->x = petowner->x;
+			from->y = petowner->y;
+		}
+		else
+		{
+			// Move the pet closer to the player
+			if (distance_x > 0)
+				from->x++;
+			else if (distance_x < 0)
+				from->x--;
+
+			if (distance_y > 0)
+				from->y++;
+			else if (distance_y < 0)
+				from->y--;
+		}
+	}
 
 	// Notify nearby characters of the pet's movement
 	PacketBuilder builder(PACKET_NPC, PACKET_PLAYER, 7);
@@ -1525,18 +1550,41 @@ void Map::Attack(Character *from, Direction direction)
 		}
 	}
 
-	PacketBuilder builder(PACKET_ATTACK, PACKET_PLAYER, 3);
-	builder.AddShort(from->PlayerID());
-	builder.AddChar(direction);
-
-	UTIL_FOREACH(this->characters, character)
+	// Handle pet attack motion if the pet is attacking
+	if (from->PetNPC && (from->PetNPC->PetAttacking || from->PetNPC->PetGuarding))
 	{
-		if (character == from || !from->InRange(character))
-		{
-			continue;
-		}
+		NPC *pet = from->PetNPC;
 
-		character->Send(builder);
+		PacketBuilder builder(PACKET_ATTACK, PACKET_PLAYER, 3);
+		builder.AddShort(pet->index); // Use the pet's index for the attack motion
+		builder.AddChar(direction);
+
+		// Send the attack motion to the owner and other players
+		UTIL_FOREACH(this->characters, character)
+		{
+			if (character->InRange(pet))
+			{
+				character->Send(builder);
+			}
+		}
+	}
+
+	// Handle player attack motion if the player is attacking
+	if (!from->PetNPC || !from->PetNPC->PetAttacking)
+	{
+		PacketBuilder builder(PACKET_ATTACK, PACKET_PLAYER, 3);
+		builder.AddShort(from->PlayerID());
+		builder.AddChar(direction);
+
+		UTIL_FOREACH(this->characters, character)
+		{
+			if (character == from || !from->InRange(character))
+			{
+				continue;
+			}
+
+			character->Send(builder);
+		}
 	}
 
 	if (is_instrument)
@@ -2299,7 +2347,8 @@ void Map::SpellGroup(Character *from, unsigned short spell_id)
 
 		hpgain = std::max(hpgain, 0);
 
-		if (!from->CanInteractCombat() && !(from->CanInteractPKCombat() && (from->map->pk || (this->world->config["GlobalPK"] && !this->world->PKExcept(this->id)))))
+		if (!from->CanInteractCombat() && !(from->CanInteractPKCombat() && (from->map->pk || (from->world->config["GlobalPK"] && !from->world->PKExcept(from->map->id)))))
+
 			hpgain = std::min(hpgain, 1);
 
 		member->hp += hpgain;

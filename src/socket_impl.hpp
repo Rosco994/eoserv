@@ -57,7 +57,7 @@ const int SOCKET_ERROR = -1;
 
 #endif // WIN32
 
-struct SocketImpl // Renamed from 'Socket' to 'SocketImpl'
+struct SocketImpl
 {
 	SOCKET sock;
 	sockaddr_in sin;

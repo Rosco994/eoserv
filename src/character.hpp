@@ -288,17 +288,22 @@ public:
 
 	bool autoloot_enabled; // Add this line to track autoloot status
 
-	NPC *PetNPC;				// Renamed from pet
-	bool HasPet;				// Renamed from has_pet
-	bool PetTransferInProgress; // Renamed from pet_transfer
+	NPC *PetNPC;
+	bool HasPet;
+	bool PetTransferInProgress;
 
-	void PetTransfer();						  // Renamed from PetTransfer
-	void PetKill();							  // Renamed from KillPet
-	void PetSpawn(int pet_id);				  // Renamed from SpawnPet
-	void PetSetMode(const std::string &mode); // Renamed from SetPetMode
+	void PetTransfer();
+	void PetKill();
+	void PetSpawn(int pet_id);
+	void PetSetMode(const std::string &mode);
 
-	std::list<std::unique_ptr<NPC_Opponent>> damagelist; // Tracks attackers and their damage
+	std::list<std::unique_ptr<NPC_Opponent>> damagelist;
 
+private:
+	bool direction_changed = false;
+	double last_move_time = 0.0;
+
+public:
 	Character(std::string name, World *);
 
 	bool IsHideInvisible() const { return hidden & HideInvisible; }
@@ -396,6 +401,12 @@ public:
 	std::string SourceName() const;
 	Character *SourceCharacter();
 	World *SourceWorld();
+
+	bool IsStandingStill() const;
+	bool HasChangedDirection() const;
+	void ResetDirectionChangeFlag();
+
+	void Face(Direction direction);
 
 	~Character();
 

@@ -365,12 +365,14 @@ Character::Character(std::string name, World *world)
 	  display_agi(this->world->config["UseAdjustedStats"] ? adj_agi : agi),
 	  display_con(this->world->config["UseAdjustedStats"] ? adj_con : con),
 	  display_cha(this->world->config["UseAdjustedStats"] ? adj_cha : cha),
-	  autoloot_enabled(true),	   // Initialize autoloot_enabled to true
-	  last_pot(Timer::GetTime()),  // Initialize last_pot to the current time
-	  auto_potion_enabled(true),   // Initialize auto_potion_enabled to true
-	  PetNPC(0),				   // Initialize PetNPC to 0
-	  HasPet(false),			   // Initialize HasPet to false
-	  PetTransferInProgress(false) // Initialize PetTransferInProgress to false
+	  autoloot_enabled(true),		// Initialize autoloot_enabled to true
+	  last_pot(Timer::GetTime()),	// Initialize last_pot to the current time
+	  auto_potion_enabled(true),	// Initialize auto_potion_enabled to true
+	  PetNPC(0),					// Initialize PetNPC to 0
+	  HasPet(false),				// Initialize HasPet to false
+	  PetTransferInProgress(false), // Initialize PetTransferInProgress to false
+	  direction_changed(false),		// Initialize direction_changed to false
+	  last_move_time(0.0)			// Initialize last_move_time to 0.0
 {
 	{
 		std::vector<std::string> bot_characters = BotListUnserialize(this->world->config["BotCharacters"]);
@@ -604,12 +606,23 @@ void Character::StatusMsg(std::string message)
 
 Map::WalkResult Character::Walk(Direction direction)
 {
+	this->direction_changed = (this->direction != direction);
+	this->last_move_time = Timer::GetTime();
 	return this->map->Walk(this, direction);
 }
 
 Map::WalkResult Character::AdminWalk(Direction direction)
 {
+	this->direction_changed = (this->direction != direction);
+	this->last_move_time = Timer::GetTime();
 	return this->map->Walk(this, direction, true);
+}
+
+void Character::Face(Direction direction)
+{
+	this->direction_changed = (this->direction != direction);
+	this->last_move_time = Timer::GetTime();
+	this->map->Face(this, direction);
 }
 
 void Character::Attack(Direction direction)
@@ -2187,6 +2200,16 @@ void Character::Logout()
 
 	this->online = false;
 
+	// Clean up the pet if the character has one
+	if (this->PetNPC)
+	{
+		auto pet = this->PetNPC;
+		this->map->npcs.erase(std::remove(this->map->npcs.begin(), this->map->npcs.end(), pet), this->map->npcs.end());
+		delete pet; // Free the pet object
+		this->PetNPC = nullptr;
+		this->HasPet = false;
+	}
+
 	this->Save();
 
 	this->world->Logout(this);
@@ -2368,6 +2391,12 @@ void Character::PetSpawn(int pet_id)
 	this->PetNPC->PetSetOwner(this);
 	this->map->npcs.push_back(this->PetNPC);
 	this->PetNPC->Spawn();
+
+	// Immediately set the pet to follow the player
+	this->PetNPC->PetFollowing = true;
+	this->PetNPC->PetGuarding = false;
+	this->PetNPC->PetAttacking = false;
+
 	this->HasPet = true;
 }
 
@@ -2435,22 +2464,41 @@ void Character::PetSetMode(const std::string &mode)
 	if (!this->PetNPC)
 		return;
 
-	if (mode == "attacking")
+	if (mode == "follow")
 	{
-		this->PetNPC->PetAttacking = true;
-		this->PetNPC->PetGuarding = false;
-		this->PetNPC->PetFollowing = false;
-	}
-	else if (mode == "guarding")
-	{
-		this->PetNPC->PetAttacking = false;
-		this->PetNPC->PetGuarding = true;
-		this->PetNPC->PetFollowing = false;
-	}
-	else if (mode == "following")
-	{
-		this->PetNPC->PetAttacking = false;
-		this->PetNPC->PetGuarding = false;
 		this->PetNPC->PetFollowing = true;
+		this->PetNPC->PetGuarding = false;
+		this->PetNPC->PetAttacking = false;
 	}
+	else if (mode == "guard")
+	{
+		this->PetNPC->PetFollowing = false;
+		this->PetNPC->PetGuarding = true;
+		this->PetNPC->PetAttacking = false;
+	}
+	else if (mode == "attack")
+	{
+		this->PetNPC->PetFollowing = false;
+		this->PetNPC->PetGuarding = false;
+		this->PetNPC->PetAttacking = true;
+	}
+	else
+	{
+		this->StatusMsg("Invalid pet mode. Valid modes are: follow, guard, attack.");
+	}
+}
+
+bool Character::IsStandingStill() const
+{
+	return (Timer::GetTime() - this->last_move_time) > 1.0; // Adjust threshold as needed
+}
+
+bool Character::HasChangedDirection() const
+{
+	return this->direction_changed;
+}
+
+void Character::ResetDirectionChangeFlag()
+{
+	this->direction_changed = false;
 }
