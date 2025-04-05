@@ -1512,7 +1512,15 @@ void NPC::PetWalkTo(int x, int y)
 
 	if (!this->Walk(this->direction))
 	{
-		this->Walk(static_cast<Direction>(util::rand(0, 3)));
+		// Fallback: Try random directions if the target position is not walkable
+		for (int i = 0; i < 4; ++i)
+		{
+			Direction random_dir = static_cast<Direction>(util::rand(0, 3));
+			if (this->Walk(random_dir))
+			{
+				return;
+			}
+		}
 	}
 }
 
@@ -1552,7 +1560,7 @@ NPC *NPC::PetFindNearbyEnemy()
 
 	UTIL_FOREACH(this->map->npcs, npc)
 	{
-		// Skip dead NPCs or NPCs of the same owner
+		// Skip dead NPCs or NPCs owned by the same player
 		if (!npc->alive || npc == this || npc->PetOwner == this->PetOwner)
 			continue;
 

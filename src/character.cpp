@@ -1290,10 +1290,12 @@ void Character::Warp(short map, unsigned char x, unsigned char y, WarpAnimation 
 		builder.AddShort(this->PlayerID());
 		this->trade_partner->Send(builder);
 
+		this->player->client->state = EOClient::Playing;
 		this->trading = false;
 		this->trade_inventory.clear();
 		this->trade_agree = false;
 
+		this->trade_partner->player->client->state = EOClient::Playing;
 		this->trade_partner->trading = false;
 		this->trade_partner->trade_inventory.clear();
 		this->trade_agree = false;
@@ -1314,6 +1316,7 @@ void Character::Warp(short map, unsigned char x, unsigned char y, WarpAnimation 
 
 	if (this->arena)
 	{
+		// Arena-specific cleanup logic (not shown in the provided code)
 		--this->arena->occupants;
 		this->arena = 0;
 	}
@@ -2145,13 +2148,16 @@ void Character::Send(const PacketBuilder &builder)
 
 void Character::Logout()
 {
+	// Ensure the character is online before proceeding
 	if (!this->online)
 	{
 		return;
 	}
 
+	// Cancel any active spell
 	this->CancelSpell();
 
+	// Handle ongoing trade session
 	if (this->trading)
 	{
 		PacketBuilder builder(PACKET_TRADE, PACKET_CLOSE, 2);
@@ -2198,17 +2204,45 @@ void Character::Logout()
 		}
 	}
 
-	this->online = false;
-
-	// Clean up the pet if the character has one
+	// Notify nearby players about the pet's removal if it exists
 	if (this->PetNPC)
 	{
-		auto pet = this->PetNPC;
-		this->map->npcs.erase(std::remove(this->map->npcs.begin(), this->map->npcs.end(), pet), this->map->npcs.end());
-		delete pet; // Free the pet object
+		PacketBuilder builder(PACKET_NPC, PACKET_REMOVE, 2);
+		builder.AddShort(this->PetNPC->index); // Use the pet's index
+
+		UTIL_FOREACH(this->map->characters, character)
+		{
+			if (character->InRange(this->PetNPC))
+			{
+				character->Send(builder);
+			}
+		}
+
+		// Remove the pet from the map
+		this->map->npcs.erase(
+			std::remove(this->map->npcs.begin(), this->map->npcs.end(), this->PetNPC),
+			this->map->npcs.end());
+
+		delete this->PetNPC; // Clean up the pet
 		this->PetNPC = nullptr;
 		this->HasPet = false;
 	}
+
+	// Notify nearby players about the owner's logout
+	PacketBuilder builder(PACKET_AVATAR, PACKET_REMOVE, 2);
+	builder.AddShort(this->PlayerID());
+
+	UTIL_FOREACH(this->map->characters, character)
+	{
+		if (character->InRange(this))
+		{
+			character->Send(builder);
+		}
+	}
+
+	// Existing logout logic
+	this->map->Leave(this);
+	this->online = false;
 
 	this->Save();
 
@@ -2372,6 +2406,8 @@ void Character::PetKill()
 
 		this->HasPet = false;
 	}
+
+	this->PetNPC = nullptr; // Ensure the pointer is cleared
 }
 
 void Character::PetSpawn(int pet_id)

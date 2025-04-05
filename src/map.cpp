@@ -833,6 +833,30 @@ void Map::Leave(Character *character, WarpAnimation animation, bool silent)
 		this->characters.end());
 
 	character->map = 0;
+
+	// Clean up the pet if the character has one and the pet's owner is no longer online
+	if (character->PetNPC && (!character->PetNPC->PetOwner || !character->PetNPC->PetOwner->online))
+	{
+		auto pet = character->PetNPC;
+
+		// Remove the pet from the map
+		this->npcs.erase(std::remove(this->npcs.begin(), this->npcs.end(), pet), this->npcs.end());
+		delete pet; // Free the pet object
+		character->PetNPC = nullptr;
+		character->HasPet = false;
+
+		// Notify nearby players about the pet's removal
+		PacketBuilder builder(PACKET_NPC, PACKET_REMOVE, 2);
+		builder.AddShort(pet->index);
+
+		UTIL_FOREACH(this->characters, nearby_character)
+		{
+			if (nearby_character->InRange(pet))
+			{
+				nearby_character->Send(builder);
+			}
+		}
+	}
 }
 
 void Map::Msg(Character *from, std::string message, bool echo)
@@ -1559,7 +1583,7 @@ void Map::Attack(Character *from, Direction direction)
 		builder.AddShort(pet->index); // Use the pet's index for the attack motion
 		builder.AddChar(direction);
 
-		// Send the attack motion to the owner and other players
+		// Send the attack motion to nearby players
 		UTIL_FOREACH(this->characters, character)
 		{
 			if (character->InRange(pet))
@@ -1567,24 +1591,24 @@ void Map::Attack(Character *from, Direction direction)
 				character->Send(builder);
 			}
 		}
+
+		// Prevent the owner's attack motion from being sent
+		return;
 	}
 
 	// Handle player attack motion if the player is attacking
-	if (!from->PetNPC || !from->PetNPC->PetAttacking)
+	PacketBuilder builder(PACKET_ATTACK, PACKET_PLAYER, 3);
+	builder.AddShort(from->PlayerID());
+	builder.AddChar(direction);
+
+	UTIL_FOREACH(this->characters, character)
 	{
-		PacketBuilder builder(PACKET_ATTACK, PACKET_PLAYER, 3);
-		builder.AddShort(from->PlayerID());
-		builder.AddChar(direction);
-
-		UTIL_FOREACH(this->characters, character)
+		if (character == from || !from->InRange(character))
 		{
-			if (character == from || !from->InRange(character))
-			{
-				continue;
-			}
-
-			character->Send(builder);
+			continue;
 		}
+
+		character->Send(builder);
 	}
 
 	if (is_instrument)
@@ -1759,6 +1783,28 @@ void Map::Attack(Character *from, Direction direction)
 		{
 			return;
 		}
+	}
+
+	// Handle pet attack motion if the pet is attacking
+	if (from->PetNPC && from->PetNPC->PetAttacking)
+	{
+		NPC *pet = from->PetNPC;
+
+		PacketBuilder builder(PACKET_ATTACK, PACKET_PLAYER, 3);
+		builder.AddShort(pet->index); // Use the pet's index for the attack motion
+		builder.AddChar(direction);
+
+		// Send the attack motion to nearby players
+		UTIL_FOREACH(this->characters, character)
+		{
+			if (character->InRange(pet))
+			{
+				character->Send(builder);
+			}
+		}
+
+		// Prevent the owner's attack motion from being sent
+		return;
 	}
 }
 
