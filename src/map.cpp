@@ -832,6 +832,16 @@ void Map::Leave(Character *character, WarpAnimation animation, bool silent)
 		std::remove(UTIL_RANGE(this->characters), character),
 		this->characters.end());
 
+	// Clean up the pet if the character has one
+	if (character->PetNPC)
+	{
+		auto pet = character->PetNPC;
+		this->npcs.erase(std::remove(this->npcs.begin(), this->npcs.end(), pet), this->npcs.end());
+		delete pet; // Free the pet object
+		character->PetNPC = nullptr;
+		character->HasPet = false;
+	}
+
 	character->map = 0;
 }
 

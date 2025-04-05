@@ -2187,6 +2187,16 @@ void Character::Logout()
 
 	this->online = false;
 
+	// Clean up the pet if the character has one
+	if (this->PetNPC)
+	{
+		auto pet = this->PetNPC;
+		this->map->npcs.erase(std::remove(this->map->npcs.begin(), this->map->npcs.end(), pet), this->map->npcs.end());
+		delete pet; // Free the pet object
+		this->PetNPC = nullptr;
+		this->HasPet = false;
+	}
+
 	this->Save();
 
 	this->world->Logout(this);
@@ -2368,6 +2378,12 @@ void Character::PetSpawn(int pet_id)
 	this->PetNPC->PetSetOwner(this);
 	this->map->npcs.push_back(this->PetNPC);
 	this->PetNPC->Spawn();
+
+	// Immediately set the pet to follow the player
+	this->PetNPC->PetFollowing = true;
+	this->PetNPC->PetGuarding = false;
+	this->PetNPC->PetAttacking = false;
+
 	this->HasPet = true;
 }
 
