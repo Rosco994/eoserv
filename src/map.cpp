@@ -1559,7 +1559,7 @@ void Map::Attack(Character *from, Direction direction)
 		builder.AddShort(pet->index); // Use the pet's index for the attack motion
 		builder.AddChar(direction);
 
-		// Send the attack motion to the owner and other players
+		// Send the attack motion to nearby players
 		UTIL_FOREACH(this->characters, character)
 		{
 			if (character->InRange(pet))
@@ -1567,24 +1567,24 @@ void Map::Attack(Character *from, Direction direction)
 				character->Send(builder);
 			}
 		}
+
+		// Prevent the owner's attack motion from being sent
+		return;
 	}
 
 	// Handle player attack motion if the player is attacking
-	if (!from->PetNPC || !from->PetNPC->PetAttacking)
+	PacketBuilder builder(PACKET_ATTACK, PACKET_PLAYER, 3);
+	builder.AddShort(from->PlayerID());
+	builder.AddChar(direction);
+
+	UTIL_FOREACH(this->characters, character)
 	{
-		PacketBuilder builder(PACKET_ATTACK, PACKET_PLAYER, 3);
-		builder.AddShort(from->PlayerID());
-		builder.AddChar(direction);
-
-		UTIL_FOREACH(this->characters, character)
+		if (character == from || !from->InRange(character))
 		{
-			if (character == from || !from->InRange(character))
-			{
-				continue;
-			}
-
-			character->Send(builder);
+			continue;
 		}
+
+		character->Send(builder);
 	}
 
 	if (is_instrument)
