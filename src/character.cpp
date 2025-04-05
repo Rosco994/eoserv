@@ -2146,9 +2146,7 @@ void Character::Send(const PacketBuilder &builder)
 void Character::Logout()
 {
 	if (!this->online)
-	{
 		return;
-	}
 
 	this->CancelSpell();
 
@@ -2203,9 +2201,29 @@ void Character::Logout()
 	// Clean up the pet if the character has one
 	if (this->PetNPC)
 	{
-		auto pet = this->PetNPC;
-		this->map->npcs.erase(std::remove(this->map->npcs.begin(), this->map->npcs.end(), pet), this->map->npcs.end());
-		delete pet; // Free the pet object
+		// Ensure PetNPC and its map are valid before accessing
+		if (this->PetNPC->map)
+		{
+			// Notify other players about the pet's removal
+			PacketBuilder builder(PACKET_NPC, PACKET_REMOVE, 1);
+			builder.AddChar(this->PetNPC->index);
+
+			UTIL_FOREACH(this->PetNPC->map->characters, character)
+			{
+				if (character->InRange(this->PetNPC))
+				{
+					character->Send(builder);
+				}
+			}
+
+			// Remove the pet from the map's NPC list
+			this->PetNPC->map->npcs.erase(
+				std::remove(UTIL_RANGE(this->PetNPC->map->npcs), this->PetNPC),
+				this->PetNPC->map->npcs.end());
+		}
+
+		// Safely delete the pet and reset pointers
+		delete this->PetNPC;
 		this->PetNPC = nullptr;
 		this->HasPet = false;
 	}
