@@ -1355,7 +1355,12 @@ void Character::Warp(short map, unsigned char x, unsigned char y, WarpAnimation 
 			// Create a new NPC index for the pet on the new map
 			unsigned char index = this->map->GenerateNPCIndex();
 			if (index > 250)
+			{
+				this->PetNPC = nullptr;
+				this->HasPet = false;
+				this->StatusMsg("Your summon was despawned due to map limitations.");
 				return;
+			}
 
 			// Update the pet's map and position
 			this->PetNPC->map = this->map;
