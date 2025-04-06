@@ -299,9 +299,14 @@ public:
 
 	std::list<std::unique_ptr<NPC_Opponent>> damagelist;
 
+	NPC *pet = nullptr; // Add a pointer to the pet NPC
+
+	void SetPetRespawnTime(double time); // Setter for pet_respawn_time
+
 private:
 	bool direction_changed = false;
 	double last_move_time = 0.0;
+	double pet_respawn_time; // Time when the pet can respawn
 
 public:
 	Character(std::string name, World *);

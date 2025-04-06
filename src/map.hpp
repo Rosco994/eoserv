@@ -331,6 +331,11 @@ public:
 	void ReloadNPCs();
 	NPC *GetNPCIndexAt(unsigned char x, unsigned char y) const;
 
+	void UpdatePetBehavior(NPC *pet);			   // Updates pet behavior (e.g., following owner, attacking targets)
+	void PetAttack(NPC *pet, Direction direction); // Handles pet attack logic
+
+	Direction DirectionTowards(int from_x, int from_y, int to_x, int to_y); // Declare helper function
+
 	~Map();
 };
 

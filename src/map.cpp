@@ -37,6 +37,21 @@
 #include <utility>
 #include <vector>
 
+namespace util
+{
+	Direction direction_towards(int from_x, int from_y, int to_x, int to_y)
+	{
+		if (std::abs(from_x - to_x) > std::abs(from_y - to_y))
+		{
+			return (from_x < to_x) ? DIRECTION_RIGHT : DIRECTION_LEFT;
+		}
+		else
+		{
+			return (from_y < to_y) ? DIRECTION_DOWN : DIRECTION_UP;
+		}
+	}
+}
+
 static const char *map_safe_fail_filename;
 
 static void map_safe_fail(int line)
@@ -807,24 +822,18 @@ void Map::Enter(Character *character, WarpAnimation animation)
 
 void Map::Leave(Character *character, WarpAnimation animation, bool silent)
 {
+	// Notify nearby players about the character's removal
 	if (!silent)
 	{
-		PacketBuilder builder(PACKET_AVATAR, PACKET_REMOVE, 3);
+		PacketBuilder builder(PACKET_AVATAR, PACKET_REMOVE, 2);
 		builder.AddShort(character->PlayerID());
 
-		if (animation != WARP_ANIMATION_NONE)
+		UTIL_FOREACH(this->characters, other_character)
 		{
-			builder.AddChar(animation);
-		}
-
-		UTIL_FOREACH(this->characters, checkcharacter)
-		{
-			if (checkcharacter == character || !character->InRange(checkcharacter))
+			if (other_character->InRange(character))
 			{
-				continue;
+				other_character->Send(builder);
 			}
-
-			checkcharacter->Send(builder);
 		}
 	}
 
@@ -834,28 +843,27 @@ void Map::Leave(Character *character, WarpAnimation animation, bool silent)
 
 	character->map = 0;
 
-	// Clean up the pet if the character has one and the pet's owner is no longer online
-	if (character->PetNPC && (!character->PetNPC->PetOwner || !character->PetNPC->PetOwner->online))
+	// Handle pet removal if the character has an active pet
+	if (character->HasPet && character->PetNPC)
 	{
-		auto pet = character->PetNPC;
+		PacketBuilder pet_builder(PACKET_NPC, PACKET_REMOVE, 2);
+		pet_builder.AddShort(character->PetNPC->index);
 
-		// Remove the pet from the map
-		this->npcs.erase(std::remove(this->npcs.begin(), this->npcs.end(), pet), this->npcs.end());
-		delete pet; // Free the pet object
-		character->PetNPC = nullptr;
-		character->HasPet = false;
-
-		// Notify nearby players about the pet's removal
-		PacketBuilder builder(PACKET_NPC, PACKET_REMOVE, 2);
-		builder.AddShort(pet->index);
-
-		UTIL_FOREACH(this->characters, nearby_character)
+		UTIL_FOREACH(this->characters, other_character)
 		{
-			if (nearby_character->InRange(pet))
+			if (other_character->InRange(character->PetNPC))
 			{
-				nearby_character->Send(builder);
+				other_character->Send(pet_builder);
 			}
 		}
+
+		this->npcs.erase(
+			std::remove(this->npcs.begin(), this->npcs.end(), character->PetNPC),
+			this->npcs.end());
+
+		delete character->PetNPC;
+		character->PetNPC = nullptr;
+		character->HasPet = false;
 	}
 }
 
@@ -1273,31 +1281,31 @@ Map::WalkResult Map::Walk(NPC *from, Direction direction)
 	{
 	case DIRECTION_UP:
 		target_y -= 1;
-		if (target_y > from->y && !from->pet)
+		if (target_y > from->y && !from->PetActive)
 			return WalkFail;
 		break;
 
 	case DIRECTION_RIGHT:
 		target_x += 1;
-		if (target_x < from->x && !from->pet)
+		if (target_x < from->x && !from->PetActive)
 			return WalkFail;
 		break;
 
 	case DIRECTION_DOWN:
 		target_y += 1;
-		if (target_x < from->x && !from->pet)
+		if (target_x < from->x && !from->PetActive)
 			return WalkFail;
 		break;
 
 	case DIRECTION_LEFT:
 		target_x -= 1;
-		if (target_x > from->x && !from->pet)
+		if (target_x > from->x && !from->PetActive)
 			return WalkFail;
 		break;
 	}
 
 	// Allow pets to bypass Walkable and Occupied checks
-	if (!from->pet)
+	if (!from->PetActive)
 	{
 		bool adminghost = (from->ENF().type == ENF::Aggressive || from->parent);
 
@@ -1440,102 +1448,12 @@ Map::WalkResult Map::Walk(NPC *from, Direction direction)
 
 Map::WalkResult Map::PetWalk(NPC *from, Direction direction)
 {
-	unsigned char target_x = from->x;
-	unsigned char target_y = from->y;
-
-	switch (direction)
-	{
-	case DIRECTION_UP:
-		target_y -= 1;
-		if (target_y > from->y)
-		{
-			return WalkFail;
-		}
-		break;
-
-	case DIRECTION_RIGHT:
-		target_x += 1;
-		if (target_x < from->x)
-		{
-			return WalkFail;
-		}
-		break;
-
-	case DIRECTION_DOWN:
-		target_y += 1;
-		if (target_x < from->x)
-		{
-			return WalkFail;
-		}
-		break;
-
-	case DIRECTION_LEFT:
-		target_x -= 1;
-		if (target_x > from->x)
-		{
-			return WalkFail;
-		}
-		break;
-	}
-
-	if (!this->InBounds(target_x, target_y))
+	// Ensure the pet's target tile is walkable
+	if (!this->Walkable(from->x, from->y, true))
 		return WalkFail;
 
-	if (!this->Walkable(target_x, target_y, false)) // Treat pets as players for walkability
-		return WalkFail;
-
-	if (this->Occupied(target_x, target_y, PlayerOnly))
-		return WalkFail;
-
-	// Adjust pet's position dynamically to follow the player
-	if (from->PetOwner)
-	{
-		Character *petowner = from->PetOwner;
-
-		// Calculate the distance between the pet and the player
-		int distance_x = petowner->x - from->x;
-		int distance_y = petowner->y - from->y;
-
-		// If the pet is too far, warp it closer to the player
-		if (std::abs(distance_x) > 2 || std::abs(distance_y) > 2)
-		{
-			from->x = petowner->x;
-			from->y = petowner->y;
-		}
-		else
-		{
-			// Move the pet closer to the player
-			if (distance_x > 0)
-				from->x++;
-			else if (distance_x < 0)
-				from->x--;
-
-			if (distance_y > 0)
-				from->y++;
-			else if (distance_y < 0)
-				from->y--;
-		}
-	}
-
-	// Notify nearby characters of the pet's movement
-	PacketBuilder builder(PACKET_NPC, PACKET_PLAYER, 7);
-	builder.AddChar(from->index);
-	builder.AddChar(from->x);
-	builder.AddChar(from->y);
-	builder.AddChar(from->direction);
-	builder.AddByte(255);
-	builder.AddByte(255);
-	builder.AddByte(255);
-
-	UTIL_FOREACH(this->characters, character)
-	{
-		if (character->InRange(from))
-		{
-			character->Send(builder);
-		}
-	}
-
-	return WalkOK;
+	// Attempt to move the pet in the specified direction
+	return this->Walk(from, direction);
 }
 
 void Map::Attack(Character *from, Direction direction)
@@ -1577,23 +1495,7 @@ void Map::Attack(Character *from, Direction direction)
 	// Handle pet attack motion if the pet is attacking
 	if (from->PetNPC && (from->PetNPC->PetAttacking || from->PetNPC->PetGuarding))
 	{
-		NPC *pet = from->PetNPC;
-
-		PacketBuilder builder(PACKET_ATTACK, PACKET_PLAYER, 3);
-		builder.AddShort(pet->index); // Use the pet's index for the attack motion
-		builder.AddChar(direction);
-
-		// Send the attack motion to nearby players
-		UTIL_FOREACH(this->characters, character)
-		{
-			if (character->InRange(pet))
-			{
-				character->Send(builder);
-			}
-		}
-
-		// Prevent the owner's attack motion from being sent
-		return;
+		this->PetAttack(from->PetNPC, direction);
 	}
 
 	// Handle player attack motion if the player is attacking
@@ -1805,6 +1707,24 @@ void Map::Attack(Character *from, Direction direction)
 
 		// Prevent the owner's attack motion from being sent
 		return;
+	}
+}
+
+void Map::PetAttack(NPC *pet, Direction direction)
+{
+	if (pet->PetTarget)
+	{
+		NPC *target_npc = dynamic_cast<NPC *>(pet->PetTarget);
+		if (target_npc)
+		{
+			// Cast PetDamageMultiplier to double before multiplication
+			double damage_multiplier = static_cast<double>(this->world->config["PetDamageMultiplier"]);
+			int min_damage = static_cast<int>(pet->PetOwner->mindam * damage_multiplier);
+			int max_damage = static_cast<int>(pet->PetOwner->maxdam * damage_multiplier);
+			int damage = util::rand(min_damage, max_damage);
+
+			target_npc->Damage(pet->PetOwner, damage);
+		}
 	}
 }
 
@@ -2987,6 +2907,46 @@ NPC *Map::GetNPCIndexAt(unsigned char x, unsigned char y) const
 		}
 	}
 	return nullptr; // Return nullptr if no NPC is found at the given position
+}
+
+void Map::UpdatePetBehavior(NPC *pet)
+{
+	if (pet->PetTarget)
+	{
+		// Ensure the target is an NPC
+		NPC *target_npc = dynamic_cast<NPC *>(pet->PetTarget);
+		if (target_npc)
+		{
+			if (util::path_length(pet->x, pet->y, target_npc->x, target_npc->y) <= pet->PetAttackRange)
+			{
+				this->PetAttack(pet, util::direction_towards(pet->x, pet->y, target_npc->x, target_npc->y));
+			}
+			else
+			{
+				this->PetWalk(pet, util::direction_towards(pet->x, pet->y, target_npc->x, target_npc->y));
+			}
+		}
+		else
+		{
+			// Clear invalid target
+			pet->PetTarget = nullptr;
+		}
+	}
+}
+
+Direction Map::DirectionTowards(int from_x, int from_y, int to_x, int to_y)
+{
+	int x_diff = to_x - from_x;
+	int y_diff = to_y - from_y;
+
+	if (std::abs(x_diff) > std::abs(y_diff))
+	{
+		return (x_diff > 0) ? DIRECTION_RIGHT : DIRECTION_LEFT;
+	}
+	else
+	{
+		return (y_diff > 0) ? DIRECTION_DOWN : DIRECTION_UP;
+	}
 }
 
 #undef SAFE_SEEK

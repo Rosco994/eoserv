@@ -372,7 +372,8 @@ Character::Character(std::string name, World *world)
 	  HasPet(false),				// Initialize HasPet to false
 	  PetTransferInProgress(false), // Initialize PetTransferInProgress to false
 	  direction_changed(false),		// Initialize direction_changed to false
-	  last_move_time(0.0)			// Initialize last_move_time to 0.0
+	  last_move_time(0.0),			// Initialize last_move_time to 0.0
+	  pet_respawn_time(0.0)			// Initialize pet_respawn_time to 0.0
 {
 	{
 		std::vector<std::string> bot_characters = BotListUnserialize(this->world->config["BotCharacters"]);
@@ -1310,6 +1311,14 @@ void Character::Warp(short map, unsigned char x, unsigned char y, WarpAnimation 
 	this->warp_anim = animation;
 	this->nowhere = false;
 
+	// Notify nearby players about the pet's removal before transitioning maps
+	if (this->HasPet && this->PetNPC)
+	{
+		this->PetNPC->PetDespawn(); // Use PetDespawn to properly remove the pet
+		this->PetNPC = nullptr;
+		this->HasPet = false;
+	}
+
 	this->map->Enter(this, animation);
 
 	this->Send(builder);
@@ -1328,36 +1337,53 @@ void Character::Warp(short map, unsigned char x, unsigned char y, WarpAnimation 
 		this->next_arena = 0;
 	}
 
-	// Handle pet map transition
+	// Handle pet transition to the new map
 	if (this->HasPet && this->PetNPC)
 	{
-		// Save the pet's current mode
+		// Save the pet's current mode and state
 		bool was_following = this->PetNPC->PetFollowing;
 		bool was_guarding = this->PetNPC->PetGuarding;
 		bool was_attacking = this->PetNPC->PetAttacking;
 		NPC *previous_target = this->PetNPC->PetTarget;
 
-		// Remove the pet from the current map
-		if (this->PetNPC->map)
+		// Despawn the pet from the old map
+		this->PetNPC->PetDespawn();
+
+		// Check if the new map is walkable
+		if (this->map->Walkable(x, y))
 		{
-			this->PetNPC->map->npcs.erase(
-				std::remove(this->PetNPC->map->npcs.begin(), this->PetNPC->map->npcs.end(), this->PetNPC),
-				this->PetNPC->map->npcs.end());
+			// Create a new NPC index for the pet on the new map
+			unsigned char index = this->map->GenerateNPCIndex();
+			if (index > 250)
+				return;
+
+			// Update the pet's map and position
+			this->PetNPC->map = this->map;
+			this->PetNPC->x = x;
+			this->PetNPC->y = y;
+			this->PetNPC->index = index;
+
+			// Add the pet to the new map
+			this->map->npcs.push_back(this->PetNPC);
+
+			// Notify nearby players on the new map about the pet's appearance
+			this->PetNPC->Spawn();
+
+			// Restore the pet's mode and state
+			this->PetNPC->PetFollowing = was_following;
+			this->PetNPC->PetGuarding = was_guarding;
+			this->PetNPC->PetAttacking = was_attacking;
+			this->PetNPC->PetTarget = previous_target;
+
+			this->HasPet = true;
 		}
-
-		// Update the pet's map and position
-		this->PetNPC->map = this->world->GetMap(map);
-		this->PetNPC->x = x;
-		this->PetNPC->y = y;
-
-		// Add the pet to the new map
-		this->PetNPC->map->npcs.push_back(this->PetNPC);
-
-		// Restore the pet's mode
-		this->PetNPC->PetFollowing = was_following;
-		this->PetNPC->PetGuarding = was_guarding;
-		this->PetNPC->PetAttacking = was_attacking;
-		this->PetNPC->PetTarget = previous_target;
+		else
+		{
+			// If the new map is not walkable, despawn the pet permanently
+			this->PetNPC = nullptr;
+			this->HasPet = false;
+			this->StatusMsg("Your summon was despawned due to being off-map.");
+		}
 	}
 }
 
@@ -2207,37 +2233,9 @@ void Character::Logout()
 	// Notify nearby players about the pet's removal if it exists
 	if (this->PetNPC)
 	{
-		PacketBuilder builder(PACKET_NPC, PACKET_REMOVE, 2);
-		builder.AddShort(this->PetNPC->index); // Use the pet's index
-
-		UTIL_FOREACH(this->map->characters, character)
-		{
-			if (character->InRange(this->PetNPC))
-			{
-				character->Send(builder);
-			}
-		}
-
-		// Remove the pet from the map
-		this->map->npcs.erase(
-			std::remove(this->map->npcs.begin(), this->map->npcs.end(), this->PetNPC),
-			this->map->npcs.end());
-
-		delete this->PetNPC; // Clean up the pet
+		this->PetNPC->PetDespawn(); // Use PetDespawn to properly remove the pet
 		this->PetNPC = nullptr;
 		this->HasPet = false;
-	}
-
-	// Notify nearby players about the owner's logout
-	PacketBuilder builder(PACKET_AVATAR, PACKET_REMOVE, 2);
-	builder.AddShort(this->PlayerID());
-
-	UTIL_FOREACH(this->map->characters, character)
-	{
-		if (character->InRange(this))
-		{
-			character->Send(builder);
-		}
 	}
 
 	// Existing logout logic
@@ -2412,6 +2410,13 @@ void Character::PetKill()
 
 void Character::PetSpawn(int pet_id)
 {
+	// Check if the respawn timer has elapsed
+	if (Timer::GetTime() < this->pet_respawn_time)
+	{
+		this->StatusMsg("Your pet is still recovering and cannot be summoned yet.");
+		return;
+	}
+
 	if (!this->map->GetTile(this->x, this->y).Walkable(false))
 	{
 		this->StatusMsg("You are unable to summon at this time.");
@@ -2441,57 +2446,47 @@ void Character::PetTransfer()
 	if (!this->PetNPC)
 		return;
 
+	// Save the pet's current mode
 	bool was_following = this->PetNPC->PetFollowing;
 	bool was_guarding = this->PetNPC->PetGuarding;
 	bool was_attacking = this->PetNPC->PetAttacking;
 	NPC *previous_target = this->PetNPC->PetTarget;
 
-	if (this->HasPet && !this->PetTransferInProgress)
+	// Remove the pet from the old map
+	this->PetNPC->PetDespawn();
+
+	// Check if the new map is walkable
+	if (this->map->Walkable(this->x, this->y))
 	{
-		UTIL_FOREACH(this->PetNPC->map->characters, character)
-		{
-			if (character->InRange(this->PetNPC))
-			{
-				this->PetNPC->RemoveFromView(character);
-			}
-		}
-
-		this->PetNPC->map->npcs.erase(
-			std::remove(this->PetNPC->map->npcs.begin(), this->PetNPC->map->npcs.end(), this->PetNPC),
-			this->PetNPC->map->npcs.end());
-
-		this->HasPet = false;
-		this->PetTransferInProgress = true;
-	}
-
-	if (!this->HasPet && this->PetTransferInProgress)
-	{
-		if (!this->map->Walkable(this->x, this->y))
-		{
-			this->StatusMsg("Your summon was despawned due to being off-map.");
-			this->PetTransferInProgress = false;
-			return;
-		}
-
+		// Create a new NPC index for the pet on the new map
 		unsigned char index = this->map->GenerateNPCIndex();
 		if (index > 250)
 			return;
 
+		// Update the pet's map and position
 		this->PetNPC->map = this->map;
 		this->PetNPC->x = this->x;
 		this->PetNPC->y = this->y;
 		this->PetNPC->index = index;
 
+		// Add the pet to the new map
 		this->map->npcs.push_back(this->PetNPC);
+
+		// Notify nearby players on the new map about the pet's appearance
 		this->PetNPC->Spawn();
 
+		// Restore the pet's mode
 		this->PetNPC->PetFollowing = was_following;
 		this->PetNPC->PetGuarding = was_guarding;
 		this->PetNPC->PetAttacking = was_attacking;
 		this->PetNPC->PetTarget = previous_target;
 
 		this->HasPet = true;
-		this->PetTransferInProgress = false;
+	}
+	else
+	{
+		this->StatusMsg("Your summon was despawned due to being off-map.");
+		this->HasPet = false;
 	}
 }
 
@@ -2537,4 +2532,9 @@ bool Character::HasChangedDirection() const
 void Character::ResetDirectionChangeFlag()
 {
 	this->direction_changed = false;
+}
+
+void Character::SetPetRespawnTime(double time)
+{
+	this->pet_respawn_time = time;
 }

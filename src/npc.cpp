@@ -48,8 +48,8 @@ void NPC::SetSpeedTable(std::array<double, 7> speeds)
 	}
 }
 
-NPC::NPC(Map *map, short id, unsigned char x, unsigned char y, unsigned char spawn_type, short spawn_time, unsigned char index, bool temporary, bool pet, Character *PetOwner)
-	: map(map), id(id), x(x), y(y), spawn_type(spawn_type), spawn_time(spawn_time), index(index), temporary(temporary), pet(pet), PetOwner(PetOwner)
+NPC::NPC(Map *map, short id, unsigned char x, unsigned char y, unsigned char spawn_type, short spawn_time, unsigned char index, bool temporary, bool PetActive, Character *PetOwner)
+	: map(map), id(id), x(x), y(y), spawn_type(spawn_type), spawn_time(spawn_time), index(index), temporary(temporary), PetActive(PetActive), PetOwner(PetOwner)
 {
 	this->id = id;
 	this->map = map;
@@ -81,13 +81,17 @@ NPC::NPC(Map *map, short id, unsigned char x, unsigned char y, unsigned char spa
 	}
 
 	this->parent = 0;
-	this->PetMinDamage = this->ENF().mindam;
-	this->PetMaxDamage = this->ENF().maxdam;
+	this->PetMinDamage = this->ENF().mindam; // Set minimum damage for pets from ENF data
+	this->PetMaxDamage = this->ENF().maxdam; // Set maximum damage for pets from ENF data
 	this->PetFollowing = true;
 	this->PetAttacking = false;
 	this->PetGuarding = false;
-	this->PetTarget = nullptr;
+	this->PetTarget = nullptr; // Initialize PetTarget to null
+	this->PetAttackRange = 1;  // Default attack range for pets
+
 	this->direction_changed = false;
+
+	this->PetAttackRange = 1; // Default attack range for pets
 }
 
 const NPC_Data &NPC::Data() const
@@ -223,12 +227,13 @@ void NPC::Act()
 	int chase_distance = static_cast<int>(config.at("PetChaseDistance"));
 	int guard_distance = static_cast<int>(config.at("PetGuardDistance"));
 
-	if (this->pet && this->PetOwner)
+	if (this->PetActive && this->PetOwner)
 	{
 		// Check if the owner is on a different map
 		if (this->PetOwner->map != this->map)
 		{
-			this->PetOwner->PetTransfer();
+			// Notify nearby players that the pet has left the map
+			this->PetDespawn();
 			return;
 		}
 		// Handle pet positioning behind the player when the player changes direction while standing still
@@ -273,185 +278,47 @@ void NPC::Act()
 		{
 			int distance_to_owner = util::path_length(this->x, this->y, this->PetOwner->x, this->PetOwner->y);
 
-			// Smooth movement: move step-by-step toward the owner
+			// If the pet is too far from the owner, move closer
 			if (distance_to_owner > 1)
 			{
 				this->PetWalkTo(this->PetOwner->x, this->PetOwner->y);
-				return;
 			}
-			else if (distance_to_owner > (guard_distance * 2))
+		}
+		else if (this->PetGuarding)
+		{
+			NPC *nearby_enemy = this->PetFindNearbyEnemy();
+			if (nearby_enemy && util::path_length(this->x, this->y, nearby_enemy->x, nearby_enemy->y) <= static_cast<int>(this->map->world->config["PetGuardDistance"]))
 			{
-				this->PetOwner->PetTransfer();
-				return;
+				this->PetTarget = nearby_enemy;
+				this->PetWalkTo(nearby_enemy->x, nearby_enemy->y);
 			}
 			else
 			{
-				// Stand one space behind the owner and face the same direction
-				this->x = this->PetOwner->x - pet_dir_dx(this->PetOwner->direction);
-				this->y = this->PetOwner->y - pet_dir_dy(this->PetOwner->direction);
-				this->direction = this->PetOwner->direction;
-				return;
+				this->PetWalkTo(this->PetOwner->x, this->PetOwner->y);
 			}
 		}
-
-		// Handle pet attacking behavior
-		if (this->PetAttacking)
+		else if (this->PetAttacking)
 		{
-			int distance_to_owner = util::path_length(this->x, this->y, this->PetOwner->x, this->PetOwner->y);
-
-			// If the owner has moved, prioritize returning to the owner after the current kill
-			if (distance_to_owner > guard_distance)
-			{
-				if (this->PetTarget && this->PetTarget->alive)
-				{
-					// Finish attacking the current target
-					int distance_to_target = util::path_length(this->x, this->y, this->PetTarget->x, this->PetTarget->y);
-
-					if (distance_to_target > 1)
-					{
-						this->PetWalkTo(this->PetTarget->x, this->PetTarget->y);
-					}
-					else
-					{
-						this->PetDetermineDirection(this->PetTarget->x, this->PetTarget->y);
-
-						// Apply damage multiplier
-						int damage = util::rand(this->PetMinDamage, this->PetMaxDamage) * damage_multiplier;
-						this->PetTarget->Damage(this->PetOwner, damage, -1);
-
-						if (this->PetTarget->hp <= 0)
-						{
-							this->PetTarget = nullptr;
-						}
-					}
-					return;
-				}
-
-				// Return to the owner after finishing the current target
-				this->PetWalkTo(this->PetOwner->x, this->PetOwner->y);
-
-				// Check for NPCs in range after returning to the owner
-				if (distance_to_owner == 1)
-				{
-					this->PetTarget = nullptr; // Reset the target to find a new one
-				}
-				return;
-			}
-
-			// If no target or the target is dead, find a new target
 			if (!this->PetTarget || !this->PetTarget->alive)
 			{
-				NPC *closest_npc = nullptr;
-				int closest_distance = chase_distance + 1;
-
-				UTIL_FOREACH(this->map->npcs, npc)
-				{
-					if (npc->alive && npc != this &&
-						(npc->ENF().type == ENF::Aggressive || npc->ENF().type == ENF::Passive))
-					{
-						int distance = util::path_length(this->x, this->y, npc->x, npc->y);
-						if (distance <= chase_distance && distance < closest_distance)
-						{
-							closest_npc = npc;
-							closest_distance = distance;
-						}
-					}
-				}
-
-				this->PetTarget = closest_npc;
+				this->PetTarget = this->PetFindNearbyEnemy();
 			}
 
-			// Attack the target if one is found
 			if (this->PetTarget)
 			{
-				int distance_to_target = util::path_length(this->x, this->y, this->PetTarget->x, this->PetTarget->y);
-
-				if (distance_to_target > 1)
+				if (util::path_length(this->x, this->y, this->PetTarget->x, this->PetTarget->y) <= this->PetAttackRange)
 				{
-					this->PetWalkTo(this->PetTarget->x, this->PetTarget->y);
+					this->map->PetAttack(this, this->PetDetermineDirection(this->PetTarget->x, this->PetTarget->y));
 				}
 				else
 				{
-					this->PetDetermineDirection(this->PetTarget->x, this->PetTarget->y);
-
-					// Apply damage multiplier
-					int damage = util::rand(this->PetMinDamage, this->PetMaxDamage) * damage_multiplier;
-					this->PetTarget->Damage(this->PetOwner, damage, -1);
-
-					if (this->PetTarget->hp <= 0)
-					{
-						this->PetTarget = nullptr;
-					}
+					this->PetWalkTo(this->PetTarget->x, this->PetTarget->y);
 				}
-				return;
 			}
-
-			// If no valid targets are in range, return to the owner
-			this->PetWalkTo(this->PetOwner->x, this->PetOwner->y);
-			return;
-		}
-
-		// Handle pet guarding behavior
-		if (this->PetGuarding)
-		{
-			int distance_to_owner = util::path_length(this->x, this->y, this->PetOwner->x, this->PetOwner->y);
-
-			// Ensure the pet stays within PetGuardDistance of the owner
-			if (distance_to_owner > guard_distance)
+			else
 			{
 				this->PetWalkTo(this->PetOwner->x, this->PetOwner->y);
-				return;
 			}
-
-			// Check for NPCs near the owner
-			NPC *nearby_npc = nullptr;
-
-			UTIL_FOREACH(this->map->npcs, npc)
-			{
-				if (npc->alive && npc != this &&
-					(npc->ENF().type == ENF::Aggressive || npc->ENF().type == ENF::Passive))
-				{
-					int distance_to_owner = util::path_length(this->PetOwner->x, this->PetOwner->y, npc->x, npc->y);
-
-					// If an NPC is within 1 tile of the owner, target it
-					if (distance_to_owner == 1)
-					{
-						nearby_npc = npc;
-						break;
-					}
-				}
-			}
-
-			// Attack the nearby NPC if found
-			if (nearby_npc)
-			{
-				this->PetTarget = nearby_npc;
-
-				int distance_to_target = util::path_length(this->x, this->y, this->PetTarget->x, this->PetTarget->y);
-
-				if (distance_to_target > 1)
-				{
-					this->PetWalkTo(this->PetTarget->x, this->PetTarget->y);
-				}
-				else
-				{
-					this->PetDetermineDirection(this->PetTarget->x, this->PetTarget->y);
-
-					// Apply damage multiplier
-					int damage = util::rand(this->PetMinDamage, this->PetMaxDamage) * damage_multiplier;
-					this->PetTarget->Damage(this->PetOwner, damage, -1);
-
-					if (this->PetTarget->hp <= 0)
-					{
-						this->PetTarget = nullptr;
-					}
-				}
-				return;
-			}
-
-			// If no NPC is nearby, stay close to the owner
-			this->PetWalkTo(this->PetOwner->x, this->PetOwner->y);
-			return;
 		}
 	}
 
@@ -1205,10 +1072,54 @@ abort_drop:
 		}
 	}
 
+	// Set the respawn timer if the pet is killed
+	if (this->PetOwner)
+	{
+		this->PetOwner->SetPetRespawnTime(Timer::GetTime() + static_cast<double>(this->map->world->config["PetRespawnTime"]));
+	}
+
 	if (this->temporary)
 	{
 		delete this;
 		return;
+	}
+
+	if (from->pet && from->pet->InRange(this))
+	{
+		PacketBuilder builder(PACKET_NPC, PACKET_SPEC, 10);
+		builder.AddShort(from->pet->index);
+		builder.AddShort(this->id);
+		builder.AddThree(amount);
+		builder.AddChar(from->pet->direction);
+
+		UTIL_FOREACH(this->map->characters, character)
+		{
+			if (character->InRange(this))
+			{
+				character->Send(builder);
+			}
+		}
+	}
+	else
+	{
+		PacketBuilder builder(PACKET_NPC, PACKET_SPEC, 18);
+		builder.AddShort(from->PlayerID());
+		builder.AddChar(from->direction);
+		builder.AddShort(this->index);
+		builder.AddShort(0); // dropped item uid
+		builder.AddShort(0); // dropped item id
+		builder.AddChar(this->x);
+		builder.AddChar(this->y);
+		builder.AddInt(0);		  // dropped item amount
+		builder.AddThree(amount); // damage
+
+		UTIL_FOREACH(this->map->characters, character)
+		{
+			if (character->InRange(this))
+			{
+				character->Send(builder);
+			}
+		}
 	}
 }
 
@@ -1400,7 +1311,7 @@ void NPC::FormulaVars(std::unordered_map<std::string, double> &vars, std::string
 void NPC::PetSetOwner(Character *character)
 {
 	this->PetOwner = character;
-	this->pet = true;
+	this->PetActive = true;
 	this->PetFollowing = true;
 	this->PetGuarding = false;
 	this->PetAttacking = false;
@@ -1524,32 +1435,18 @@ void NPC::PetWalkTo(int x, int y)
 	}
 }
 
-void NPC::PetDetermineDirection(int x, int y)
+Direction NPC::PetDetermineDirection(int x, int y)
 {
 	int xdiff = x - this->x;
 	int ydiff = y - this->y;
 
 	if (std::abs(xdiff) > std::abs(ydiff))
 	{
-		this->direction = (xdiff > 0) ? DIRECTION_RIGHT : DIRECTION_LEFT;
+		return (xdiff > 0) ? DIRECTION_RIGHT : DIRECTION_LEFT;
 	}
 	else
 	{
-		this->direction = (ydiff > 0) ? DIRECTION_DOWN : DIRECTION_UP;
-	}
-}
-
-void NPC::PetFindAltRoute(int target_x, int target_y)
-{
-	std::vector<Direction> path;
-	if (this->PetFindPath(target_x, target_y, path) && !path.empty())
-	{
-		this->Walk(path.front());
-	}
-	else
-	{
-		// Fall back to random movement if no path is found
-		this->Walk(static_cast<Direction>(util::rand(0, 3)));
+		return (ydiff > 0) ? DIRECTION_DOWN : DIRECTION_UP;
 	}
 }
 
@@ -1560,8 +1457,9 @@ NPC *NPC::PetFindNearbyEnemy()
 
 	UTIL_FOREACH(this->map->npcs, npc)
 	{
-		// Skip dead NPCs or NPCs owned by the same player
-		if (!npc->alive || npc == this || npc->PetOwner == this->PetOwner)
+		// Skip dead NPCs, NPCs owned by the same player, or NPCs that are not aggressive or passive
+		if (!npc->alive || npc == this || npc->PetOwner == this->PetOwner ||
+			(npc->ENF().type != ENF::Aggressive && npc->ENF().type != ENF::Passive))
 			continue;
 
 		// Calculate distance to the NPC
@@ -1578,103 +1476,6 @@ NPC *NPC::PetFindNearbyEnemy()
 	return closest_enemy;
 }
 
-bool NPC::PetFindPath(int target_x, int target_y, std::vector<Direction> &path)
-{
-	// Define the PetNode struct for A* pathfinding
-	struct PetNode
-	{
-		int x, y;
-		int g, h;
-		PetNode *parent;
-
-		PetNode(int x, int y, int g, int h, PetNode *parent = nullptr)
-			: x(x), y(y), g(g), h(h), parent(parent) {}
-
-		int f() const { return g + h; }
-
-		bool operator<(const PetNode &other) const { return f() > other.f(); }
-	};
-
-	std::priority_queue<PetNode> open_list;
-	std::unordered_set<int> closed_set;
-
-	auto hash = [this](int x, int y)
-	{
-		return y * this->map->width + x;
-	};
-
-	open_list.emplace(this->x, this->y, 0, util::path_length(this->x, this->y, target_x, target_y));
-
-	while (!open_list.empty())
-	{
-		PetNode current = open_list.top();
-		open_list.pop();
-
-		if (current.x == target_x && current.y == target_y)
-		{
-			// Reconstruct path
-			while (current.parent)
-			{
-				int dx = current.x - current.parent->x;
-				int dy = current.y - current.parent->y;
-
-				if (dx == 1)
-					path.push_back(DIRECTION_RIGHT);
-				else if (dx == -1)
-					path.push_back(DIRECTION_LEFT);
-				else if (dy == 1)
-					path.push_back(DIRECTION_DOWN);
-				else if (dy == -1)
-					path.push_back(DIRECTION_UP);
-
-				current = *current.parent;
-			}
-
-			std::reverse(path.begin(), path.end());
-			return true;
-		}
-
-		int current_hash = hash(current.x, current.y);
-		if (closed_set.count(current_hash))
-			continue;
-
-		closed_set.insert(current_hash);
-
-		Direction directions[] = {DIRECTION_UP, DIRECTION_DOWN, DIRECTION_LEFT, DIRECTION_RIGHT};
-		for (Direction dir : directions)
-		{
-			int nx = current.x, ny = current.y;
-			switch (dir)
-			{
-			case DIRECTION_UP:
-				--ny;
-				break;
-			case DIRECTION_DOWN:
-				++ny;
-				break;
-			case DIRECTION_LEFT:
-				--nx;
-				break;
-			case DIRECTION_RIGHT:
-				++nx;
-				break;
-			}
-
-			if (!this->map->Walkable(nx, ny, true) || closed_set.count(hash(nx, ny)))
-				continue;
-
-			int g = current.g + 1;
-			int h = util::path_length(nx, ny, target_x, target_y);
-			open_list.emplace(nx, ny, g, h, new PetNode(current));
-		}
-	}
-
-	// If no path is found, fallback to random movement
-	path.clear();
-	path.push_back(static_cast<Direction>(util::rand(0, 3)));
-	return false;
-}
-
 void NPC::ResetDirectionChangeFlag()
 {
 	this->direction_changed = false;
@@ -1683,6 +1484,57 @@ void NPC::ResetDirectionChangeFlag()
 bool NPC::HasChangedDirection() const
 {
 	return this->direction_changed;
+}
+
+void NPC::PetDespawn()
+{
+	// Notify nearby players that the pet is being removed
+	PacketBuilder builder(PACKET_NPC, PACKET_REMOVE, 2);
+	builder.AddShort(this->index);
+
+	UTIL_FOREACH(this->map->characters, character)
+	{
+		if (character->InRange(this))
+		{
+			character->Send(builder); // Send the removal packet to nearby players
+		}
+	}
+
+	// Remove the pet from the map's NPC list
+	this->map->npcs.erase(
+		std::remove(UTIL_RANGE(this->map->npcs), this),
+		this->map->npcs.end());
+
+	// Preserve the pet's mode for future respawns
+	this->PetFollowing = this->PetFollowing;
+	this->PetGuarding = this->PetGuarding;
+	this->PetAttacking = this->PetAttacking;
+
+	// Clear the pet's owner reference and mark it as inactive
+	this->PetOwner = nullptr;
+	this->PetActive = false;
+
+	// Delete the pet object
+	delete this;
+}
+
+void NPC::OwnerLoggedOut()
+{
+	if (this->PetOwner && this->PetActive)
+	{
+		// Despawn the pet when the owner logs off or changes maps
+		this->PetDespawn();
+	}
+}
+
+bool NPC::InRange(const Character *character) const
+{
+	return util::path_length(this->x, this->y, character->x, character->y) <= static_cast<int>(this->map->world->config["SeeDistance"]);
+}
+
+bool NPC::InRange(const NPC *npc) const
+{
+	return util::path_length(this->x, this->y, npc->x, npc->y) <= static_cast<int>(this->map->world->config["SeeDistance"]);
 }
 
 NPC::~NPC()

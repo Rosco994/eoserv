@@ -68,14 +68,17 @@ public:
 
 	int id;
 
-	bool pet;
+	bool PetActive = false; // Indicates if the NPC is a pet
 	Character *PetOwner;
 	bool PetFollowing = false;
 	bool PetAttacking = false;
 	bool PetGuarding = false;
 	NPC *PetTarget = nullptr;
-	int PetMinDamage;
-	int PetMaxDamage;
+
+	int PetMinDamage;	  // Minimum damage the pet can deal
+	int PetMaxDamage;	  // Maximum damage the pet can deal
+	int PetAttackRange;	  // Attack range of the pet
+	int PetGuardDistance; // Guarding distance of the pet
 
 	static void SetSpeedTable(std::array<double, 7> speeds);
 
@@ -103,13 +106,17 @@ public:
 	void Pet(NPC *npc);
 	void PetDamage(NPC *from, int amount, int spell_id = -1);
 	void PetWalkTo(int x, int y);
-	void PetDetermineDirection(int x, int y);
-	void PetFindAltRoute(int target_x, int target_y);
-	bool PetFindPath(int target_x, int target_y, std::vector<Direction> &path);
+	Direction PetDetermineDirection(int x, int y); // Update return type to Direction
 	NPC *PetFindNearbyEnemy();
+	void PetFace(Direction direction); // Declare the PetFace method
+	void PetDespawn();				   // Declare PetDespawn method
+	void OwnerLoggedOut();			   // Declare OwnerLoggedOut method
 
 	void ResetDirectionChangeFlag();
 	bool HasChangedDirection() const;
+
+	bool InRange(const Character *character) const; // Declaration for InRange
+	bool InRange(const NPC *npc) const;				// Overloaded declaration
 
 	~NPC();
 

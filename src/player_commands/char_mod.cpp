@@ -84,9 +84,9 @@ namespace PlayerCommands
 
 	void Command_Pet(const std::vector<std::string> &arguments, Character *character)
 	{
-		if (!character->PetNPC || !character->PetNPC->pet)
+		if (!character->PetNPC || !character->PetNPC->PetActive)
 		{
-			character->ServerMsg("You do not have a pet.");
+			character->ServerMsg("You do not have an active pet.");
 			return;
 		}
 
