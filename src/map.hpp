@@ -331,6 +331,8 @@ public:
 	void ReloadNPCs();
 	NPC *GetNPCIndexAt(unsigned char x, unsigned char y) const;
 
+	void Attack(NPC *from, NPC *target); // Add this overload for NPC-to-NPC attacks
+
 	~Map();
 };
 

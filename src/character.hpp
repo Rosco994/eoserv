@@ -288,14 +288,13 @@ public:
 
 	bool autoloot_enabled; // Add this line to track autoloot status
 
-	NPC *PetNPC;				// Renamed from pet
-	bool HasPet;				// Renamed from has_pet
-	bool PetTransferInProgress; // Renamed from pet_transfer
+	NPC *PetNPC;                // Pointer to the player's pet NPC
+	bool HasPet;                // Indicates if the player has a pet
+	bool PetTransferInProgress; // Tracks if a pet transfer is in progress
 
-	void PetTransfer();						  // Renamed from PetTransfer
-	void PetKill();							  // Renamed from KillPet
-	void PetSpawn(int pet_id);				  // Renamed from SpawnPet
-	void PetSetMode(const std::string &mode); // Renamed from SetPetMode
+	void KillPet();             // Removes the player's pet
+	void SpawnPet(int pet_id);  // Spawns a pet for the player
+	void PetTransfer();         // Handles pet transfer between maps
 
 	std::list<std::unique_ptr<NPC_Opponent>> damagelist; // Tracks attackers and their damage
 

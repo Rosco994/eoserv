@@ -89,14 +89,16 @@ public:
 
 	void FormulaVars(std::unordered_map<std::string, double> &vars, std::string prefix = "");
 
-	void PetSetOwner(Character *character); // Renamed from SetOwner
-	void Pet(NPC *npc);
-	void PetDamage(NPC *from, int amount, int spell_id = -1); // Renamed from PetDamage
-	void PetWalkTo(int x, int y);							  // Renamed from WalkXY
-	void PetDetermineDirection(int x, int y);				  // Renamed from DirectionNeeded
-	void PetFindAltRoute(int target_x, int target_y);		  // Add this declaration
+	// Pet system methods
+	void PetSetOwner(Character *character);
+	void PetDamage(NPC *from, int amount, int spell_id = -1);
+	void PetFindAltRoute(int target_x, int target_y);
 	bool PetFindPath(int target_x, int target_y, std::vector<Direction> &path);
 	NPC *PetFindNearbyEnemy();
+	void PetTransfer();
+	void PetKilled(Character *from, int amount, int spell_id = -1);
+	void PetWalkTo(int x, int y);
+	void PetDetermineDirection(int x, int y);
 
 	~NPC();
 };

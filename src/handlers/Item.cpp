@@ -57,11 +57,11 @@ namespace Handlers
 				{
 					if (character->HasPet)
 					{
-						character->PetKill();
+						character->KillPet(); // Updated from PetKill to KillPet
 						character->HasPet = false;
 						break;
 					}
-					character->PetSpawn(item.scrollmap);
+					character->SpawnPet(item.scrollmap); // Updated from PetSpawn to SpawnPet
 					character->HasPet = true;
 					character->PetNPC->PetGuarding = true;
 

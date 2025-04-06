@@ -802,6 +802,31 @@ void Map::Enter(Character *character, WarpAnimation animation)
 		checkcharacter->Send(builder);
 	}
 
+	// Re-spawn the pet on the new map if it was marked for transfer
+	if (character->PetNPC && character->PetTransferInProgress)
+	{
+		unsigned char index = this->GenerateNPCIndex();
+		if (index <= 250 && this->Walkable(character->x, character->y, false))
+		{
+			character->PetNPC->map = this;
+			character->PetNPC->x = character->x;
+			character->PetNPC->y = character->y;
+			character->PetNPC->index = index;
+
+			this->npcs.push_back(character->PetNPC);
+			character->PetNPC->Spawn();
+			character->HasPet = true;
+			character->PetTransferInProgress = false;
+		}
+		else
+		{
+			character->StatusMsg("Your pet could not be transferred to the new map.");
+			delete character->PetNPC;
+			character->PetNPC = nullptr;
+			character->HasPet = false;
+		}
+	}
+
 	character->CheckQuestRules();
 }
 
@@ -832,14 +857,29 @@ void Map::Leave(Character *character, WarpAnimation animation, bool silent)
 		std::remove(UTIL_RANGE(this->characters), character),
 		this->characters.end());
 
-	// Clean up the pet if the character has one
+	// Handle pet transfer if the character has a pet
 	if (character->PetNPC)
 	{
 		auto pet = character->PetNPC;
+
+		// Remove the pet from the current map's NPC list
 		this->npcs.erase(std::remove(this->npcs.begin(), this->npcs.end(), pet), this->npcs.end());
-		delete pet; // Free the pet object
-		character->PetNPC = nullptr;
-		character->HasPet = false;
+
+		// Notify nearby players that the pet is being removed
+		PacketBuilder builder(PACKET_NPC, PACKET_REMOVE, 2);
+		builder.AddChar(pet->index);
+
+		UTIL_FOREACH(this->characters, checkcharacter)
+		{
+			if (checkcharacter->InRange(pet))
+			{
+				checkcharacter->Send(builder);
+			}
+		}
+
+		// Mark the pet for transfer
+		character->PetTransferInProgress = true; // Updated to use character directly
+		character->PetNPC->map = nullptr;		 // Clear the map reference
 	}
 
 	character->map = 0;
@@ -1720,6 +1760,31 @@ void Map::Attack(Character *from, Direction direction)
 		if (!this->Walkable(target_x, target_y, true))
 		{
 			return;
+		}
+	}
+}
+
+void Map::Attack(NPC *from, NPC *target)
+{
+	if (!from || !target || !from->alive || !target->alive)
+	{
+		return;
+	}
+
+	int damage = util::rand(from->PetMinDamage, from->PetMaxDamage);
+	target->Damage(from->PetOwner, damage); // Apply damage to the target NPC
+
+	// Optionally, add visual or sound effects for the attack
+	PacketBuilder builder(PACKET_NPC, PACKET_SPEC, 6); // Corrected second argument to PACKET_SPEC (PacketAction)
+	builder.AddChar(from->index);
+	builder.AddChar(target->index);
+	builder.AddShort(damage);
+	builder.AddChar(0); // Optional attack type
+	UTIL_FOREACH(this->characters, character)
+	{
+		if (character->InRange(from))
+		{
+			character->Send(builder);
 		}
 	}
 }
