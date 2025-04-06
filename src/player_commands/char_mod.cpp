@@ -10,6 +10,7 @@
 #include "../i18n.hpp"
 #include "../world.hpp"
 #include "../npc.hpp"
+#include "../packet.hpp"
 
 #include "../console.hpp"
 #include "../util.hpp"
@@ -101,28 +102,50 @@ namespace PlayerCommands
 
 		if (mode == "attack")
 		{
-			character->PetNPC->PetAttacking = true;
-			character->PetNPC->PetGuarding = false;
-			character->PetNPC->PetFollowing = false;
-			character->ServerMsg("Your pet is now in attacking mode.");
+			if (character->PetNPC) // Ensure PetNPC is valid
+			{
+				character->PetSetMode("attacking");
+				character->ServerMsg("Your pet is now in attacking mode.");
+			}
 		}
 		else if (mode == "guard")
 		{
-			character->PetNPC->PetAttacking = false;
-			character->PetNPC->PetGuarding = true;
-			character->PetNPC->PetFollowing = false;
-			character->ServerMsg("Your pet is now in guarding mode.");
+			if (character->PetNPC) // Ensure PetNPC is valid
+			{
+				character->PetSetMode("guarding");
+				character->ServerMsg("Your pet is now in guarding mode.");
+			}
 		}
 		else if (mode == "follow")
 		{
-			character->PetNPC->PetAttacking = false;
-			character->PetNPC->PetGuarding = false;
-			character->PetNPC->PetFollowing = true;
-			character->ServerMsg("Your pet is now in following mode.");
+			if (character->PetNPC) // Ensure PetNPC is valid
+			{
+				character->PetSetMode("following");
+				character->ServerMsg("Your pet is now in following mode.");
+			}
 		}
 		else
 		{
 			character->ServerMsg("Invalid mode. Modes: attack, guard, follow");
+		}
+
+		// Validate the pet object before sending updates
+		if (character->PetNPC && character->PetNPC->map)
+		{
+			PacketBuilder builder(PACKET_NPC, PACKET_SPEC, 6);
+			builder.AddChar(character->PetNPC->index);
+			builder.AddChar(mode == "attack" ? 1 : mode == "guard" ? 2
+											   : mode == "follow"  ? 3
+																   : 0); // 1 = attack, 2 = guard, 3 = follow, 0 = invalid
+			builder.AddShort(character->PetNPC->id);
+			builder.AddChar(0); // Optional data
+			UTIL_FOREACH(character->map->characters, nearby_character)
+			{
+				if (nearby_character->InRange(character->PetNPC))
+				{
+					nearby_character->Send(builder);
+				}
+			}
 		}
 	}
 

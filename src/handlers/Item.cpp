@@ -57,13 +57,21 @@ namespace Handlers
 				{
 					if (character->HasPet)
 					{
-						character->KillPet(); // Updated from PetKill to KillPet
-						character->HasPet = false;
+						if (character->PetNPC) // Ensure PetNPC is valid before accessing it
+						{
+							character->PetKill();
+							character->HasPet = false;
+						}
 						break;
 					}
-					character->SpawnPet(item.scrollmap); // Updated from PetSpawn to SpawnPet
+
+					character->PetSpawn(item.scrollmap);
 					character->HasPet = true;
-					character->PetNPC->PetGuarding = true;
+
+					if (character->PetNPC) // Ensure PetNPC is valid before modifying its state
+					{
+						character->PetNPC->PetGuarding = true;
+					}
 
 					if (item.scrolly == 1)
 					{

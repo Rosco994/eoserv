@@ -2338,7 +2338,7 @@ void Character::AutoPotion()
 	this->last_pot = current_time;
 }
 
-void Character::KillPet()
+void Character::PetKill()
 {
 	if (!this->PetNPC)
 	{
@@ -2347,6 +2347,12 @@ void Character::KillPet()
 
 	if (this->HasPet)
 	{
+		// Save the pet's current mode and target
+		bool was_following = this->PetNPC->PetFollowing;
+		bool was_guarding = this->PetNPC->PetGuarding;
+		bool was_attacking = this->PetNPC->PetAttacking;
+		NPC *previous_target = this->PetNPC->PetTarget;
+
 		// Remove the pet from the map and notify nearby players
 		UTIL_FOREACH(this->PetNPC->map->characters, character)
 		{
@@ -2360,14 +2366,24 @@ void Character::KillPet()
 			std::remove(this->PetNPC->map->npcs.begin(), this->PetNPC->map->npcs.end(), this->PetNPC),
 			this->PetNPC->map->npcs.end());
 
-		// Delete the pet object and reset pet-related flags
+		// Delete the pet object
 		delete this->PetNPC;
 		this->PetNPC = nullptr;
 		this->HasPet = false;
+
+		// Restore the pet's mode and target after respawn
+		this->PetSpawn(this->PetNPC->id);
+		if (this->PetNPC)
+		{
+			this->PetNPC->PetFollowing = was_following;
+			this->PetNPC->PetGuarding = was_guarding;
+			this->PetNPC->PetAttacking = was_attacking;
+			this->PetNPC->PetTarget = previous_target;
+		}
 	}
 }
 
-void Character::SpawnPet(int pet_id)
+void Character::PetSpawn(int pet_id)
 {
 	if (!this->map->Walkable(this->x, this->y, false))
 	{
@@ -2387,6 +2403,12 @@ void Character::SpawnPet(int pet_id)
 	this->map->npcs.push_back(this->PetNPC);
 	this->PetNPC->Spawn();
 	this->HasPet = true;
+
+	// Ensure pet modes are initialized properly
+	this->PetNPC->PetFollowing = true; // Default to following mode
+	this->PetNPC->PetGuarding = false;
+	this->PetNPC->PetAttacking = false;
+	this->PetNPC->PetTarget = nullptr;
 }
 
 void Character::PetTransfer()
@@ -2397,6 +2419,54 @@ void Character::PetTransfer()
 	}
 
 	// Handle pet transfer by killing and respawning the pet
-	this->KillPet();
-	this->SpawnPet(this->PetNPC->id);
+	this->PetKill();
+	this->PetSpawn(this->PetNPC->id);
+}
+
+void Character::PetSetMode(const std::string &mode)
+{
+	if (!this->PetNPC || !this->HasPet)
+	{
+		this->ServerMsg("You do not have a pet.");
+		return;
+	}
+
+	if (mode == "attacking")
+	{
+		this->PetNPC->PetAttacking = true;
+		this->PetNPC->PetGuarding = false;
+		this->PetNPC->PetFollowing = false;
+	}
+	else if (mode == "guarding")
+	{
+		this->PetNPC->PetAttacking = false;
+		this->PetNPC->PetGuarding = true;
+		this->PetNPC->PetFollowing = false;
+	}
+	else if (mode == "following")
+	{
+		this->PetNPC->PetAttacking = false;
+		this->PetNPC->PetGuarding = false;
+		this->PetNPC->PetFollowing = true;
+	}
+	else
+	{
+		this->ServerMsg("Invalid pet mode.");
+		return;
+	}
+
+	// Notify nearby players about the pet's mode change
+	PacketBuilder builder(PACKET_NPC, PACKET_SPEC, 6);
+	builder.AddChar(this->PetNPC->index);
+	builder.AddChar(mode == "attacking" ? 1 : mode == "guarding" ? 2
+																 : 3); // 1 = attack, 2 = guard, 3 = follow
+	builder.AddShort(this->PetNPC->id);
+	builder.AddChar(0); // Optional data
+	UTIL_FOREACH(this->map->characters, nearby_character)
+	{
+		if (nearby_character->InRange(this->PetNPC))
+		{
+			nearby_character->Send(builder);
+		}
+	}
 }

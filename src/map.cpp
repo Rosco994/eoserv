@@ -2969,5 +2969,17 @@ NPC *Map::GetNPCIndexAt(unsigned char x, unsigned char y) const
 	return nullptr; // Return nullptr if no NPC is found at the given position
 }
 
+void Map::Update()
+{
+	// Update pet behavior
+	UTIL_FOREACH(this->npcs, npc)
+	{
+		if (npc->pet)
+		{
+			npc->UpdatePetBehavior();
+		}
+	}
+}
+
 #undef SAFE_SEEK
 #undef SAFE_READ

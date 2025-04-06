@@ -201,7 +201,7 @@ void NPC::Act()
 		{
 			if (std::abs(this->x - this->PetTarget->x) <= 1 && std::abs(this->y - this->PetTarget->y) <= 1)
 			{
-				 // Use the new Map::Attack overload for NPC-to-NPC attacks
+				// Use the new Map::Attack overload for NPC-to-NPC attacks
 				this->map->Attack(this, this->PetTarget);
 			}
 			else
@@ -224,6 +224,41 @@ void NPC::Act()
 				this->PetTarget = enemy;
 				this->PetAttacking = true;
 			}
+		}
+	}
+}
+
+void NPC::UpdatePetBehavior()
+{
+	if (!this->pet || !this->PetOwner)
+		return;
+
+	if (this->PetAttacking && this->PetTarget)
+	{
+		// Attack the target if within range
+		if (util::path_length(this->x, this->y, this->PetTarget->x, this->PetTarget->y) <= this->map->world->config["PetChaseDistance"])
+		{
+			this->Attack(this->PetTarget);
+		}
+		else
+		{
+			this->PetTarget = nullptr; // Clear target if out of range
+		}
+	}
+	else if (this->PetGuarding)
+	{
+		// Guard the owner within the guard distance
+		if (util::path_length(this->x, this->y, this->PetOwner->x, this->PetOwner->y) > this->map->world->config["PetGuardDistance"])
+		{
+			this->WalkTowards(this->PetOwner->x, this->PetOwner->y);
+		}
+	}
+	else if (this->PetFollowing)
+	{
+		// Follow the owner
+		if (util::path_length(this->x, this->y, this->PetOwner->x, this->PetOwner->y) > 1)
+		{
+			this->WalkTowards(this->PetOwner->x, this->PetOwner->y);
 		}
 	}
 }
@@ -820,7 +855,7 @@ void NPC::PetKilled(Character *from, int amount, int spell_id)
 	this->Die();
 	if (this->PetOwner)
 	{
-		this->PetOwner->KillPet();
+		this->PetOwner->PetKill();
 	}
 }
 
@@ -1042,7 +1077,7 @@ void NPC::PetDamage(NPC *from, int amount, int spell_id)
 		this->Die();
 		if (this->PetOwner)
 		{
-			this->PetOwner->KillPet();
+			this->PetOwner->PetKill();
 		}
 	}
 }
